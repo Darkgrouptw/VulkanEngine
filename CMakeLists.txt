@@ -32,14 +32,36 @@ else()
     message(STATUS "Using Vulkan Lib: ${Vulkan_LIBRARIES}")
 endif()
 
+# 3b. GLFW
+if (DEFINED GLFW_PATH)
+    set(GLFW_INCLUDE_DIRS "${GLFW_PATH}/Include")
+    set(GLFW_LIBRARIES "${GLFW_PATH}/lib-vc2022") # 根據下載的版本 Visual Studio 2022
+else()
+    find_package(glfw3 3.3 REQUIRED)
+    message(STATUS "Found GLFW Lib: ${GLFW_LIBRARIES}")
+endif()
+if (NOT DEFINED GLFW_LIBRARIES)
+    message(FATAL_ERROR "Not Found GLFW")
+else()
+    message(STATUS "Using GLFW Lib: ${GLFW_LIBRARIES}")
+endif()
+
+# 3c. GLM
+if (NOT DEFINED GLM_PATH)
+    message(FATAL ERROR "Not Found GLM PATH")
+endif()
+
 # 3d. Final
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_include_directories(${PROJECT_NAME} PRIVATE
     ${Vulkan_INCLUDE_DIRS}
-    # ${TINYOBJ_PATH}
-    # ${GLFW_INCLUDE_DIRS}
-    # ${GLM_PATH}
+    ${GLFW_INCLUDE_DIRS}
+    ${GLM_PATH}
 )
-target_link_directories(${PROJECT_NAME} PUBLIC
+target_link_directories(${PROJECT_NAME} PRIVATE
     ${Vulkan_LIBRARIES}
-    # ${GLFW_LIB}
+    ${GLFW_LIBRARIES}
+)
+target_link_libraries(${PROJECT_NAME} 
+    glfw3
+    vulkan-1
 )
