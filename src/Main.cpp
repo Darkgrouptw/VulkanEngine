@@ -1,29 +1,21 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp>
-
 #include <iostream>
+//#include <cstdlib>
 
-int main() {
-    glfwInit();
+#include "Core/VulkanEngineApplication.h"
 
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
+using namespace std;
 
-    uint32_t extensionCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-
-    std::cout << extensionCount << " extensions supported\n";
-    while(!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
+int main() 
+{
+    VulkanEngineApplication application;
+    try
+    {
+        application.Run();
     }
-
-    glfwDestroyWindow(window);
-
-    glfwTerminate();
-
-    return 0;
+    catch (const exception &e)
+    {
+        cerr << e.what() << endl;
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 }

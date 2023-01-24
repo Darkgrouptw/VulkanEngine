@@ -13,8 +13,6 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project(VulkanEngine)
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(${PROJECT_NAME} src/Main.cpp)
-
 
 # 3. Setup Library Stuff
 # 3a. Vulkan
@@ -52,10 +50,19 @@ if (NOT DEFINED GLM_PATH)
 endif()
 
 # 3d. Final
+file(GLOB_RECURSE AllFiles_SRC
+     "src/*.h"
+     "src/*.cpp"
+)
+# message("All Files: ${AllFiles_SRC}")
+add_executable(${PROJECT_NAME} 
+    ${AllFiles_SRC}
+)
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${Vulkan_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS}
     ${GLM_PATH}
+    "./src"
 )
 target_link_directories(${PROJECT_NAME} PRIVATE
     ${Vulkan_LIBRARIES}
