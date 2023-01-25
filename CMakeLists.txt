@@ -22,18 +22,22 @@ if (DEFINED VULKAN_SDK_PATH)
     set(Vulkan_FOUND "True")
 else()
     find_package(Vulkan REQUIRED)
-    message(STATUS "Found Vulkan Lib: ${Vulkan_LIBRARIES}")
+    message(STATUS "Find Vulkan Package")
 endif()
 if (NOT Vulkan_FOUND)
     message(FATAL ERROR "Not Found Vulkan")
 else()
-    message(STATUS "Using Vulkan Lib: ${Vulkan_LIBRARIES}")
+    message(STATUS "Using Vulkan Library: ${Vulkan_LIBRARIES}")
 endif()
 
 # 3b. GLFW
 if (DEFINED GLFW_PATH)
     set(GLFW_INCLUDE_DIRS "${GLFW_PATH}/Include")
-    set(GLFW_LIBRARIES "${GLFW_PATH}/lib-vc2022") # 根據下載的版本 Visual Studio 2022
+    if (WIN32)
+        set(GLFW_LIBRARIES "${GLFW_PATH}/lib-vc2022") # 根據下載的版本 Visual Studio 2022
+    else()
+        set(GLFW_LIBRARIES "${GLFW_PATH}/lib") # 其他平台應該都是在這個下面
+    endif()
 else()
     find_package(glfw3 3.3 REQUIRED)
     message(STATUS "Found GLFW Lib: ${GLFW_LIBRARIES}")
@@ -64,11 +68,23 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${GLM_PATH}
     "./src"
 )
-target_link_directories(${PROJECT_NAME} PRIVATE
-    ${Vulkan_LIBRARIES}
-    ${GLFW_LIBRARIES}
-)
-target_link_libraries(${PROJECT_NAME} 
-    glfw3
-    vulkan-1
-)
+if (WIN32)
+    message(STATUS "Building For Windows")
+    target_link_directories(${PROJECT_NAME} PRIVATE
+        ${Vulkan_LIBRARIES}
+        ${GLFW_LIBRARIES}
+    )
+    target_link_libraries(${PROJECT_NAME} 
+        glfw3
+        vulkan-1
+    )
+else()
+    message(STATUS "Building For Unix")
+    target_link_directories(${PROJECT_NAME} PRIVATE
+        ${GLFW_LIBRARIES}
+    )
+    target_link_libraries(${PROJECT_NAME} 
+        glfw
+        ${Vulkan_LIBRARIES}
+    )
+endif()
