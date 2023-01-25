@@ -65,7 +65,7 @@ void VulkanEngineApplication::__CreateVKInstance()
 	createInfo.sType												= VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo										= &appInfo;
 
-
+	
 	// 由於 Vulakn 是底層的 API (和平台無關)
 	// 必須從有一個和 GLFW 的系統溝通的 API
 	// 撈 Entension
@@ -74,7 +74,7 @@ void VulkanEngineApplication::__CreateVKInstance()
 	// 目前不完全支援 Vulkan 的 VK_KHR_PORTABILITY_subset
 	// https://vulkan.lunarg.com/doc/view/1.3.236.0/mac/getting_started.html#user-content-encountered-vk_error_incompatible_driver
 	vector<const char*> extNames;
-	extNames.push_back("VK_KHR_portability_enumeration");
+	extNames.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 	createInfo.flags												= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 	createInfo.enabledExtensionCount 								= static_cast<uint32_t>(extNames.size());
 	createInfo.ppEnabledExtensionNames 								= extNames.data();
@@ -102,7 +102,6 @@ void VulkanEngineApplication::__CreateVKInstance()
 
 	// 建立 VKInstance
 	VkResult result													= vkCreateInstance(&createInfo, nullptr, &instance);
-	cout << result << endl;
 	if (result != VK_SUCCESS)
 		throw runtime_error("Failed to create Vulkan Instance");
 }
