@@ -68,6 +68,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${GLM_PATH}
     "./src"
 )
+
 if (WIN32)
     message(STATUS "Building For Windows")
     target_link_directories(${PROJECT_NAME} PRIVATE
@@ -80,11 +81,8 @@ if (WIN32)
     )
 else()
     message(STATUS "Building For Unix")
-    target_link_directories(${PROJECT_NAME} PRIVATE
-        ${GLFW_LIBRARIES}
-    )
     target_link_libraries(${PROJECT_NAME} 
-        glfw
         ${Vulkan_LIBRARIES}
+        ${GLFW_LIBRARIES}/libglfw.dylib
     )
 endif()
