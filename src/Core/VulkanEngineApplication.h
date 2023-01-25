@@ -2,8 +2,13 @@
 /*
 * Vulkan 系統的 Application
 */
+#include <iostream>
+#include <vector>
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+using namespace std;
 
 class VulkanEngineApplication
 {
@@ -21,5 +26,13 @@ private:
 	GLFWwindow* window												= NULL;									// GLFW Window
 	const int WIDTH													= 1600;									// 長
 	const int HEIGHT												= 900;									// 寬
+
+	// Vulkan
+	VkInstance instance;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Helper Function
+	//////////////////////////////////////////////////////////////////////////
+	void __CreateVKInstance();
 };
 
