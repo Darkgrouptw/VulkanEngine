@@ -86,7 +86,8 @@ void VulkanEngineApplication::__CreateVKInstance()
 	createInfo.enabledLayerCount = 0;
 
 	// 測試支援那些 Vulkan Entension
-	/*uint32_t extensionCount;
+	#ifdef VKENGINE_DEBUG_DETAILS
+	uint32_t extensionCount;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 	vector<VkExtensionProperties> extensions(extensionCount);
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
@@ -94,7 +95,8 @@ void VulkanEngineApplication::__CreateVKInstance()
 
 	for (const auto& extension : extensions) {
 		cout << '\t' << extension.extensionName << endl;
-	}*/
+	}
+	#endif
 
 	// 建立 VKInstance
 	VkResult result													= vkCreateInstance(&createInfo, nullptr, &instance);
@@ -109,7 +111,7 @@ void VulkanEngineApplication::__PickPhysicalDevice()
 		throw runtime_error("Failed to find GPUs with Vulkan Support");
 
 	// 並非所有的顯卡都符合設定
-	// 所以這邊要做更進一步的 Check
+	// 所以這邊要做更進一步的 Check (例如是否有 Geometry Shader 等)
 	vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 	for(const auto& device: devices)
@@ -124,6 +126,17 @@ void VulkanEngineApplication::__PickPhysicalDevice()
 }
 bool VulkanEngineApplication::__isDeviceSuitable(VkPhysicalDevice device)
 {
+	// 測試顯卡的一些細節
+	#ifdef VKENGINE_DEBUG_DETAILS
+	VkPhysicalDeviceProperties deviceProperties;
+	vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+	VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+	cout << "Max Dimension of Texture Size: " << deviceProperties.limits.maxImageDimension2D << endl;
+	cout << "Is Geometry Shader available: " << (deviceFeatures.geometryShader ? "True" : "False") << endl;	// Mac M1 不支援 (https://forum.unity.com/threads/geometry-shader-on-mac.1056659/)
+	#endif
 	return true;
 }
 #pragma endregion
