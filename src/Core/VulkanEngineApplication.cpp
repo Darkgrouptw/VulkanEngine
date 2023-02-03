@@ -10,7 +10,6 @@ void VulkanEngineApplication::Run()
 }
 #pragma endregion
 #pragma region Private
-
 void VulkanEngineApplication::InitWindow()
 {
 	// 初始化
@@ -21,12 +20,11 @@ void VulkanEngineApplication::InitWindow()
 
 	window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 }
-
 void VulkanEngineApplication::InitVulkan()
 {
 	__CreateVKInstance();
+	__PickPhysicalDevice();
 }
-
 void VulkanEngineApplication::MainLoop()
 {
 	while (!glfwWindowShouldClose(window))																	// 接到是否關閉此視窗的 Flag
@@ -34,7 +32,6 @@ void VulkanEngineApplication::MainLoop()
 		glfwPollEvents();																					// 抓出 GFLW 的事件 Queue
 	}
 }
-
 void VulkanEngineApplication::Destroy()
 {
 	// 清掉 Vulkan Instance
@@ -44,7 +41,6 @@ void VulkanEngineApplication::Destroy()
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 // Helper Function
@@ -105,5 +101,29 @@ void VulkanEngineApplication::__CreateVKInstance()
 	if (result != VK_SUCCESS)
 		throw runtime_error("Failed to create Vulkan Instance");
 }
+void VulkanEngineApplication::__PickPhysicalDevice()
+{
+	uint32_t deviceCount = 0;
+	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);											// 抓出所有支援的 Device
+	if (deviceCount == 0)
+		throw runtime_error("Failed to find GPUs with Vulkan Support");
 
+	// 並非所有的顯卡都符合設定
+	// 所以這邊要做更進一步的 Check
+	vector<VkPhysicalDevice> devices(deviceCount);
+	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+	for(const auto& device: devices)
+		if (__isDeviceSuitable(device))
+		{
+			physiclaDevice = device;
+			break;
+		}
+
+	if (physiclaDevice == VK_NULL_HANDLE)
+		throw runtime_error("No Suitable GPUs");
+}
+bool VulkanEngineApplication::__isDeviceSuitable(VkPhysicalDevice device)
+{
+	return true;
+}
 #pragma endregion

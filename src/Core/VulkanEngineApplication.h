@@ -29,10 +29,13 @@ private:
 
 	// Vulkan
 	VkInstance instance;
+	VkPhysicalDevice physiclaDevice									= VK_NULL_HANDLE;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Function
 	//////////////////////////////////////////////////////////////////////////
-	void __CreateVKInstance();
+	void __CreateVKInstance();																				// Vulkan Instance
+	void __PickPhysicalDevice();																			// 選擇顯卡
+	bool __isDeviceSuitable(VkPhysicalDevice);																// 是否為合適的顯卡
 };
 
