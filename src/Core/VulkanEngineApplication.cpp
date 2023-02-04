@@ -24,6 +24,7 @@ void VulkanEngineApplication::InitVulkan()
 {
 	__CreateVKInstance();
 	__PickPhysicalDevice();
+	__CreateLogicalDevice();
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -34,7 +35,9 @@ void VulkanEngineApplication::MainLoop()
 }
 void VulkanEngineApplication::Destroy()
 {
-	// 清掉 Vulkan Instance
+
+	// 清掉 Vulkan 相關東西
+	vkDestroyDevice(device, nullptr);
 	vkDestroyInstance(instance, nullptr);
 
 	// 關閉 GLFW
@@ -115,16 +118,20 @@ void VulkanEngineApplication::__PickPhysicalDevice()
 	vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 	for(const auto& device: devices)
-		if (__isDeviceSuitable(device))
+	{
+		int queueIndex = __GetQueueIndexIfDeviceSuitable(device);
+		if (queueIndex >= 0)
 		{
 			physiclaDevice = device;
+			queueFamilyIndex = queueIndex;
 			break;
 		}
+	}
 
 	if (physiclaDevice == VK_NULL_HANDLE)
 		throw runtime_error("No Suitable GPUs");
 }
-bool VulkanEngineApplication::__isDeviceSuitable(VkPhysicalDevice device)
+int VulkanEngineApplication::__GetQueueIndexIfDeviceSuitable(VkPhysicalDevice device)
 {
 	// 測試顯卡的一些細節
 	#ifdef VKENGINE_DEBUG_DETAILS
@@ -137,6 +144,62 @@ bool VulkanEngineApplication::__isDeviceSuitable(VkPhysicalDevice device)
 	cout << "Max Dimension of Texture Size: " << deviceProperties.limits.maxImageDimension2D << endl;
 	cout << "Is Geometry Shader available: " << (deviceFeatures.geometryShader ? "True" : "False") << endl;	// Mac M1 不支援 (https://forum.unity.com/threads/geometry-shader-on-mac.1056659/)
 	#endif
-	return true;
+
+	// 檢查 QueueFamily 是否支援 Graphics 的 Queue
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+	vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);	
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+	for(int i = 0; i < queueFamilies.size(); i++)
+	{
+		const auto& queueFamily = queueFamilies[i];
+
+		// 顯示到底有哪些東西
+		#ifdef VKENGINE_DEBUG_DETAILS
+		cout << device << " " << queueFamily.queueFlags << endl;
+		#endif
+
+		// 判斷是否支援 Graphics 的 QueueFamily
+		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkQueueFlagBits.html
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			cout << "Graphics Queue: " << i << endl;
+			return i;																						// 這一個 Queue Index 是處理 Graphics 相關的
+		}
+	}
+	return -1;																								// 無正常的可以處理 Graphics 的 Queue 
+}
+void VulkanEngineApplication::__CreateLogicalDevice()
+{
+	// 建立 QueueInfo
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType 											= VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex 								= queueFamilyIndex;
+
+	float priorties 												= 1.0f;
+	queueCreateInfo.pQueuePriorities								= &priorties;							// 0 ~ 1 
+
+	// 預設來說這裡 Queue 只需要一個 (一般來說都是在 Multi-thread 中 create command buffers，然後在 Main Thread 一次全部送上去)
+	queueCreateInfo.queueCount 										= 1;
+
+	// 對此裝置需要啟用哪些 Features
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	// 真正建立 Logical Device
+	VkDeviceCreateInfo createInfo{};
+	createInfo.sType												= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createInfo.pQueueCreateInfos									= &queueCreateInfo;
+	createInfo.pEnabledFeatures										= &deviceFeatures;
+	createInfo.queueCreateInfoCount									= 1;
+
+	// 暫時不需要
+	createInfo.enabledExtensionCount								= 0;
+	createInfo.enabledLayerCount									= 0;
+
+	// 產生裝置完後，設定 Graphics Queue
+	if (vkCreateDevice(physiclaDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+		throw runtime_error("Failed to create logical device");
+	vkGetDeviceQueue(device, queueFamilyIndex, 0, &graphicsQueue);
 }
 #pragma endregion
