@@ -10,7 +10,7 @@
 
 using namespace std;
 
-// 測試顯卡的一些細節使用
+// 測試 Vulkan 的一些細節使用
 #define VKENGINE_DEBUG_DETAILS
 
 class VulkanEngineApplication

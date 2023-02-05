@@ -12,7 +12,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	// VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT: Something has happened that violates the specification or indicates a possible mistake
 	// VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT: Potential non-optimal use of Vulkan
 	
-    cerr << "Validation layer: " << pCallbackData->pMessage << endl;
+    cerr << pCallbackData->pMessage << endl;
 
     return VK_FALSE;
 }
@@ -275,8 +275,17 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 	createInfo.queueCreateInfoCount									= 1;
 
 	// 暫時不需要
+#if defined(__APPLE__)
+	vector<const char*> extNames									= 
+	{
+		"VK_KHR_portability_subset"
+	};
+	createInfo.enabledExtensionCount								= static_cast<uint32_t>(extNames.size());
+	createInfo.ppEnabledExtensionNames								= extNames.data();
+#else
 	createInfo.enabledExtensionCount								= 0;
 	createInfo.enabledLayerCount									= 0;
+#endif
 
 	// 產生裝置完後，設定 Graphics Queue
 	if (vkCreateDevice(physiclaDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
