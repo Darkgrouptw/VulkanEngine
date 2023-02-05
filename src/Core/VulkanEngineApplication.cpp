@@ -23,6 +23,8 @@ void VulkanEngineApplication::InitWindow()
 void VulkanEngineApplication::InitVulkan()
 {
 	__CreateVKInstance();
+	//__SetupDebugMessage();
+	__CreateSurface();
 	__PickPhysicalDevice();
 	__CreateLogicalDevice();
 }
@@ -35,9 +37,9 @@ void VulkanEngineApplication::MainLoop()
 }
 void VulkanEngineApplication::Destroy()
 {
-
 	// 清掉 Vulkan 相關東西
 	vkDestroyDevice(device, nullptr);
+	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
 
 	// 關閉 GLFW
@@ -50,6 +52,12 @@ void VulkanEngineApplication::Destroy()
 //////////////////////////////////////////////////////////////////////////
 void VulkanEngineApplication::__CreateVKInstance()
 {
+#ifdef VKENGINE_DEBUG_DETAILS
+	EnabledValidationLayer = __CheckValidationLayerSupport();
+	if (!EnabledValidationLayer)
+		cout << "ValidationLayer is requested, but it's not supported" << endl;
+#endif
+
 	// 建立 Application Info
 	VkApplicationInfo appInfo{};
 	appInfo.sType													= VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -105,6 +113,17 @@ void VulkanEngineApplication::__CreateVKInstance()
 	VkResult result													= vkCreateInstance(&createInfo, nullptr, &instance);
 	if (result != VK_SUCCESS)
 		throw runtime_error("Failed to create Vulkan Instance");
+}
+//void VulkanEngineApplication::__SetupDebugMessage
+void VulkanEngineApplication::__CreateSurface()
+{
+	//VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+	//cout << result << endl;
+
+	
+	//vkcreate
+	//if (result != VK_SUCCESS)
+	//	throw runtime_error("Failed to create window surface");
 }
 void VulkanEngineApplication::__PickPhysicalDevice()
 {
@@ -164,7 +183,9 @@ int VulkanEngineApplication::__GetQueueIndexIfDeviceSuitable(VkPhysicalDevice de
 		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkQueueFlagBits.html
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
+			#ifdef VKENGINE_DEBUG_DETAILS
 			cout << "Graphics Queue: " << i << endl;
+			#endif
 			return i;																						// 這一個 Queue Index 是處理 Graphics 相關的
 		}
 	}
@@ -202,4 +223,30 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 		throw runtime_error("Failed to create logical device");
 	vkGetDeviceQueue(device, queueFamilyIndex, 0, &graphicsQueue);
 }
+
+#ifdef VKENGINE_DEBUG_DETAILS
+bool VulkanEngineApplication::__CheckValidationLayerSupport()
+{
+	uint32_t layerCount = 0;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+	vector<VkLayerProperties> layerProperties(layerCount);
+	vkEnumerateInstanceLayerProperties(&layerCount, layerProperties.data());
+
+	for (const char* layerName : ValidationLayersNames)
+	{
+		bool IsLayerFound = false;
+		for(const auto currentProperties : layerProperties)
+			if (strcmp(layerName, currentProperties.layerName) == 0)
+			{
+				IsLayerFound = true;
+				break;
+			}
+
+		if (!IsLayerFound)
+			return false;
+	}
+	return true;
+}
+#endif
 #pragma endregion
