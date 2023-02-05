@@ -142,11 +142,17 @@ void VulkanEngineApplication::__CreateVKInstance()
 	// 2. 測試支援那些 Vulkan Entension
 #if defined(VKENGINE_DEBUG_DETAILS)
 	// 1.
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 	if (EnabledValidationLayer)
 	{
-		uint32_t glfwExtensionCount = 0;
 		createInfo.enabledLayerCount = static_cast<uint32_t>(ValidationLayersNames.size());
 		createInfo.ppEnabledLayerNames = ValidationLayersNames.data();
+
+        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugCreateInfo.pfnUserCallback = debugCallback;
+		createInfo.pNext = &debugCreateInfo;
 	}
 	else
 		createInfo.enabledLayerCount = 0;
@@ -161,8 +167,6 @@ void VulkanEngineApplication::__CreateVKInstance()
 
 	for (const auto& extension : extensions)
 		cout << '\t' << extension.extensionName << endl;
-#else
-	createInfo.enabledLayerCount = 0;
 #endif
 
 	// 建立 VKInstance
@@ -274,8 +278,8 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 	createInfo.pEnabledFeatures										= &deviceFeatures;
 	createInfo.queueCreateInfoCount									= 1;
 
-	// 暫時不需要
 #if defined(__APPLE__)
+	// Mac 有開啟此功能，需要設定一下
 	vector<const char*> extNames									= 
 	{
 		"VK_KHR_portability_subset"
