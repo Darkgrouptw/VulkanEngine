@@ -185,14 +185,6 @@ void VulkanEngineApplication::__SetupDebugMessenger()
 	}
 #endif
 }
-void VulkanEngineApplication::__PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &debugCreateInfo)
-{
-	debugCreateInfo.sType 											= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    debugCreateInfo.messageSeverity 								= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    debugCreateInfo.messageType 									= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    debugCreateInfo.pfnUserCallback 								= debugCallback;
-	debugCreateInfo.pUserData 										= nullptr;
-}
 void VulkanEngineApplication::__CreateSurface()
 {
 	VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
@@ -223,37 +215,6 @@ void VulkanEngineApplication::__PickPhysicalDevice()
 
 	if (physiclaDevice == VK_NULL_HANDLE)
 		throw runtime_error("No Suitable GPUs");
-}
-int VulkanEngineApplication::__GetQueueIndexIfDeviceSuitable(VkPhysicalDevice device)
-{
-	// 測試顯卡的一些細節
-#if defined(VKENGINE_DEBUG_DETAILS)
-	VkPhysicalDeviceProperties deviceProperties;
-	vkGetPhysicalDeviceProperties(device, &deviceProperties);
-
-	VkPhysicalDeviceFeatures deviceFeatures;
-	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-	cout << "Max Dimension of Texture Size: " << deviceProperties.limits.maxImageDimension2D << endl;
-	cout << "Is Geometry Shader available: " << (deviceFeatures.geometryShader ? "True" : "False") << endl;	// Mac M1 不支援 (https://forum.unity.com/threads/geometry-shader-on-mac.1056659/)
-	#endif
-
-	// 檢查 QueueFamily 是否支援 Graphics 的 Queue
-	uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-	vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);	
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-	for(int i = 0; i < queueFamilies.size(); i++)
-	{
-		const auto& queueFamily = queueFamilies[i];
-
-		// 判斷是否支援 Graphics 的 QueueFamily
-		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkQueueFlagBits.html
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-			return i;																						// 這一個 Queue Index 是處理 Graphics 相關的
-	}
-	return -1;																								// 無正常的可以處理 Graphics 的 Queue 
 }
 void VulkanEngineApplication::__CreateLogicalDevice()
 {
@@ -299,6 +260,65 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 	if (vkCreateDevice(physiclaDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
 		throw runtime_error("Failed to create logical device");
 	vkGetDeviceQueue(device, queueFamilyIndex, 0, &graphicsQueue);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// 比較 Minor 的 Helper Function
+//////////////////////////////////////////////////////////////////////////
+void VulkanEngineApplication::__PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &debugCreateInfo)
+{
+	debugCreateInfo.sType 											= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    debugCreateInfo.messageSeverity 								= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debugCreateInfo.messageType 									= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    debugCreateInfo.pfnUserCallback 								= debugCallback;
+	debugCreateInfo.pUserData 										= nullptr;
+}
+bool VulkanEngineApplication::__CheckDeviceExtensionSupport(VkPhysicalDevice device)
+{
+	uint32_t extensionCount = 0;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+	vector<VkExtensionProperties> properties(extensionCount);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, properties.data());
+
+	for(const auto& names : NeedCheckDeviceExtensionNames)
+		if (find_if(properties.begin(), properties.end(), [names](VkExtensionProperties p) { return string(p.extensionName) == names; }) == properties.end())							// 找到 end 也沒找到
+			return false;
+	return true;
+}
+int VulkanEngineApplication::__GetQueueIndexIfDeviceSuitable(VkPhysicalDevice device)
+{
+	// 測試顯卡的一些細節
+#if defined(VKENGINE_DEBUG_DETAILS)
+	VkPhysicalDeviceProperties deviceProperties;
+	vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+	VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+	cout << "Max Dimension of Texture Size: " << deviceProperties.limits.maxImageDimension2D << endl;
+	cout << "Is Geometry Shader available: " << (deviceFeatures.geometryShader ? "True" : "False") << endl;	// Mac M1 不支援 (https://forum.unity.com/threads/geometry-shader-on-mac.1056659/)
+#endif
+	// 先檢查 Device Extension 是否都支援 
+	if (!__CheckDeviceExtensionSupport(device))
+		return -1;
+
+	// 檢查 QueueFamily 是否支援 Graphics 的 Queue
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+	vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);	
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+	for(int i = 0; i < queueFamilies.size(); i++)
+	{
+		const auto& queueFamily = queueFamilies[i];
+
+		// 判斷是否支援 Graphics 的 QueueFamily
+		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkQueueFlagBits.html
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			return i;																						// 這一個 Queue Index 是處理 Graphics 相關的
+	}
+	return -1;																								// 無正常的可以處理 Graphics 的 Queue 
 }
 
 #if defined(VKENGINE_DEBUG_DETAILS)
