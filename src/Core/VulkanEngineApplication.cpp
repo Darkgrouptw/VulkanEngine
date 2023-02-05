@@ -148,10 +148,7 @@ void VulkanEngineApplication::__CreateVKInstance()
 		createInfo.enabledLayerCount = static_cast<uint32_t>(ValidationLayersNames.size());
 		createInfo.ppEnabledLayerNames = ValidationLayersNames.data();
 
-        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debugCreateInfo.pfnUserCallback = debugCallback;
+       __PopulateDebugMessengerCreateInfo(debugCreateInfo);
 		createInfo.pNext = &debugCreateInfo;
 	}
 	else
@@ -182,16 +179,19 @@ void VulkanEngineApplication::__SetupDebugMessenger()
 	if (EnabledValidationLayer)
 	{
 		VkDebugUtilsMessengerCreateInfoEXT createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		createInfo.pfnUserCallback = debugCallback;
-		createInfo.pUserData = nullptr; // 可以設定使用者
-
+       	__PopulateDebugMessengerCreateInfo(createInfo);
 		if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
     		throw std::runtime_error("Failed to set up debug messenger");
 	}
 #endif
+}
+void VulkanEngineApplication::__PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &debugCreateInfo)
+{
+	debugCreateInfo.sType 											= VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    debugCreateInfo.messageSeverity 								= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debugCreateInfo.messageType 									= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    debugCreateInfo.pfnUserCallback 								= debugCallback;
+	debugCreateInfo.pUserData 										= nullptr;
 }
 void VulkanEngineApplication::__CreateSurface()
 {
@@ -286,9 +286,13 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 	};
 	createInfo.enabledExtensionCount								= static_cast<uint32_t>(extNames.size());
 	createInfo.ppEnabledExtensionNames								= extNames.data();
-#else
-	createInfo.enabledExtensionCount								= 0;
-	createInfo.enabledLayerCount									= 0;
+#endif
+#if defined(VKENGINE_DEBUG_DETAILS)
+	if (EnabledValidationLayer)
+	{
+		createInfo.enabledLayerCount 								= static_cast<uint32_t>(ValidationLayersNames.size());
+		createInfo.ppEnabledLayerNames								= ValidationLayersNames.data();
+	}
 #endif
 
 	// 產生裝置完後，設定 Graphics Queue
