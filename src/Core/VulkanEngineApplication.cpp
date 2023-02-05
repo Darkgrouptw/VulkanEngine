@@ -19,6 +19,9 @@ void VulkanEngineApplication::InitWindow()
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);																// 設定不做 Resize
 
 	window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+#if defined(VKENGINE_DEBUG_DETAILS)
+	cout << "glfwVulkanSupported: " << (glfwVulkanSupported() ? "True" : "False") << endl;
+#endif
 }
 void VulkanEngineApplication::InitVulkan()
 {
@@ -52,7 +55,7 @@ void VulkanEngineApplication::Destroy()
 //////////////////////////////////////////////////////////////////////////
 void VulkanEngineApplication::__CreateVKInstance()
 {
-#ifdef VKENGINE_DEBUG_DETAILS
+#if defined(VKENGINE_DEBUG_DETAILS)
 	EnabledValidationLayer = __CheckValidationLayerSupport();
 	if (!EnabledValidationLayer)
 		cout << "ValidationLayer is requested, but it's not supported" << endl;
@@ -72,42 +75,50 @@ void VulkanEngineApplication::__CreateVKInstance()
 	createInfo.sType												= VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo										= &appInfo;
 
-	
-	// 由於 Vulakn 是底層的 API (和平台無關)
-	// 必須從有一個和 GLFW 的系統溝通的 API
-	// 撈 Entension
-#if defined(__APPLE__)
+	// 取得 GLFW Extension
+	uint32_t glfwExtensionCount										= 0;
+	const char** glfwExtensions										= glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+	vector<const char*> extNames(glfwExtensions, 					glfwExtensions + glfwExtensionCount);
+
+	// 從 Vulkan 1.3.216 版本起
+	// 會強制使用 VK_KHR_PORTABILITY_subset
 	// 由於 Mac 是使用 MoltenVK
 	// 目前不完全支援 Vulkan 的 VK_KHR_PORTABILITY_subset
 	// https://vulkan.lunarg.com/doc/view/1.3.236.0/mac/getting_started.html#user-content-encountered-vk_error_incompatible_driver
-	vector<const char*> extNames;
+#if defined(__APPLE__)
 	extNames.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 	createInfo.flags												= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-	createInfo.enabledExtensionCount 								= static_cast<uint32_t>(extNames.size());
-	createInfo.ppEnabledExtensionNames 								= extNames.data();
-#else
-	// 正常的模式下 取得 Extension
-	uint32_t glfwExtensionCount										= 0;
-	const char** glfwExtensions										= glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-	createInfo.enabledExtensionCount								= glfwExtensionCount;
-	createInfo.ppEnabledExtensionNames								= glfwExtensions;
 #endif
+	createInfo.enabledExtensionCount								= static_cast<uint32_t>(extNames.size());
+	createInfo.ppEnabledExtensionNames								= extNames.data();
 
-	// 設定 Global Layer
-	createInfo.enabledLayerCount = 0;
+	// 這裡做兩件事情
+	// 1. 設定 Global Layer (如果支援就先設定 Debug Layer)
+	// 2. 測試支援那些 Vulkan Entension
+#if defined(VKENGINE_DEBUG_DETAILS)
+	// 1.
+	if (EnabledValidationLayer)
+	{
+		uint32_t glfwExtensionCount = 0;
+		createInfo.enabledLayerCount = static_cast<uint32_t>(ValidationLayersNames.size());
+		createInfo.ppEnabledLayerNames = ValidationLayersNames.data();
+	}
+	else
+		createInfo.enabledLayerCount = 0;
 
-	// 測試支援那些 Vulkan Entension
-	#ifdef VKENGINE_DEBUG_DETAILS
+
+	// 2.
 	uint32_t extensionCount;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 	vector<VkExtensionProperties> extensions(extensionCount);
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 	std::cout << "available extensions:\n";
 
-	for (const auto& extension : extensions) {
+	for (const auto& extension : extensions)
 		cout << '\t' << extension.extensionName << endl;
-	}
-	#endif
+#else
+	createInfo.enabledLayerCount = 0;
+#endif
 
 	// 建立 VKInstance
 	VkResult result													= vkCreateInstance(&createInfo, nullptr, &instance);
@@ -117,13 +128,9 @@ void VulkanEngineApplication::__CreateVKInstance()
 //void VulkanEngineApplication::__SetupDebugMessage
 void VulkanEngineApplication::__CreateSurface()
 {
-	//VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
-	//cout << result << endl;
-
-	
-	//vkcreate
-	//if (result != VK_SUCCESS)
-	//	throw runtime_error("Failed to create window surface");
+	VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+	if (result != VK_SUCCESS)
+		throw runtime_error("Failed to create window surface");
 }
 void VulkanEngineApplication::__PickPhysicalDevice()
 {
@@ -153,7 +160,7 @@ void VulkanEngineApplication::__PickPhysicalDevice()
 int VulkanEngineApplication::__GetQueueIndexIfDeviceSuitable(VkPhysicalDevice device)
 {
 	// 測試顯卡的一些細節
-	#ifdef VKENGINE_DEBUG_DETAILS
+#if defined(VKENGINE_DEBUG_DETAILS)
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
@@ -174,20 +181,10 @@ int VulkanEngineApplication::__GetQueueIndexIfDeviceSuitable(VkPhysicalDevice de
 	{
 		const auto& queueFamily = queueFamilies[i];
 
-		// 顯示到底有哪些東西
-		#ifdef VKENGINE_DEBUG_DETAILS
-		cout << device << " " << queueFamily.queueFlags << endl;
-		#endif
-
 		// 判斷是否支援 Graphics 的 QueueFamily
 		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkQueueFlagBits.html
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-		{
-			#ifdef VKENGINE_DEBUG_DETAILS
-			cout << "Graphics Queue: " << i << endl;
-			#endif
 			return i;																						// 這一個 Queue Index 是處理 Graphics 相關的
-		}
 	}
 	return -1;																								// 無正常的可以處理 Graphics 的 Queue 
 }
@@ -224,7 +221,7 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 	vkGetDeviceQueue(device, queueFamilyIndex, 0, &graphicsQueue);
 }
 
-#ifdef VKENGINE_DEBUG_DETAILS
+#if defined(VKENGINE_DEBUG_DETAILS)
 bool VulkanEngineApplication::__CheckValidationLayerSupport()
 {
 	uint32_t layerCount = 0;

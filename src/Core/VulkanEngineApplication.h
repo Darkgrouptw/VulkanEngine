@@ -48,11 +48,12 @@ private:
 	void __CreateLogicalDevice();																			// 根據對應的顯卡，去建立 Logical Device Interface
 
 	// Debug Vulkan 的功能
-#ifdef VKENGINE_DEBUG_DETAILS
+#if defined(VKENGINE_DEBUG_DETAILS)
 	bool EnabledValidationLayer										= false;								// 是否底層有支援這個功能
 	vector<const char*> ValidationLayersNames 						= 										// 判斷是否有底下的標籤，就代表是否可以開啟這個功能
 	{
-		"VK_LAYER_KHRONOS_validation"
+		"VK_LAYER_KHRONOS_validation",
+		"VK_KHR_portability_subset"
 	};
 	bool __CheckValidationLayerSupport();																	// 檢查 Vulkan Validtion Layer 是否支援
 #endif
