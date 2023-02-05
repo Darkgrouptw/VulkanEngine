@@ -1,5 +1,30 @@
 #include "VulkanEngineApplication.h"
 
+#pragma region VulkanMessage
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData) {
+
+	// 可以根據 Message Type 來濾掉一些東西
+	// VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT: Some event has happened that is unrelated to the specification or performance
+	// VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT: Something has happened that violates the specification or indicates a possible mistake
+	// VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT: Potential non-optimal use of Vulkan
+	
+    cerr << "Validation layer: " << pCallbackData->pMessage << endl;
+
+    return VK_FALSE;
+}
+static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+#pragma endregion
 #pragma region Public
 void VulkanEngineApplication::Run()
 {
@@ -26,7 +51,7 @@ void VulkanEngineApplication::InitWindow()
 void VulkanEngineApplication::InitVulkan()
 {
 	__CreateVKInstance();
-	//__SetupDebugMessage();
+	__SetupDebugMessenger();
 	__CreateSurface();
 	__PickPhysicalDevice();
 	__CreateLogicalDevice();
@@ -89,6 +114,13 @@ void VulkanEngineApplication::__CreateVKInstance()
 	extNames.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 	createInfo.flags												= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
+
+// 設定 Debug Details
+#if defined(VKENGINE_DEBUG_DETAILS)
+	if (EnabledValidationLayer)
+		extNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#endif
+
 	createInfo.enabledExtensionCount								= static_cast<uint32_t>(extNames.size());
 	createInfo.ppEnabledExtensionNames								= extNames.data();
 
@@ -125,7 +157,25 @@ void VulkanEngineApplication::__CreateVKInstance()
 	if (result != VK_SUCCESS)
 		throw runtime_error("Failed to create Vulkan Instance");
 }
-//void VulkanEngineApplication::__SetupDebugMessage
+void VulkanEngineApplication::__SetupDebugMessenger()
+{
+#if !defined(VKENGINE_DEBUG_DETAILS)
+	return;
+#else
+	if (EnabledValidationLayer)
+	{
+		VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		createInfo.pfnUserCallback = debugCallback;
+		createInfo.pUserData = nullptr; // 可以設定使用者
+
+		if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+    		throw std::runtime_error("Failed to set up debug messenger");
+	}
+#endif
+}
 void VulkanEngineApplication::__CreateSurface()
 {
 	VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
