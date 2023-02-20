@@ -64,6 +64,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateSurface();
 	__PickPhysicalDevice();
 	__CreateLogicalDevice();
+	__CreateSwapChain();
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -203,31 +204,32 @@ void VulkanEngineApplication::__PickPhysicalDevice()
 	vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 	for(const auto& device: devices)
-	{
-		int queueIndex = __GetQueueIndexIfDeviceSuitable(device);
-		if (queueIndex >= 0)
+		if (__IsDeviceSuitable(device))
 		{
 			physiclaDevice = device;
-			queueFamilyIndex = queueIndex;
 			break;
 		}
-	}
-
+	
 	if (physiclaDevice == VK_NULL_HANDLE)
 		throw runtime_error("No Suitable GPUs");
 }
 void VulkanEngineApplication::__CreateLogicalDevice()
 {
-	// 建立 QueueInfo
-	VkDeviceQueueCreateInfo queueCreateInfo{};
-	queueCreateInfo.sType 											= VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.queueFamilyIndex 								= queueFamilyIndex;
+	QueueFamilyIndices indices										= __FindQueueFamilies(physiclaDevice);
 
-	float priorties 												= 1.0f;
-	queueCreateInfo.pQueuePriorities								= &priorties;							// 0 ~ 1 
+	vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	set<uint32_t> uniqueQueueFamilies 								= {indices.GraphicsFamily.value(), indices.PresentFamily.value()};
 
-	// 預設來說這裡 Queue 只需要一個 (一般來說都是在 Multi-thread 中 create command buffers，然後在 Main Thread 一次全部送上去)
-	queueCreateInfo.queueCount 										= 1;
+	float queuePriority 											= 1.0f;
+    for (uint32_t queueFamily : uniqueQueueFamilies)
+	{
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType 										= VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex 							= queueFamily;
+        queueCreateInfo.queueCount 									= 1;									// 預設來說這裡 Queue 只需要一個 (一般來說都是在 Multi-thread 中 create command buffers，然後在 Main Thread 一次全部送上去)
+        queueCreateInfo.pQueuePriorities 							= &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
 
 	// 對此裝置需要啟用哪些 Features
 	VkPhysicalDeviceFeatures deviceFeatures{};
@@ -235,19 +237,17 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 	// 真正建立 Logical Device
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType												= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	createInfo.pQueueCreateInfos									= &queueCreateInfo;
+	createInfo.pQueueCreateInfos									= queueCreateInfos.data();
 	createInfo.pEnabledFeatures										= &deviceFeatures;
 	createInfo.queueCreateInfoCount									= 1;
 
 #if defined(__APPLE__)
 	// Mac 有開啟此功能，需要設定一下
-	vector<const char*> extNames									= 
-	{
-		"VK_KHR_portability_subset"
-	};
-	createInfo.enabledExtensionCount								= static_cast<uint32_t>(extNames.size());
-	createInfo.ppEnabledExtensionNames								= extNames.data();
+	deviceExtensionNames.push_back("VK_KHR_portability_subset");
 #endif
+	createInfo.enabledExtensionCount								= static_cast<uint32_t>(deviceExtensionNames.size());
+	createInfo.ppEnabledExtensionNames								= deviceExtensionNames.data();
+
 #if defined(VKENGINE_DEBUG_DETAILS)
 	if (EnabledValidationLayer)
 	{
@@ -259,7 +259,60 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 	// 產生裝置完後，設定 Graphics Queue
 	if (vkCreateDevice(physiclaDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
 		throw runtime_error("Failed to create logical device");
-	vkGetDeviceQueue(device, queueFamilyIndex, 0, &graphicsQueue);
+    vkGetDeviceQueue(device, indices.GraphicsFamily.value(), 0, &graphicsQueue);
+    vkGetDeviceQueue(device, indices.PresentFamily.value(), 0, &presentQueue);
+}
+void VulkanEngineApplication::__CreateSwapChain()
+{
+	SwapChainSupportDetails details 								= __QuerySwapChainSupport(physiclaDevice);
+
+	VkSurfaceFormatKHR surfaceFormat 								= __ChooseSwapSurfaceFormat(details.Formats);
+	VkPresentModeKHR presentMode 									= __ChooseSwapPresentMode(details.PresentModes);
+	VkExtent2D extent												= __ChooseSwapExtent(details.Capbilities);
+
+	// 需要多一張圖，預備下一個 Frame 繪製
+	uint32_t imageCount 											= details.Capbilities.minImageCount + 1;
+	if (details.Capbilities.maxImageCount > 0 && imageCount > details.Capbilities.maxImageCount)			// maxImageCount 可能為 0 (代表沒有最大值)，然後判斷是否超過最大值
+		imageCount 													= details.Capbilities.maxImageCount;
+
+	// 建立 SwapChain
+	VkSwapchainCreateInfoKHR createInfo{};
+	createInfo.sType												= VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	createInfo.surface												= surface;
+
+	// 傳入上方的設定
+	createInfo.imageColorSpace										= surfaceFormat.colorSpace;
+	createInfo.imageFormat											= surfaceFormat.format;
+	createInfo.presentMode											= presentMode;
+	createInfo.imageExtent											= extent;
+	createInfo.minImageCount										= imageCount;
+
+	// 其他細節設定
+	createInfo.imageArrayLayers										= 1;									// 如果要使用 Stereo 就會需要兩個 (兩個輸出)，不然一般都是一個
+	createInfo.imageUsage											= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;	// 輸出的圖，可以做什麼使用的設定
+	QueueFamilyIndices indices 										= __FindQueueFamilies(physiclaDevice);
+	uint32_t queueFamilyIndices[]									= { indices.GraphicsFamily.value(), indices.PresentFamily.value() };
+	
+	// 判斷 Graphics & Present 是否在同一個 Queue
+	if (indices.GraphicsFamily.value() != indices.PresentFamily.value())
+	{
+		// 不同 Queue 可以互相 share Images
+		createInfo.imageSharingMode 								= VK_SHARING_MODE_CONCURRENT;
+		createInfo.queueFamilyIndexCount 							= 2;
+		createInfo.pQueueFamilyIndices 								= queueFamilyIndices;
+	}
+	else
+	{
+		// 只能單一個 Queue 使用 Images，這個會效能會比較好
+		createInfo.imageSharingMode 								= VK_SHARING_MODE_EXCLUSIVE;
+		//createInfo.queueFamilyIndexCount 							= 0;
+		//createInfo.pQueueFamilyIndices								= nullptr;
+	}
+
+	createInfo.preTransform											= details.Capbilities.currentTransform;	// 如果輸出的圖片有需要旋轉，需要更動這個參數
+	createInfo.compositeAlpha										= VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;	// 如果有需要 Blending With Other Windows，需調調整設定，不然預設都是忽略輸出的 Alpha （使用 Opaque_Bit_KHR）
+	createInfo.clipped												= VK_TRUE;
+
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -281,13 +334,27 @@ bool VulkanEngineApplication::__CheckDeviceExtensionSupport(VkPhysicalDevice dev
 	vector<VkExtensionProperties> properties(extensionCount);
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, properties.data());
 
-	for(const auto& names : NeedCheckDeviceExtensionNames)
-		if (find_if(properties.begin(), properties.end(), [names](VkExtensionProperties p) { return string(p.extensionName) == names; }) == properties.end())							// 找到 end 也沒找到
+	for(const auto& names : deviceExtensionNames)
+		if (find_if(properties.begin(), properties.end(), [names](VkExtensionProperties p) { return strcmp(p.extensionName, names) == 0; }) == properties.end())							// 找到 end 也沒找到
 			return false;
 	return true;
 }
-int VulkanEngineApplication::__GetQueueIndexIfDeviceSuitable(VkPhysicalDevice device)
+bool VulkanEngineApplication::__IsDeviceSuitable(VkPhysicalDevice device)
 {
+	// 先檢查 Device Extension 是否都支援
+	if (!__CheckDeviceExtensionSupport(device))
+		return false;
+
+	// 找出各種 Queue 是否支援
+	QueueFamilyIndices indices 								= __FindQueueFamilies(device);
+	if (!indices.IsCompleted())
+		return false;	
+
+	// 判斷 SwapChain 是否可以支援
+	auto details											= __QuerySwapChainSupport(device);
+	if (details.Formats.empty() || details.PresentModes.empty())
+		return false;
+
 	// 測試顯卡的一些細節
 #if defined(VKENGINE_DEBUG_DETAILS)
 	VkPhysicalDeviceProperties deviceProperties;
@@ -299,9 +366,11 @@ int VulkanEngineApplication::__GetQueueIndexIfDeviceSuitable(VkPhysicalDevice de
 	cout << "Max Dimension of Texture Size: " << deviceProperties.limits.maxImageDimension2D << endl;
 	cout << "Is Geometry Shader available: " << (deviceFeatures.geometryShader ? "True" : "False") << endl;	// Mac M1 不支援 (https://forum.unity.com/threads/geometry-shader-on-mac.1056659/)
 #endif
-	// 先檢查 Device Extension 是否都支援 
-	if (!__CheckDeviceExtensionSupport(device))
-		return -1;
+	return true;
+}
+QueueFamilyIndices VulkanEngineApplication::__FindQueueFamilies(VkPhysicalDevice device)
+{
+	QueueFamilyIndices indices;
 
 	// 檢查 QueueFamily 是否支援 Graphics 的 Queue
 	uint32_t queueFamilyCount = 0;
@@ -311,15 +380,82 @@ int VulkanEngineApplication::__GetQueueIndexIfDeviceSuitable(VkPhysicalDevice de
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 	for(int i = 0; i < queueFamilies.size(); i++)
 	{
-		const auto& queueFamily = queueFamilies[i];
-
 		// 判斷是否支援 Graphics 的 QueueFamily
 		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkQueueFlagBits.html
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-			return i;																						// 這一個 Queue Index 是處理 Graphics 相關的
+		if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)											// 這一個 Queue Index 是處理 Graphics 相關的*/
+			indices.GraphicsFamily = i;
+
+		// 判斷 device 是否支援 presentation
+		VkBool32 presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+		if (presentSupport)
+			indices.PresentFamily = i;
+
+		if (indices.IsCompleted())
+			break;
 	}
-	return -1;																								// 無正常的可以處理 Graphics 的 Queue 
+	return indices;																								// 無正常的可以處理 Graphics 的 Queue */
 }
+
+
+//////////////////////////////////////////////////////////////////////////
+// 比較 Swap Chain 的 Function
+//////////////////////////////////////////////////////////////////////////
+SwapChainSupportDetails VulkanEngineApplication::__QuerySwapChainSupport(VkPhysicalDevice device)
+{
+	SwapChainSupportDetails details;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.Capbilities);
+
+	// Get Format
+	uint32_t size = 0;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &size, nullptr);
+	if (size > 0)
+	{
+		details.Formats.resize(size);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &size, details.Formats.data());
+	}
+
+	// Get Present Mode
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &size, nullptr);
+	if (size > 0)
+	{
+		details.PresentModes.resize(size);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &size, details.PresentModes.data());
+	}
+	return details;
+}
+VkSurfaceFormatKHR VulkanEngineApplication::__ChooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& availableFormats)
+{
+	for(const auto& format : availableFormats)
+		if (format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR && format.format == VK_FORMAT_R8G8B8A8_SRGB)
+			return format;
+	return availableFormats[0];
+}
+VkPresentModeKHR VulkanEngineApplication::__ChooseSwapPresentMode(const vector<VkPresentModeKHR>& availablePresentModes)
+{
+	for(const auto& mode : availablePresentModes)
+		if (mode == VK_PRESENT_MODE_MAILBOX_KHR)					// 這個模式最比 FIFO 還省電，且不會造成 Tearing
+			return mode;
+	return VK_PRESENT_MODE_FIFO_KHR;
+}
+VkExtent2D VulkanEngineApplication::__ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+{
+	// 如果內部值是正常的
+	if (capabilities.currentExtent.width != numeric_limits<uint32_t>::max())
+		return capabilities.currentExtent;
+
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	VkExtent2D actualExtent =
+	{
+		static_cast<uint32_t>(width),
+		static_cast<uint32_t>(height)
+	};
+	actualExtent.width = clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+	actualExtent.height = clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+	return actualExtent;
+}
+
 
 #if defined(VKENGINE_DEBUG_DETAILS)
 bool VulkanEngineApplication::__CheckValidationLayerSupport()

@@ -4,6 +4,10 @@
 */
 #include <iostream>
 #include <vector>
+#include <set>
+#include <cstdint>
+#include <limits>
+#include <optional>
 #include <algorithm>
 
 #define GLFW_INCLUDE_VULKAN
@@ -13,6 +17,27 @@ using namespace std;
 
 // 測試 Vulkan 的一些細節使用
 #define VKENGINE_DEBUG_DETAILS
+
+// 在 Vulkan 中，有很多不同的 Queue，分別各次處理不同的 operation
+struct QueueFamilyIndices
+{
+	optional<uint32_t> GraphicsFamily;
+	optional<uint32_t> PresentFamily;
+
+	// 判斷是否有給過值
+	bool IsCompleted()
+	{
+		return GraphicsFamily.has_value() && PresentFamily.has_value();
+	}
+};
+
+// 檢查並建立 Swap Chain 的設定
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR Capbilities;																	// 基本 Surface Capabilities (min/max number of images in swap chain, min/max width and height of images)
+	vector<VkSurfaceFormatKHR> Formats;																		// Surface formats (Pixel format, Color Space) Ex: VK_FORMAT_B8G8R8A8_UNORM
+	vector<VkPresentModeKHR> PresentModes;																	// 可以顯示的 Mode Ex: VK_PRESENT_MODE_FIFO_KHR
+};
 
 class VulkanEngineApplication
 {
@@ -36,9 +61,10 @@ private:
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkSurfaceKHR surface;
 	VkPhysicalDevice physiclaDevice									= VK_NULL_HANDLE;
-	int queueFamilyIndex											= -1;
 	VkDevice device;
+
 	VkQueue graphicsQueue;
+	VkQueue presentQueue;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Function
@@ -48,16 +74,26 @@ private:
 	void __CreateSurface();																					// 建立和視窗溝通的 Surface (GLFW & Vulkan)
 	void __PickPhysicalDevice();																			// 選擇顯卡
 	void __CreateLogicalDevice();																			// 根據對應的顯卡，去建立 Logical Device Interface
+	void __CreateSwapChain();																				// 建立 Swap Chain
 	
 	//////////////////////////////////////////////////////////////////////////
 	// 比較 Minor 的 Helper Function
 	//////////////////////////////////////////////////////////////////////////
 	void __PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT&);							// 設定 Type
 	bool __CheckDeviceExtensionSupport(VkPhysicalDevice);													// 檢查 DeviceExtension 是否支援某幾項
-	int __GetQueueIndexIfDeviceSuitable(VkPhysicalDevice);													// 是否為合適的顯卡 (是根據 Queue Family 是否支援 Graphics 來做判斷，大於等於 0 代表是合適的裝置)
+	bool __IsDeviceSuitable(VkPhysicalDevice);																// 是否為合適的顯卡
+	QueueFamilyIndices __FindQueueFamilies(VkPhysicalDevice);												// 找顯卡中 對應 Queue 的 Indices
+	
+	//////////////////////////////////////////////////////////////////////////
+	// 比較 Swap Chain 的 Function
+	//////////////////////////////////////////////////////////////////////////
+	SwapChainSupportDetails __QuerySwapChainSupport(VkPhysicalDevice);										// 檢查裝置是否支援 SwapChain
+	VkSurfaceFormatKHR __ChooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>&);						// 選擇裝置的 SurfaceFormat
+	VkPresentModeKHR __ChooseSwapPresentMode(const vector<VkPresentModeKHR>&);								// 選擇裝置的 PresentMode
+	VkExtent2D __ChooseSwapExtent(const VkSurfaceCapabilitiesKHR&);											// 根據裝置的 Capabillities 選擇 Extent
 
 	// 檢查項目
-	vector<string> NeedCheckDeviceExtensionNames				= 
+	vector<const char*> deviceExtensionNames						= 
 	{
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
