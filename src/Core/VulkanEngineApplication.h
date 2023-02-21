@@ -62,6 +62,7 @@ private:
 	VkSurfaceKHR surface;
 	VkPhysicalDevice physiclaDevice									= VK_NULL_HANDLE;
 	VkDevice device;
+	VkSwapchainKHR swapChain;
 
 	VkQueue graphicsQueue;
 	VkQueue presentQueue;

@@ -80,6 +80,7 @@ void VulkanEngineApplication::Destroy()
 	if (EnabledValidationLayer)
 		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 #endif
+	vkDestroySwapchainKHR(device, swapChain, nullptr);
 	vkDestroyDevice(device, nullptr);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
@@ -308,11 +309,14 @@ void VulkanEngineApplication::__CreateSwapChain()
 		//createInfo.queueFamilyIndexCount 							= 0;
 		//createInfo.pQueueFamilyIndices								= nullptr;
 	}
-
 	createInfo.preTransform											= details.Capbilities.currentTransform;	// 如果輸出的圖片有需要旋轉，需要更動這個參數
 	createInfo.compositeAlpha										= VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;	// 如果有需要 Blending With Other Windows，需調調整設定，不然預設都是忽略輸出的 Alpha （使用 Opaque_Bit_KHR）
-	createInfo.clipped												= VK_TRUE;
+	createInfo.clipped												= VK_TRUE;								// 會把看不見得 Pixel 忽略 (等同於 Unity Clip)
+	createInfo.oldSwapchain											= VK_NULL_HANDLE;						// 當如果不支援的話，所做的動作是什麼
 
+	// 建立 SwapChain
+	if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
+		throw new runtime_error("Failed to create SwapChain");
 }
 
 //////////////////////////////////////////////////////////////////////////
