@@ -94,7 +94,7 @@ private:
 	QueueFamilyIndices __FindQueueFamilies(VkPhysicalDevice);												// 找顯卡中 對應 Queue 的 Indices
 	
 	//////////////////////////////////////////////////////////////////////////
-	// 比較 Swap Chain 的 Function
+	// Swap Chain 的 Helper Function
 	//////////////////////////////////////////////////////////////////////////
 	SwapChainSupportDetails __QuerySwapChainSupport(VkPhysicalDevice);										// 檢查裝置是否支援 SwapChain
 	VkSurfaceFormatKHR __ChooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>&);						// 選擇裝置的 SurfaceFormat

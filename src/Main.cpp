@@ -1,5 +1,4 @@
 #include <iostream>
-//#include <cstdlib>
 
 #include "Core/VulkanEngineApplication.h"
 
