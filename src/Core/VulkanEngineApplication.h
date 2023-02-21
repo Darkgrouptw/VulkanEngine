@@ -62,10 +62,16 @@ private:
 	VkSurfaceKHR surface;
 	VkPhysicalDevice physiclaDevice									= VK_NULL_HANDLE;
 	VkDevice device;
-	VkSwapchainKHR swapChain;
 
+	// Vulkan Queue
 	VkQueue graphicsQueue;
 	VkQueue presentQueue;
+
+	// Vulkan SwapChain
+	VkSwapchainKHR swapChain;
+	vector<VkImage> swapChainImages;
+	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Function
