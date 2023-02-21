@@ -52,26 +52,26 @@ private:
 	void Destroy();																							// 清空其他的資料
 
 	// 視窗設定
-	GLFWwindow* window												= NULL;									// GLFW Window
+	GLFWwindow* Window												= NULL;									// GLFW Window
 	const int WIDTH													= 1600;									// 長
 	const int HEIGHT												= 900;									// 寬
 
 	// Vulkan
-	VkInstance instance;
-	VkDebugUtilsMessengerEXT debugMessenger;
-	VkSurfaceKHR surface;
-	VkPhysicalDevice physiclaDevice									= VK_NULL_HANDLE;
-	VkDevice device;
+	VkInstance Instance;
+	VkDebugUtilsMessengerEXT DebugMessenger;
+	VkSurfaceKHR Surface;
+	VkPhysicalDevice PhysiclaDevice									= VK_NULL_HANDLE;
+	VkDevice Device;
 
 	// Vulkan Queue
-	VkQueue graphicsQueue;
-	VkQueue presentQueue;
+	VkQueue GraphicsQueue;
+	VkQueue PresentQueue;
 
 	// Vulkan SwapChain
-	VkSwapchainKHR swapChain;
-	vector<VkImage> swapChainImages;
-	VkFormat swapChainImageFormat;
-	VkExtent2D swapChainExtent;
+	VkSwapchainKHR SwapChain;
+	vector<VkImage> SwapChainImages;
+	VkFormat SwapChainImageFormat;
+	VkExtent2D SwapChainExtent;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Function
@@ -82,6 +82,7 @@ private:
 	void __PickPhysicalDevice();																			// 選擇顯卡
 	void __CreateLogicalDevice();																			// 根據對應的顯卡，去建立 Logical Device Interface
 	void __CreateSwapChain();																				// 建立 Swap Chain
+	void __CreateImageViews();																				// 建立 Image Views
 	
 	//////////////////////////////////////////////////////////////////////////
 	// 比較 Minor 的 Helper Function

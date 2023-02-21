@@ -52,7 +52,7 @@ void VulkanEngineApplication::InitWindow()
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);															// 預設初始化設定預設是 OpenGL，所以只用 NO_API
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);																// 設定不做 Resize
 
-	window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+	Window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 #if defined(VKENGINE_DEBUG_DETAILS)
 	cout << "glfwVulkanSupported: " << (glfwVulkanSupported() ? "True" : "False") << endl;
 #endif
@@ -68,7 +68,7 @@ void VulkanEngineApplication::InitVulkan()
 }
 void VulkanEngineApplication::MainLoop()
 {
-	while (!glfwWindowShouldClose(window))																	// 接到是否關閉此視窗的 Flag
+	while (!glfwWindowShouldClose(Window))																	// 接到是否關閉此視窗的 Flag
 	{
 		glfwPollEvents();																					// 抓出 GFLW 的事件 Queue
 	}
@@ -78,15 +78,15 @@ void VulkanEngineApplication::Destroy()
 	// 清掉 Vulkan 相關東西
 #if defined(VKENGINE_DEBUG_DETAILS)
 	if (EnabledValidationLayer)
-		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+		DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
 #endif
-	vkDestroySwapchainKHR(device, swapChain, nullptr);
-	vkDestroyDevice(device, nullptr);
-	vkDestroySurfaceKHR(instance, surface, nullptr);
-	vkDestroyInstance(instance, nullptr);
+	vkDestroySwapchainKHR(Device, SwapChain, nullptr);
+	vkDestroyDevice(Device, nullptr);
+	vkDestroySurfaceKHR(Instance, Surface, nullptr);
+	vkDestroyInstance(Instance, nullptr);
 
 	// 關閉 GLFW
-	glfwDestroyWindow(window);
+	glfwDestroyWindow(Window);
 	glfwTerminate();
 }
 
@@ -169,7 +169,7 @@ void VulkanEngineApplication::__CreateVKInstance()
 #endif
 
 	// 建立 VKInstance
-	VkResult result													= vkCreateInstance(&createInfo, nullptr, &instance);
+	VkResult result													= vkCreateInstance(&createInfo, nullptr, &Instance);
 	if (result != VK_SUCCESS)
 		throw runtime_error("Failed to create Vulkan Instance");
 }
@@ -182,41 +182,41 @@ void VulkanEngineApplication::__SetupDebugMessenger()
 	{
 		VkDebugUtilsMessengerCreateInfoEXT createInfo{};
        	__PopulateDebugMessengerCreateInfo(createInfo);
-		if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+		if (CreateDebugUtilsMessengerEXT(Instance, &createInfo, nullptr, &DebugMessenger) != VK_SUCCESS)
     		throw std::runtime_error("Failed to set up debug messenger");
 	}
 #endif
 }
 void VulkanEngineApplication::__CreateSurface()
 {
-	VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+	VkResult result = glfwCreateWindowSurface(Instance, Window, nullptr, &Surface);
 	if (result != VK_SUCCESS)
 		throw runtime_error("Failed to create window surface");
 }
 void VulkanEngineApplication::__PickPhysicalDevice()
 {
 	uint32_t deviceCount = 0;
-	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);											// 抓出所有支援的 Device
+	vkEnumeratePhysicalDevices(Instance, &deviceCount, nullptr);											// 抓出所有支援的 Device
 	if (deviceCount == 0)
 		throw runtime_error("Failed to find GPUs with Vulkan Support");
 
 	// 並非所有的顯卡都符合設定
 	// 所以這邊要做更進一步的 Check (例如是否有 Geometry Shader 等)
 	vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+	vkEnumeratePhysicalDevices(Instance, &deviceCount, devices.data());
 	for(const auto& device: devices)
 		if (__IsDeviceSuitable(device))
 		{
-			physiclaDevice = device;
+			PhysiclaDevice = device;
 			break;
 		}
 	
-	if (physiclaDevice == VK_NULL_HANDLE)
+	if (PhysiclaDevice == VK_NULL_HANDLE)
 		throw runtime_error("No Suitable GPUs");
 }
 void VulkanEngineApplication::__CreateLogicalDevice()
 {
-	QueueFamilyIndices indices										= __FindQueueFamilies(physiclaDevice);
+	QueueFamilyIndices indices										= __FindQueueFamilies(PhysiclaDevice);
 
 	vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	set<uint32_t> uniqueQueueFamilies 								= {indices.GraphicsFamily.value(), indices.PresentFamily.value()};
@@ -258,14 +258,14 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 #endif
 
 	// 產生裝置完後，設定 Graphics Queue
-	if (vkCreateDevice(physiclaDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+	if (vkCreateDevice(PhysiclaDevice, &createInfo, nullptr, &Device) != VK_SUCCESS)
 		throw runtime_error("Failed to create logical device");
-    vkGetDeviceQueue(device, indices.GraphicsFamily.value(), 0, &graphicsQueue);
-    vkGetDeviceQueue(device, indices.PresentFamily.value(), 0, &presentQueue);
+    vkGetDeviceQueue(Device, indices.GraphicsFamily.value(), 0, &GraphicsQueue);
+    vkGetDeviceQueue(Device, indices.PresentFamily.value(), 0, &PresentQueue);
 }
 void VulkanEngineApplication::__CreateSwapChain()
 {
-	SwapChainSupportDetails details 								= __QuerySwapChainSupport(physiclaDevice);
+	SwapChainSupportDetails details 								= __QuerySwapChainSupport(PhysiclaDevice);
 
 	VkSurfaceFormatKHR surfaceFormat 								= __ChooseSwapSurfaceFormat(details.Formats);
 	VkPresentModeKHR presentMode 									= __ChooseSwapPresentMode(details.PresentModes);
@@ -279,7 +279,7 @@ void VulkanEngineApplication::__CreateSwapChain()
 	// 建立 SwapChain
 	VkSwapchainCreateInfoKHR createInfo{};
 	createInfo.sType												= VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface												= surface;
+	createInfo.surface												= Surface;
 
 	// 傳入上方的設定
 	createInfo.imageColorSpace										= surfaceFormat.colorSpace;
@@ -291,7 +291,7 @@ void VulkanEngineApplication::__CreateSwapChain()
 	// 其他細節設定
 	createInfo.imageArrayLayers										= 1;									// 如果要使用 Stereo 就會需要兩個 (兩個輸出)，不然一般都是一個
 	createInfo.imageUsage											= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;	// 輸出的圖，可以做什麼使用的設定
-	QueueFamilyIndices indices 										= __FindQueueFamilies(physiclaDevice);
+	QueueFamilyIndices indices 										= __FindQueueFamilies(PhysiclaDevice);
 	uint32_t queueFamilyIndices[]									= { indices.GraphicsFamily.value(), indices.PresentFamily.value() };
 	
 	// 判斷 Graphics & Present 是否在同一個 Queue
@@ -315,15 +315,19 @@ void VulkanEngineApplication::__CreateSwapChain()
 	createInfo.oldSwapchain											= VK_NULL_HANDLE;						// 當如果不支援的話，所做的動作是什麼
 
 	// 建立 SwapChain
-	if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
+	if (vkCreateSwapchainKHR(Device, &createInfo, nullptr, &SwapChain) != VK_SUCCESS)
 		throw new runtime_error("Failed to create SwapChain");
 	
-	vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
-	swapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+	vkGetSwapchainImagesKHR(Device, SwapChain, &imageCount, nullptr);
+	SwapChainImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(Device, SwapChain, &imageCount, SwapChainImages.data());
 
-	swapChainImageFormat 											= surfaceFormat.format;
-	swapChainExtent													= extent;
+	SwapChainImageFormat 											= surfaceFormat.format;
+	SwapChainExtent													= extent;
+}
+void VulkanEngineApplication::__CreateImageViews()
+{
+
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -398,7 +402,7 @@ QueueFamilyIndices VulkanEngineApplication::__FindQueueFamilies(VkPhysicalDevice
 
 		// 判斷 device 是否支援 presentation
 		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, Surface, &presentSupport);
 		if (presentSupport)
 			indices.PresentFamily = i;
 
@@ -415,23 +419,23 @@ QueueFamilyIndices VulkanEngineApplication::__FindQueueFamilies(VkPhysicalDevice
 SwapChainSupportDetails VulkanEngineApplication::__QuerySwapChainSupport(VkPhysicalDevice device)
 {
 	SwapChainSupportDetails details;
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.Capbilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, Surface, &details.Capbilities);
 
 	// Get Format
 	uint32_t size = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &size, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, Surface, &size, nullptr);
 	if (size > 0)
 	{
 		details.Formats.resize(size);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &size, details.Formats.data());
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, Surface, &size, details.Formats.data());
 	}
 
 	// Get Present Mode
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &size, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, Surface, &size, nullptr);
 	if (size > 0)
 	{
 		details.PresentModes.resize(size);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &size, details.PresentModes.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, Surface, &size, details.PresentModes.data());
 	}
 	return details;
 }
@@ -456,7 +460,7 @@ VkExtent2D VulkanEngineApplication::__ChooseSwapExtent(const VkSurfaceCapabiliti
 		return capabilities.currentExtent;
 
 	int width, height;
-	glfwGetFramebufferSize(window, &width, &height);
+	glfwGetFramebufferSize(Window, &width, &height);
 	VkExtent2D actualExtent =
 	{
 		static_cast<uint32_t>(width),
