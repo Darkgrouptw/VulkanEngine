@@ -65,6 +65,7 @@ void VulkanEngineApplication::InitVulkan()
 	__PickPhysicalDevice();
 	__CreateLogicalDevice();
 	__CreateSwapChain();
+	__CreateImageViews();
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -80,6 +81,8 @@ void VulkanEngineApplication::Destroy()
 	if (EnabledValidationLayer)
 		DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
 #endif
+	for(auto& imageView : SwapChainImageViews)
+		vkDestroyImageView(Device, imageView, nullptr);
 	vkDestroySwapchainKHR(Device, SwapChain, nullptr);
 	vkDestroyDevice(Device, nullptr);
 	vkDestroySurfaceKHR(Instance, Surface, nullptr);
@@ -327,7 +330,32 @@ void VulkanEngineApplication::__CreateSwapChain()
 }
 void VulkanEngineApplication::__CreateImageViews()
 {
+	SwapChainImageViews.resize(SwapChainImages.size());
+	for (size_t i = 0; i < SwapChainImages.size(); i++)
+	{
+		VkImageViewCreateInfo createInfo{};
+		createInfo.sType 											= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.image											= SwapChainImages[i];
+		createInfo.viewType											= VK_IMAGE_VIEW_TYPE_2D;
+		createInfo.format											= SwapChainImageFormat;
 
+		// Image 的 Range 設定 0 ~ 1
+		createInfo.components.r										= VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g										= VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b										= VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a										= VK_COMPONENT_SWIZZLE_IDENTITY;
+
+		// 其他用途的設定 (Mipmap 等)
+		createInfo.subresourceRange.aspectMask						= VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.baseMipLevel = 0;
+		createInfo.subresourceRange.levelCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = 0;
+		createInfo.subresourceRange.layerCount = 1;
+
+		// Create Image
+		if (vkCreateImageView(Device, &createInfo, nullptr, &SwapChainImageViews[i]) != VK_SUCCESS)
+			throw runtime_error("Failed to create ImageView");
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////

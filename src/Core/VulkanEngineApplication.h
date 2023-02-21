@@ -70,6 +70,7 @@ private:
 	// Vulkan SwapChain
 	VkSwapchainKHR SwapChain;
 	vector<VkImage> SwapChainImages;
+	vector<VkImageView> SwapChainImageViews;
 	VkFormat SwapChainImageFormat;
 	VkExtent2D SwapChainExtent;
 
