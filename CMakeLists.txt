@@ -54,13 +54,13 @@ if (NOT DEFINED GLM_PATH)
 endif()
 
 # 3d. Final
-file(GLOB_RECURSE AllFiles_SRC
+file(GLOB_RECURSE SOURCE_FILES
      "src/*.h"
      "src/*.cpp"
 )
-# message("All Files: ${AllFiles_SRC}")
+# message("All Files: ${SOURCE_FILES}")
 add_executable(${PROJECT_NAME} 
-    ${AllFiles_SRC}
+    ${SOURCE_FILES}
 )
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${Vulkan_INCLUDE_DIRS}
@@ -86,3 +86,48 @@ else()
         ${GLFW_LIBRARIES}/libglfw.dylib
     )
 endif()
+
+# 4. Shader (Use glslc to compile to SPRIV)
+# Refernce: 
+# https://github.com/blurrypiano/littleVulkanEngine/blob/main/CMakeLists.txt
+# https://github.com/google/shaderc/tree/main/glslc#311-shader-stage-specification
+find_program(GLSLC glslc HINTS
+    /usr/bin 
+    /usr/local/bin 
+    ${VULKAN_SDK_PATH}/Bin
+    ${VULKAN_SDK_PATH}/Bin32
+    $ENV{VULKAN_SDK}/Bin/ 
+    $ENV{VULKAN_SDK}/Bin32/
+)
+# message(${GLSLC})
+file(GLOB_RECURSE SHADER_SOURCE_FILES
+     "Shaders/*.vert"
+     "Shaders/*.tesc"
+     "Shaders/*.tese"
+     "Shaders/*.geom"
+     "Shaders/*.frag"
+     "Shaders/*.comp"
+)
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/build/Shaders")
+    make_directory("${PROJECT_SOURCE_DIR}/build/Shaders")
+endif()
+
+foreach(FILE ${SHADER_SOURCE_FILES})
+    get_filename_component(FILENAME ${FILE} NAME)
+    set(SPRIV_OUTPUT_FILE "${PROJECT_SOURCE_DIR}/build/Shaders/${FILENAME}.spv")
+    message(${PROJECT_SOURCE_DIR})
+    
+    add_custom_command(
+        OUTPUT ${SPRIV_OUTPUT_FILE}
+        COMMAND ${GLSLC} ${FILE} -o ${SPRIV_OUTPUT_FILE}
+        DEPENDS ${GLSLC}
+    )
+    list(APPEND SPIRV_BINARY_FILES ${SPRIV_OUTPUT_FILE})
+endforeach(FILE)
+message(${SPIRV_BINARY_FILES})
+
+# add to target
+add_custom_target(
+    Shaders
+    DEPENDS ${SPIRV_BINARY_FILES}
+)
