@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <fstream>
 #include <algorithm>
 
 #define GLFW_INCLUDE_VULKAN
@@ -84,6 +85,7 @@ private:
 	void __CreateLogicalDevice();																			// 根據對應的顯卡，去建立 Logical Device Interface
 	void __CreateSwapChain();																				// 建立 Swap Chain
 	void __CreateImageViews();																				// 建立 Image Views
+	void __CreateGraphicsPipeline();																		// 建立 Graphics Pipeline
 	
 	//////////////////////////////////////////////////////////////////////////
 	// 比較 Minor 的 Helper Function
@@ -92,6 +94,8 @@ private:
 	bool __CheckDeviceExtensionSupport(VkPhysicalDevice);													// 檢查 DeviceExtension 是否支援某幾項
 	bool __IsDeviceSuitable(VkPhysicalDevice);																// 是否為合適的顯卡
 	QueueFamilyIndices __FindQueueFamilies(VkPhysicalDevice);												// 找顯卡中 對應 Queue 的 Indices
+	vector<char> __ReadShaderFile(const string&);															// 讀取 ShaderFile
+	VkShaderModule __CreateShaderModule(const vector<char>&);												// 產生 Shader Module
 	
 	//////////////////////////////////////////////////////////////////////////
 	// Swap Chain 的 Helper Function

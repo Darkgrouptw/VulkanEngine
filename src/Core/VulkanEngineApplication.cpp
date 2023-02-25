@@ -1,4 +1,4 @@
-#include "VulkanEngineApplication.h"
+#include "Core/VulkanEngineApplication.h"
 
 #pragma region VulkanMessage
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -66,6 +66,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateLogicalDevice();
 	__CreateSwapChain();
 	__CreateImageViews();
+	__CreateGraphicsPipeline();
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -357,6 +358,34 @@ void VulkanEngineApplication::__CreateImageViews()
 			throw runtime_error("Failed to create ImageView");
 	}
 }
+void VulkanEngineApplication::__CreateGraphicsPipeline()
+{
+	// 讀取檔案並建立 Shader Module
+	auto vertexShader 												= __ReadShaderFile("Shaders/Test.vert.spv");
+	auto fragmentShader												= __ReadShaderFile("Shaders/Test.frag.spv");
+	VkShaderModule vertexModule										= __CreateShaderModule(vertexShader);
+	VkShaderModule fragmentModule									= __CreateShaderModule(fragmentShader);
+	
+	// 產生 Graphics Pipeline
+	const char* mainFunctionName 									= "main"; 								// 入口的 Function 名稱
+	VkPipelineShaderStageCreateInfo vertexStageCreateInfo{};
+	vertexStageCreateInfo.sType										= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertexStageCreateInfo.stage										= VK_SHADER_STAGE_VERTEX_BIT;
+	vertexStageCreateInfo.module									= vertexModule;
+	vertexStageCreateInfo.pName										= mainFunctionName;
+
+	VkPipelineShaderStageCreateInfo fragmentStageCreateInfo{};
+	fragmentStageCreateInfo.sType									= VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragmentStageCreateInfo.stage									= VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragmentStageCreateInfo.module									= fragmentModule;
+	fragmentStageCreateInfo.pName									= mainFunctionName;
+
+	VkPipelineShaderStageCreateInfo shaderStages[] = {vertexStageCreateInfo, fragmentStageCreateInfo};
+
+	// 清空
+	vkDestroyShaderModule(Device, vertexModule, nullptr);
+	vkDestroyShaderModule(Device, fragmentModule, nullptr);
+}
 
 //////////////////////////////////////////////////////////////////////////
 // 比較 Minor 的 Helper Function
@@ -439,7 +468,34 @@ QueueFamilyIndices VulkanEngineApplication::__FindQueueFamilies(VkPhysicalDevice
 	}
 	return indices;																								// 無正常的可以處理 Graphics 的 Queue */
 }
+vector<char> VulkanEngineApplication::__ReadShaderFile(const string& path)
+{
+	// 讀取檔案
+	// ate: 從檔案的結果開始讀（主要是判斷檔案的大小，之後還可以移動此指標到想要的位置）
+	// binary: 避免 text transformations
+	ifstream file(path, ios::ate | ios::binary);
+	if (!file.is_open())
+        throw runtime_error("Failed to open the file(" + path + ")");
 
+	size_t fileSize 												= file.tellg();
+	vector<char> buffer(fileSize);
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+	file.close();
+	return buffer;
+}
+VkShaderModule VulkanEngineApplication::__CreateShaderModule(const vector<char>& code)
+{
+	VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType												= VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize												= code.size();
+	createInfo.pCode												= reinterpret_cast<const uint32_t*>(code.data());	// 要將原本的 char* 轉成 uint32_t*
+
+	VkShaderModule shaderModule;
+	if (vkCreateShaderModule(Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+		throw runtime_error("Failed to create shader module");
+	return shaderModule;
+}
 
 //////////////////////////////////////////////////////////////////////////
 // 比較 Swap Chain 的 Function

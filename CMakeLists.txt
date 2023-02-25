@@ -115,7 +115,6 @@ endif()
 foreach(FILE ${SHADER_SOURCE_FILES})
     get_filename_component(FILENAME ${FILE} NAME)
     set(SPRIV_OUTPUT_FILE "${PROJECT_SOURCE_DIR}/build/Shaders/${FILENAME}.spv")
-    message(${PROJECT_SOURCE_DIR})
     
     add_custom_command(
         OUTPUT ${SPRIV_OUTPUT_FILE}
@@ -124,7 +123,6 @@ foreach(FILE ${SHADER_SOURCE_FILES})
     )
     list(APPEND SPIRV_BINARY_FILES ${SPRIV_OUTPUT_FILE})
 endforeach(FILE)
-message(${SPIRV_BINARY_FILES})
 
 # add to target
 add_custom_target(
