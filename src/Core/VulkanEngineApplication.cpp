@@ -82,6 +82,7 @@ void VulkanEngineApplication::Destroy()
 	if (EnabledValidationLayer)
 		DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
 #endif
+	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
 	for(auto& imageView : SwapChainImageViews)
 		vkDestroyImageView(Device, imageView, nullptr);
 	vkDestroySwapchainKHR(Device, SwapChain, nullptr);
@@ -270,10 +271,13 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 void VulkanEngineApplication::__CreateSwapChain()
 {
 	SwapChainSupportDetails details 								= __QuerySwapChainSupport(PhysiclaDevice);
-
 	VkSurfaceFormatKHR surfaceFormat 								= __ChooseSwapSurfaceFormat(details.Formats);
 	VkPresentModeKHR presentMode 									= __ChooseSwapPresentMode(details.PresentModes);
 	VkExtent2D extent												= __ChooseSwapExtent(details.Capbilities);
+
+#if defined(VKENGINE_DEBUG_DETAILS)
+	cout << "Framebuffer: " << extent.width << " x " << extent.height << endl;
+#endif
 
 	// 需要多一張圖，預備下一個 Frame 繪製
 	uint32_t imageCount 											= details.Capbilities.minImageCount + 1;
@@ -360,9 +364,10 @@ void VulkanEngineApplication::__CreateImageViews()
 }
 void VulkanEngineApplication::__CreateGraphicsPipeline()
 {
+	#pragma region VkShaderModule
 	// 讀取檔案並建立 Shader Module
-	auto vertexShader 												= __ReadShaderFile("Shaders/Test.vert.spv");
-	auto fragmentShader												= __ReadShaderFile("Shaders/Test.frag.spv");
+	auto vertexShader 												= __ReadShaderFile("./build/Shaders/Test.vert.spv");
+	auto fragmentShader												= __ReadShaderFile("./build/Shaders/Test.frag.spv");
 	VkShaderModule vertexModule										= __CreateShaderModule(vertexShader);
 	VkShaderModule fragmentModule									= __CreateShaderModule(fragmentShader);
 	
@@ -379,12 +384,129 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	fragmentStageCreateInfo.stage									= VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragmentStageCreateInfo.module									= fragmentModule;
 	fragmentStageCreateInfo.pName									= mainFunctionName;
+	#pragma endregion
+	#pragma region Graphics Pipeline
+	// Graphics Pipeline:
+	// 1. Vertex Input												點的資料
+	// 2. Input Assembler 											點怎麼連接
+	// 3. Vertex Shader	(From Code)											
+	// 4. Rasterization
+	// 5. Fragment Shader (Fom Code)
+	// 6. Color Blending
+	// 7. FrameBuffer
+	#pragma region 1. Vertex Input
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+	vertexInputInfo.sType											= VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInputInfo.vertexAttributeDescriptionCount					= 0;
+	vertexInputInfo.pVertexAttributeDescriptions					= nullptr;
+	vertexInputInfo.vertexBindingDescriptionCount					= 0;
+	vertexInputInfo.pVertexBindingDescriptions						= nullptr;
+	#pragma endregion
+	#pragma region 2. Input Assembly
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
+	inputAssemblyInfo.sType											= VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssemblyInfo.topology										= VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;	// 每三個點使用後，不複用
+	inputAssemblyInfo.primitiveRestartEnable						= VK_FALSE;								// 上方為 _STRIP 才會使用
+	#pragma endregion
+	#pragma region Viewport & Scissor
+	// Viewport
+	VkViewport viewport{};
+	viewport.x 														= 0;
+	viewport.y 														= 0;
+	viewport.width 													= SwapChainExtent.width;
+	viewport.height													= SwapChainExtent.height;
+	viewport.minDepth												= 0;
+	viewport.maxDepth												= 1;									// 設定 Depth 0 ~ 1
 
-	VkPipelineShaderStageCreateInfo shaderStages[] = {vertexStageCreateInfo, fragmentStageCreateInfo};
+	// Scissor
+	// https://vulkan-tutorial.com/images/viewports_scissors.png
+	VkRect2D scissor{};
+	scissor.offset													= {0, 0};
+	scissor.extent													= SwapChainExtent;
+	
+	// Viewport
+	VkPipelineViewportStateCreateInfo viewportInfo{};
+	viewportInfo.sType												= VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportInfo.viewportCount										= 1;
+	viewportInfo.scissorCount										= 1;
+	viewportInfo.pViewports											= &viewport;
+	viewportInfo.pScissors											= &scissor;
+	#pragma endregion
+	#pragma region 4. Rasterization
+	VkPipelineRasterizationStateCreateInfo rasterizationInfo{};
+	rasterizationInfo.sType											= VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterizationInfo.depthClampEnable								= VK_FALSE;								// 對於 Shadow Map 可能會有需要 Near 到 Far 之間的資訊，其他都不需要設為 True
+	rasterizationInfo.rasterizerDiscardEnable						= VK_FALSE;								// 如果設定成 True，會造成 geometry 不會傳入 rasterization
+	rasterizationInfo.cullMode										= VK_CULL_MODE_BACK_BIT;				// 去除 Back face
+	rasterizationInfo.frontFace										= VK_FRONT_FACE_CLOCKWISE;				// 逆時針的 Vertex，算 Front Face
+	rasterizationInfo.depthBiasEnable								= VK_FALSE;
+	// 當設定為 False，底下設定就不需要設定
+	//rasterizationInfo.depthBiasConstantFactor 						= 0.0f;
+	//rasterizationInfo.depthBiasClamp 								= 0.0f;
+	//rasterizationInfo.depthBiasSlopeFactor 							= 0.0f;
 
-	// 清空
+	// Multisampling (Anti-Aliasing)
+	VkPipelineMultisampleStateCreateInfo multisamplingInfo{};
+	multisamplingInfo.sType											= VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multisamplingInfo.rasterizationSamples							= VK_SAMPLE_COUNT_1_BIT;
+	multisamplingInfo.sampleShadingEnable							= VK_FALSE;
+	// 上方要設定為 True，下方才要設定
+	//multisamplingInfo.minSampleShading 								= 1.0f;
+	//multisamplingInfo.pSampleMask 									= nullptr;
+	//multisamplingInfo.alphaToCoverageEnable							= VK_FALSE;
+	//multisamplingInfo.alphaToOneEnable 								= VK_FALSE;
+	#pragma endregion
+	#pragma region 6. Color Blending
+	// 這裡要設定兩個
+	// 1. 設定 Color Blending 後的 FrameBuffer 上的設定
+	// 2. 設定 Global 的 Color Blending
+	
+	// 1.
+	VkPipelineColorBlendAttachmentState colorBlendAttachmentInfo{};
+	colorBlendAttachmentInfo.colorWriteMask							= VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachmentInfo.blendEnable							= VK_FALSE;
+	// 開啟 Blend 才需要設定
+	//colorBlendAttachmentInfo.srcColorBlendFactor 					= VK_BLEND_FACTOR_ONE; // Optional
+	//colorBlendAttachmentInfo.dstColorBlendFactor 					= VK_BLEND_FACTOR_ZERO; // Optional
+	//colorBlendAttachmentInfo.colorBlendOp 							= VK_BLEND_OP_ADD; // Optional
+	//colorBlendAttachmentInfo.srcAlphaBlendFactor 					= VK_BLEND_FACTOR_ONE; // Optional
+	//colorBlendAttachmentInfo.dstAlphaBlendFactor 					= VK_BLEND_FACTOR_ZERO; // Optional
+	//colorBlendAttachmentInfo.alphaBlendOp 							= VK_BLEND_OP_ADD; // Optional	
+
+	// 2.
+	VkPipelineColorBlendStateCreateInfo colorBlendInfo{};
+	colorBlendInfo.sType											= VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlendInfo.logicOpEnable									= VK_FALSE;
+	colorBlendInfo.attachmentCount									= 1;
+	colorBlendInfo.pAttachments										= &colorBlendAttachmentInfo;
+	//VkPipelineShaderStageCreateInfo shaderStages[] = {vertexStageCreateInfo, fragmentStageCreateInfo};
+	#pragma endregion
+
+	// 而在 OpenGL 中已經設定好 Fixed Function
+	// 在 Vulkan 中要手動設定
+	vector<VkDynamicState> states = {
+		VK_DYNAMIC_STATE_VIEWPORT,									// 需要手動設定 vkCmdSetViewport
+		VK_DYNAMIC_STATE_SCISSOR									// 需要手動設定 vkCmdSetScissor
+	};
+
+	VkPipelineDynamicStateCreateInfo dynamicState{};
+	dynamicState.sType												= VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.dynamicStateCount									= static_cast<uint32_t>(states.size());
+	dynamicState.pDynamicStates										= states.data();
+
+	// 最後一步設定 Layout
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	pipelineLayoutInfo.sType										= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount								= 0;
+	pipelineLayoutInfo.pSetLayouts									= nullptr;
+
+	if (vkCreatePipelineLayout(Device, &pipelineLayoutInfo, nullptr, &PipelineLayout) != VK_SUCCESS)
+		throw runtime_error("Failed to create pipeline");
+	#pragma endregion
+	#pragma region Destroy Module
 	vkDestroyShaderModule(Device, vertexModule, nullptr);
 	vkDestroyShaderModule(Device, fragmentModule, nullptr);
+	#pragma endregion
 }
 
 //////////////////////////////////////////////////////////////////////////

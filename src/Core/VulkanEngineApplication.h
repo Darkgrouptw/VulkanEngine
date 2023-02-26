@@ -2,6 +2,9 @@
 /*
 * Vulkan 系統的 Application
 */
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 #include <iostream>
 #include <vector>
 #include <set>
@@ -10,9 +13,6 @@
 #include <optional>
 #include <fstream>
 #include <algorithm>
-
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 
 using namespace std;
 
@@ -63,6 +63,7 @@ private:
 	VkSurfaceKHR Surface;
 	VkPhysicalDevice PhysiclaDevice									= VK_NULL_HANDLE;
 	VkDevice Device;
+	VkPipelineLayout PipelineLayout;
 
 	// Vulkan Queue
 	VkQueue GraphicsQueue;
