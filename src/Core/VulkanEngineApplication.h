@@ -64,6 +64,8 @@ private:
 	VkPhysicalDevice PhysiclaDevice									= VK_NULL_HANDLE;
 	VkDevice Device;
 	VkPipelineLayout PipelineLayout;
+	VkRenderPass RenderPass;
+	VkPipeline GraphicsPipeline;
 
 	// Vulkan Queue
 	VkQueue GraphicsQueue;
@@ -86,6 +88,7 @@ private:
 	void __CreateLogicalDevice();																			// 根據對應的顯卡，去建立 Logical Device Interface
 	void __CreateSwapChain();																				// 建立 Swap Chain
 	void __CreateImageViews();																				// 建立 Image Views
+	void __CreateRenderPass();																				// 建立 RenderPass，主要是要設定 Color Buffer & Depth Buffer
 	void __CreateGraphicsPipeline();																		// 建立 Graphics Pipeline
 	
 	//////////////////////////////////////////////////////////////////////////

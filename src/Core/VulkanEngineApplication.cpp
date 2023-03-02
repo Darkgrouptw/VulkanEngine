@@ -66,6 +66,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateLogicalDevice();
 	__CreateSwapChain();
 	__CreateImageViews();
+	__CreateRenderPass();
 	__CreateGraphicsPipeline();
 }
 void VulkanEngineApplication::MainLoop()
@@ -82,7 +83,9 @@ void VulkanEngineApplication::Destroy()
 	if (EnabledValidationLayer)
 		DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
 #endif
+	vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
+	vkDestroyRenderPass(Device, RenderPass, nullptr);
 	for(auto& imageView : SwapChainImageViews)
 		vkDestroyImageView(Device, imageView, nullptr);
 	vkDestroySwapchainKHR(Device, SwapChain, nullptr);
@@ -362,6 +365,44 @@ void VulkanEngineApplication::__CreateImageViews()
 			throw runtime_error("Failed to create ImageView");
 	}
 }
+void VulkanEngineApplication::__CreateRenderPass()
+{
+	// 設定 Color Buffer
+	VkAttachmentDescription colorBufferAttachment{};
+	colorBufferAttachment.format									= SwapChainImageFormat;
+	colorBufferAttachment.samples									= VK_SAMPLE_COUNT_1_BIT;
+	colorBufferAttachment.loadOp									= VK_ATTACHMENT_LOAD_OP_CLEAR;			// 在 Load 完之後，先做 Clear
+	colorBufferAttachment.storeOp									= VK_ATTACHMENT_STORE_OP_STORE;			// Render 完之後，會存在 memory 內，方便以後讀取
+
+	// 暫時不會用到
+	// 可以設定成 DONT_CARE
+	colorBufferAttachment.stencilLoadOp								= VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorBufferAttachment.stencilStoreOp							= VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+	colorBufferAttachment.initialLayout								= VK_IMAGE_LAYOUT_UNDEFINED;			// 在 layout 之前，不需要設定
+	colorBufferAttachment.finalLayout								= VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;		// 做 SwapChain
+
+	// Attachment & Subpass
+	VkAttachmentReference colorAttachmentRef{};
+	colorAttachmentRef.attachment									= 0;									// 由於 Color Attach Index 為 0
+	colorAttachmentRef.layout										= VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // 希望得到 Best performance Of Color Attachment
+
+	VkSubpassDescription subpass{};
+	subpass.pipelineBindPoint										= VK_PIPELINE_BIND_POINT_GRAPHICS;		// 此 Pipeline 是用來 Graphics 的 (或是可以切換成 Compute)
+	subpass.colorAttachmentCount									= 1;
+	subpass.pColorAttachments										= &colorAttachmentRef;
+
+	// Create Render Pass
+	VkRenderPassCreateInfo renderPassInfo{};
+	renderPassInfo.sType											= VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.attachmentCount									= 1;
+	renderPassInfo.pAttachments										= &colorBufferAttachment;
+	renderPassInfo.subpassCount										= 1;
+	renderPassInfo.pSubpasses										= &subpass;
+
+	if (vkCreateRenderPass(Device, &renderPassInfo, nullptr, &RenderPass) != VK_SUCCESS)
+		throw runtime_error("Failed to create render pass");
+}
 void VulkanEngineApplication::__CreateGraphicsPipeline()
 {
 	#pragma region VkShaderModule
@@ -384,13 +425,16 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	fragmentStageCreateInfo.stage									= VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragmentStageCreateInfo.module									= fragmentModule;
 	fragmentStageCreateInfo.pName									= mainFunctionName;
+
+	// 創建 Shader Stage
+	VkPipelineShaderStageCreateInfo shaderStages[] = {vertexStageCreateInfo, fragmentStageCreateInfo};
 	#pragma endregion
-	#pragma region Graphics Pipeline
-	// Graphics Pipeline:
+	#pragma region Graphics Pipeline Layout
+	// Graphics Pipeline Layout:
 	// 1. Vertex Input												點的資料
 	// 2. Input Assembler 											點怎麼連接
 	// 3. Vertex Shader	(From Code)											
-	// 4. Rasterization
+	// 4. Rasterization & MultiSamping
 	// 5. Fragment Shader (Fom Code)
 	// 6. Color Blending
 	// 7. FrameBuffer
@@ -432,7 +476,7 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	viewportInfo.pViewports											= &viewport;
 	viewportInfo.pScissors											= &scissor;
 	#pragma endregion
-	#pragma region 4. Rasterization
+	#pragma region 4. Rasterization & MultiSamping
 	VkPipelineRasterizationStateCreateInfo rasterizationInfo{};
 	rasterizationInfo.sType											= VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizationInfo.depthClampEnable								= VK_FALSE;								// 對於 Shadow Map 可能會有需要 Near 到 Far 之間的資訊，其他都不需要設為 True
@@ -479,7 +523,6 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	colorBlendInfo.logicOpEnable									= VK_FALSE;
 	colorBlendInfo.attachmentCount									= 1;
 	colorBlendInfo.pAttachments										= &colorBlendAttachmentInfo;
-	//VkPipelineShaderStageCreateInfo shaderStages[] = {vertexStageCreateInfo, fragmentStageCreateInfo};
 	#pragma endregion
 
 	// 而在 OpenGL 中已經設定好 Fixed Function
@@ -494,14 +537,40 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	dynamicState.dynamicStateCount									= static_cast<uint32_t>(states.size());
 	dynamicState.pDynamicStates										= states.data();
 
-	// 最後一步設定 Layout
+	// 設定 Layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType										= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount								= 0;
 	pipelineLayoutInfo.pSetLayouts									= nullptr;
+	pipelineLayoutInfo.pushConstantRangeCount						= 0;
+	pipelineLayoutInfo.pPushConstantRanges							= nullptr;
 
 	if (vkCreatePipelineLayout(Device, &pipelineLayoutInfo, nullptr, &PipelineLayout) != VK_SUCCESS)
 		throw runtime_error("Failed to create pipeline");
+	#pragma endregion
+	#pragma region Graphics Pipeline
+	// 建立 Graphics Pipeline
+	VkGraphicsPipelineCreateInfo pipelineInfo{};
+	pipelineInfo.sType												= VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.stageCount											= static_cast<uint32_t>(sizeof(shaderStages) / sizeof(VkPipelineShaderStageCreateInfo));
+	pipelineInfo.pStages											= shaderStages;
+
+	pipelineInfo.pVertexInputState									= &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState								= &inputAssemblyInfo;
+	pipelineInfo.pViewportState										= &viewportInfo;
+	pipelineInfo.pRasterizationState								= &rasterizationInfo;
+	pipelineInfo.pMultisampleState									= &multisamplingInfo;
+	pipelineInfo.pDepthStencilState									= nullptr;
+	pipelineInfo.pColorBlendState									= &colorBlendInfo;
+	pipelineInfo.pDynamicState										= &dynamicState;
+
+	pipelineInfo.layout												= PipelineLayout;
+	pipelineInfo.renderPass											= RenderPass;
+	pipelineInfo.subpass											= 0;
+	pipelineInfo.basePipelineHandle									= VK_NULL_HANDLE;
+
+	if (vkCreateGraphicsPipelines(Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &GraphicsPipeline) != VK_SUCCESS)
+		throw runtime_error("Failed to create Graphics Pipeline");
 	#pragma endregion
 	#pragma region Destroy Module
 	vkDestroyShaderModule(Device, vertexModule, nullptr);
