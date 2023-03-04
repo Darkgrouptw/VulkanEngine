@@ -68,6 +68,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateImageViews();
 	__CreateRenderPass();
 	__CreateGraphicsPipeline();
+	__CreateFrameBuffer();
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -83,6 +84,10 @@ void VulkanEngineApplication::Destroy()
 	if (EnabledValidationLayer)
 		DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
 #endif
+	for(auto &frameBuffer : SwapChainFrameBuffers)
+		vkDestroyFramebuffer(Device, frameBuffer, nullptr);
+
+		
 	vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
 	vkDestroyRenderPass(Device, RenderPass, nullptr);
@@ -576,6 +581,25 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	vkDestroyShaderModule(Device, vertexModule, nullptr);
 	vkDestroyShaderModule(Device, fragmentModule, nullptr);
 	#pragma endregion
+}
+void VulkanEngineApplication::__CreateFrameBuffer()
+{
+	SwapChainFrameBuffers.resize(SwapChainImageViews.size());
+	for (size_t i = 0; i < SwapChainImageViews.size(); i++)
+	{
+		VkImageView attachments[] = { SwapChainImageViews[i] };
+		VkFramebufferCreateInfo frameBufferInfo{};
+		frameBufferInfo.sType										= VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		frameBufferInfo.renderPass									= RenderPass;
+		frameBufferInfo.attachmentCount								= static_cast<uint32_t>(sizeof(attachments) / sizeof(VkImageView));
+		frameBufferInfo.pAttachments								= attachments;
+		frameBufferInfo.width										= SwapChainExtent.width;
+		frameBufferInfo.height										= SwapChainExtent.height;
+		frameBufferInfo.layers										= 1;
+
+		if (vkCreateFramebuffer(Device, &frameBufferInfo, nullptr, &SwapChainFrameBuffers[i]) != VK_SUCCESS)
+			throw runtime_error("Failed to create framebuffer");
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////

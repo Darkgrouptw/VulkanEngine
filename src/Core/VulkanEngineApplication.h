@@ -75,6 +75,7 @@ private:
 	VkSwapchainKHR SwapChain;
 	vector<VkImage> SwapChainImages;
 	vector<VkImageView> SwapChainImageViews;
+	vector<VkFramebuffer> SwapChainFrameBuffers;
 	VkFormat SwapChainImageFormat;
 	VkExtent2D SwapChainExtent;
 
@@ -90,6 +91,7 @@ private:
 	void __CreateImageViews();																				// 建立 Image Views
 	void __CreateRenderPass();																				// 建立 RenderPass，主要是要設定 Color Buffer & Depth Buffer
 	void __CreateGraphicsPipeline();																		// 建立 Graphics Pipeline
+	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	
 	//////////////////////////////////////////////////////////////////////////
 	// 比較 Minor 的 Helper Function
