@@ -63,9 +63,13 @@ private:
 	VkSurfaceKHR Surface;
 	VkPhysicalDevice PhysiclaDevice									= VK_NULL_HANDLE;
 	VkDevice Device;
+	
+	// Vulkan Pipeline
 	VkPipelineLayout PipelineLayout;
 	VkRenderPass RenderPass;
 	VkPipeline GraphicsPipeline;
+	VkCommandPool CommandPool;
+	VkCommandBuffer CommandBuffer;
 
 	// Vulkan Queue
 	VkQueue GraphicsQueue;
@@ -80,7 +84,7 @@ private:
 	VkExtent2D SwapChainExtent;
 
 	//////////////////////////////////////////////////////////////////////////
-	// Helper Function
+	// Helper Init Function
 	//////////////////////////////////////////////////////////////////////////
 	void __CreateVKInstance();																				// Vulkan Instance
 	void __SetupDebugMessenger();																			// 設定 Vulkan 的 Debug 工具
@@ -92,7 +96,15 @@ private:
 	void __CreateRenderPass();																				// 建立 RenderPass，主要是要設定 Color Buffer & Depth Buffer
 	void __CreateGraphicsPipeline();																		// 建立 Graphics Pipeline
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
-	
+	void __CreateCommandPool();																				// 建立 Command Pool
+	void __CreateCommandBuffer();																			// 建立 Command Buffer
+
+	//////////////////////////////////////////////////////////////////////////
+	// Helper Render Function
+	//////////////////////////////////////////////////////////////////////////
+	void __GenerateInitViewportAndScissor(VkViewport&, VkRect2D&);											// 產生初始的 Viewport & Scissor
+	void __RecordCommandBuffer(VkCommandBuffer, uint32_t);													// 將要執行的 Command 寫入 Command Buffer
+
 	//////////////////////////////////////////////////////////////////////////
 	// 比較 Minor 的 Helper Function
 	//////////////////////////////////////////////////////////////////////////

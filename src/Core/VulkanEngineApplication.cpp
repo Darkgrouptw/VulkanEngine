@@ -69,6 +69,8 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateRenderPass();
 	__CreateGraphicsPipeline();
 	__CreateFrameBuffer();
+	__CreateCommandPool();
+	__CreateCommandBuffer();
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -84,10 +86,9 @@ void VulkanEngineApplication::Destroy()
 	if (EnabledValidationLayer)
 		DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
 #endif
+	vkDestroyCommandPool(Device, CommandPool, nullptr);
 	for(auto &frameBuffer : SwapChainFrameBuffers)
 		vkDestroyFramebuffer(Device, frameBuffer, nullptr);
-
-		
 	vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
 	vkDestroyRenderPass(Device, RenderPass, nullptr);
@@ -104,7 +105,7 @@ void VulkanEngineApplication::Destroy()
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Helper Function
+// Helper Init Function
 //////////////////////////////////////////////////////////////////////////
 void VulkanEngineApplication::__CreateVKInstance()
 {
@@ -458,21 +459,11 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	inputAssemblyInfo.primitiveRestartEnable						= VK_FALSE;								// 上方為 _STRIP 才會使用
 	#pragma endregion
 	#pragma region Viewport & Scissor
-	// Viewport
+	// Generate Viewport & Scissor
 	VkViewport viewport{};
-	viewport.x 														= 0;
-	viewport.y 														= 0;
-	viewport.width 													= SwapChainExtent.width;
-	viewport.height													= SwapChainExtent.height;
-	viewport.minDepth												= 0;
-	viewport.maxDepth												= 1;									// 設定 Depth 0 ~ 1
-
-	// Scissor
-	// https://vulkan-tutorial.com/images/viewports_scissors.png
 	VkRect2D scissor{};
-	scissor.offset													= {0, 0};
-	scissor.extent													= SwapChainExtent;
-	
+	__GenerateInitViewportAndScissor(viewport, scissor);
+
 	// Viewport
 	VkPipelineViewportStateCreateInfo viewportInfo{};
 	viewportInfo.sType												= VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -600,6 +591,92 @@ void VulkanEngineApplication::__CreateFrameBuffer()
 		if (vkCreateFramebuffer(Device, &frameBufferInfo, nullptr, &SwapChainFrameBuffers[i]) != VK_SUCCESS)
 			throw runtime_error("Failed to create framebuffer");
 	}
+}
+void VulkanEngineApplication::__CreateCommandPool()
+{
+	QueueFamilyIndices indices 										= __FindQueueFamilies(PhysiclaDevice);
+	VkCommandPoolCreateInfo poolInfo{};
+	poolInfo.sType													= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.flags													= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	poolInfo.queueFamilyIndex										= indices.GraphicsFamily.value();
+
+	if (vkCreateCommandPool(Device, &poolInfo, nullptr, &CommandPool) != VK_SUCCESS)
+		throw runtime_error("Failed to create command pool");
+}
+void VulkanEngineApplication::__CreateCommandBuffer()
+{
+	VkCommandBufferAllocateInfo allocateInfo{};
+	allocateInfo.sType												= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocateInfo.commandPool										= CommandPool;
+	allocateInfo.level												= VK_COMMAND_BUFFER_LEVEL_PRIMARY;		// 如果是 Primary，代表直接送 Command Buffer，無法被其他 Command Buffer 讀取
+	allocateInfo.commandBufferCount									= 1;
+
+	if (vkAllocateCommandBuffers(Device, &allocateInfo, &CommandBuffer) != VK_SUCCESS)
+		throw runtime_error("Failed to create command buffer");
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Helper Render Function
+//////////////////////////////////////////////////////////////////////////
+void VulkanEngineApplication::__GenerateInitViewportAndScissor(VkViewport& viewport, VkRect2D& scissor)
+{
+	// Viewport
+	viewport.x 														= 0;
+	viewport.y 														= 0;
+	viewport.width 													= SwapChainExtent.width;
+	viewport.height													= SwapChainExtent.height;
+	viewport.minDepth												= 0;
+	viewport.maxDepth												= 1;									// 設定 Depth 0 ~ 1
+
+	// Scissor
+	// https://vulkan-tutorial.com/images/viewports_scissors.png
+	scissor.offset													= {0, 0};
+	scissor.extent													= SwapChainExtent;
+}
+void VulkanEngineApplication::__RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+{
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType													= VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+		throw runtime_error("Failed to begin recording command buffer");
+
+	// 設定 Render Pass
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType											= VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass										= RenderPass;
+	renderPassInfo.framebuffer										= SwapChainFrameBuffers[imageIndex];
+	renderPassInfo.renderArea.offset								= { 0, 0 };
+	renderPassInfo.renderArea.extent								= SwapChainExtent;
+
+	// Clear
+	VkClearValue clearColor 										= {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+	renderPassInfo.clearValueCount									= 1;
+	renderPassInfo.pClearValues										= &clearColor;
+
+	// 設定 RenderPass (且無其他 Pass => CONTENTS_INLINE)
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	{
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, GraphicsPipeline);
+		
+		// 由於前面設定 VkPipelineDynamicStateCreateInfo
+		// 設定了 VK_DYNAMIC_STATE_VIEWPORT & VK_DYNAMIC_STATE_SCISSOR
+		// 所以這裡需要在指定一次
+		VkViewport viewport{};
+		VkRect2D scissor{};
+		__GenerateInitViewportAndScissor(viewport, scissor);
+
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		// 畫三角形 
+		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+	}
+	vkCmdEndRenderPass(commandBuffer);
+
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+		throw runtime_error("Failed to record command buffer");
 }
 
 //////////////////////////////////////////////////////////////////////////
