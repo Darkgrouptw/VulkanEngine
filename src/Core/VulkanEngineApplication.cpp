@@ -71,37 +71,121 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateFrameBuffer();
 	__CreateCommandPool();
 	__CreateCommandBuffer();
+	__CreateSyncObjects();
 }
 void VulkanEngineApplication::MainLoop()
 {
 	while (!glfwWindowShouldClose(Window))																	// 接到是否關閉此視窗的 Flag
 	{
 		glfwPollEvents();																					// 抓出 GFLW 的事件 Queue
+		DrawFrame();
 	}
+	vkDeviceWaitIdle(Device);
 }
 void VulkanEngineApplication::Destroy()
 {
+	#pragma region SyncObjects
+	vkDestroySemaphore(Device, ImageAvailbleSemaphore, nullptr);
+	vkDestroySemaphore(Device, RenderFinishedSemaphore, nullptr);
+	vkDestroyFence(Device, InFlightFence, nullptr);
+	#pragma endregion
+	#pragma region Command Burffer
+	// 不用 Destroy
+	#pragma endregion
+	#pragma region Command Pool
+	vkDestroyCommandPool(Device, CommandPool, nullptr);
+	#pragma endregion
+	#pragma region Frame Buffer
+	for(auto &frameBuffer : SwapChainFrameBuffers)
+		vkDestroyFramebuffer(Device, frameBuffer, nullptr);
+	#pragma endregion
+	#pragma region Graphics Pipeline
+	vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
+	#pragma endregion
+	#pragma region Render Pass
+	vkDestroyRenderPass(Device, RenderPass, nullptr);
+	#pragma endregion
+	#pragma region Image Views
+	for(auto& imageView : SwapChainImageViews)
+		vkDestroyImageView(Device, imageView, nullptr);
+	#pragma endregion
+	#pragma region Swap Cahin
+	vkDestroySwapchainKHR(Device, SwapChain, nullptr);
+	#pragma endregion
+	#pragma region Device
+	vkDestroyDevice(Device, nullptr);
+	#pragma endregion
+	#pragma region Surface
+	vkDestroySurfaceKHR(Instance, Surface, nullptr);
+	#pragma endregion
+	#pragma region Debug Messager
 	// 清掉 Vulkan 相關東西
 #if defined(VKENGINE_DEBUG_DETAILS)
 	if (EnabledValidationLayer)
 		DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
 #endif
-	vkDestroyCommandPool(Device, CommandPool, nullptr);
-	for(auto &frameBuffer : SwapChainFrameBuffers)
-		vkDestroyFramebuffer(Device, frameBuffer, nullptr);
-	vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
-	vkDestroyRenderPass(Device, RenderPass, nullptr);
-	for(auto& imageView : SwapChainImageViews)
-		vkDestroyImageView(Device, imageView, nullptr);
-	vkDestroySwapchainKHR(Device, SwapChain, nullptr);
-	vkDestroyDevice(Device, nullptr);
-	vkDestroySurfaceKHR(Instance, Surface, nullptr);
+	#pragma endregion
+	#pragma region Instance
 	vkDestroyInstance(Instance, nullptr);
+	#pragma endregion
 
 	// 關閉 GLFW
 	glfwDestroyWindow(Window);
 	glfwTerminate();
+}
+
+void VulkanEngineApplication::DrawFrame()
+{
+	// 這你需要等待幾個步驟
+	// 1. 等待前一幀的資料繪製完成
+	// 2. 取得 Swap Chain 的圖片
+	// 3. 設定 Commands 到 Command Buffer 中來繪製整個場景到 Image 中
+	// 4. Submit Command Buffer
+	// 5. 顯示 Swap Chain Image
+	#pragma region 1.
+	vkWaitForFences(Device, 1, &InFlightFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(Device, 1, &InFlightFence);																// Reset Fences
+	#pragma endregion
+	#pragma region 2.
+	uint32_t imageIndex;
+	vkAcquireNextImageKHR(Device, SwapChain, UINT64_MAX, ImageAvailbleSemaphore, VK_NULL_HANDLE, &imageIndex);
+	#pragma endregion
+	#pragma region 3.
+	// Reset & Write
+	vkResetCommandBuffer(CommandBuffer, 0);																	// 後面的參數 Flag，目前還不用，暫時先留 0
+	__SetupCommandBuffer(CommandBuffer, imageIndex);
+	#pragma endregion
+	#pragma region 4.
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType												= VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	
+	VkSemaphore waitSemaphores[] 									= { ImageAvailbleSemaphore };
+	VkPipelineStageFlags waitStages[]								= { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount									= static_cast<uint32_t>(sizeof(waitSemaphores) / sizeof(VkSemaphore));
+	submitInfo.pWaitSemaphores										= waitSemaphores;
+	submitInfo.pWaitDstStageMask									= waitStages;
+
+	submitInfo.commandBufferCount									= 1;
+	submitInfo.pCommandBuffers										= &CommandBuffer;
+
+	if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, InFlightFence) != VK_SUCCESS)
+		throw runtime_error("Failed to submit draw command buffer");
+	#pragma endregion
+	#pragma region 5.
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType												= VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentInfo.waitSemaphoreCount									= 1;
+	presentInfo.pWaitSemaphores										= waitSemaphores;
+
+	VkSwapchainKHR swapChains[] 									= { SwapChain };
+	presentInfo.swapchainCount										= static_cast<uint32_t>(sizeof(swapChains) / sizeof(VkSwapchainKHR));
+	presentInfo.pSwapchains											= swapChains;
+	presentInfo.pImageIndices										= &imageIndex;
+
+	vkQueuePresentKHR(GraphicsQueue, &presentInfo);
+	#pragma endregion
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -398,6 +482,16 @@ void VulkanEngineApplication::__CreateRenderPass()
 	subpass.colorAttachmentCount									= 1;
 	subpass.pColorAttachments										= &colorAttachmentRef;
 
+	// Subpass 也需要等待 ImageAvailableSemaphore
+	// 需要設定 Dependency
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass											= VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass											= 0;
+	dependency.srcStageMask											= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; // 確定 RenderPass 會等待 Subpass 完成
+	dependency.dstStageMask											= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask										= 0;
+	dependency.dstAccessMask										= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 	// Create Render Pass
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType											= VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -405,6 +499,8 @@ void VulkanEngineApplication::__CreateRenderPass()
 	renderPassInfo.pAttachments										= &colorBufferAttachment;
 	renderPassInfo.subpassCount										= 1;
 	renderPassInfo.pSubpasses										= &subpass;
+	renderPassInfo.dependencyCount									= 1;
+	renderPassInfo.pDependencies									= &dependency;
 
 	if (vkCreateRenderPass(Device, &renderPassInfo, nullptr, &RenderPass) != VK_SUCCESS)
 		throw runtime_error("Failed to create render pass");
@@ -614,6 +710,20 @@ void VulkanEngineApplication::__CreateCommandBuffer()
 	if (vkAllocateCommandBuffers(Device, &allocateInfo, &CommandBuffer) != VK_SUCCESS)
 		throw runtime_error("Failed to create command buffer");
 }
+void VulkanEngineApplication::__CreateSyncObjects()
+{
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType												= VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType													= VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags													= VK_FENCE_CREATE_SIGNALED_BIT;			// Create 完後，在第一次 DrawFrame 的時候就不會卡住
+
+	if (vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &ImageAvailbleSemaphore) 						!= VK_SUCCESS ||
+		vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &RenderFinishedSemaphore) 						!= VK_SUCCESS ||
+		vkCreateFence(Device, &fenceInfo, nullptr, &InFlightFence)											!= VK_SUCCESS)
+		throw runtime_error("Failed to create sync objects");
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Helper Render Function
@@ -633,7 +743,7 @@ void VulkanEngineApplication::__GenerateInitViewportAndScissor(VkViewport& viewp
 	scissor.offset													= {0, 0};
 	scissor.extent													= SwapChainExtent;
 }
-void VulkanEngineApplication::__RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType													= VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

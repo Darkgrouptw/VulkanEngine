@@ -51,6 +51,8 @@ private:
 	void InitVulkan();																						// 初始化 Vulkan
 	void MainLoop();																						// Main
 	void Destroy();																							// 清空其他的資料
+	
+	void DrawFrame();																						// 繪製畫面
 
 	// 視窗設定
 	GLFWwindow* Window												= NULL;									// GLFW Window
@@ -83,6 +85,14 @@ private:
 	VkFormat SwapChainImageFormat;
 	VkExtent2D SwapChainExtent;
 
+	// Vulkan Semaphore & Fence
+	// Semaphore: 主要是用來當作信號使用，等 Work 執行完後會觸發 Semaphore，會指使下一個 Work 繼續執行
+	// Fence: 用來等待 Work 執行話之後，下方的程式碼才會繼續執行
+	// https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Semaphores
+	VkSemaphore ImageAvailbleSemaphore;
+	VkSemaphore RenderFinishedSemaphore;
+	VkFence InFlightFence;
+
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Init Function
 	//////////////////////////////////////////////////////////////////////////
@@ -98,12 +108,13 @@ private:
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateCommandPool();																				// 建立 Command Pool
 	void __CreateCommandBuffer();																			// 建立 Command Buffer
+	void __CreateSyncObjects();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Render Function
 	//////////////////////////////////////////////////////////////////////////
 	void __GenerateInitViewportAndScissor(VkViewport&, VkRect2D&);											// 產生初始的 Viewport & Scissor
-	void __RecordCommandBuffer(VkCommandBuffer, uint32_t);													// 將要執行的 Command 寫入 Command Buffer
+	void __SetupCommandBuffer(VkCommandBuffer, uint32_t);													// 將要執行的 Command 寫入 Command Buffer
 
 	//////////////////////////////////////////////////////////////////////////
 	// 比較 Minor 的 Helper Function
