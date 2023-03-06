@@ -507,10 +507,15 @@ void VulkanEngineApplication::__CreateRenderPass()
 }
 void VulkanEngineApplication::__CreateGraphicsPipeline()
 {
-	#pragma region VkShaderModule
 	// 讀取檔案並建立 Shader Module
+	#pragma region VkShaderModule
+#if !defined(__APPLE__)
+	auto vertexShader 												= __ReadShaderFile("Shaders/Test.vert.spv");
+	auto fragmentShader												= __ReadShaderFile("Shaders/Test.frag.spv");
+#else
 	auto vertexShader 												= __ReadShaderFile("./build/Shaders/Test.vert.spv");
 	auto fragmentShader												= __ReadShaderFile("./build/Shaders/Test.frag.spv");
+#endif
 	VkShaderModule vertexModule										= __CreateShaderModule(vertexShader);
 	VkShaderModule fragmentModule									= __CreateShaderModule(fragmentShader);
 	
