@@ -160,6 +160,7 @@ void VulkanEngineApplication::DrawFrame()
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType												= VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	
+	// 等待 Semaphore 完成，在做 pass
 	VkSemaphore waitSemaphores[] 									= { ImageAvailbleSemaphore };
 	VkPipelineStageFlags waitStages[]								= { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount									= static_cast<uint32_t>(sizeof(waitSemaphores) / sizeof(VkSemaphore));
@@ -169,6 +170,11 @@ void VulkanEngineApplication::DrawFrame()
 	submitInfo.commandBufferCount									= 1;
 	submitInfo.pCommandBuffers										= &CommandBuffer;
 
+	// 完成此 Submit 要觸發 singalSempahore
+	VkSemaphore signalSemphores[]									= { RenderFinishedSemaphore };
+	submitInfo.signalSemaphoreCount									= static_cast<uint32_t>(sizeof(signalSemphores) / sizeof(VkSemaphore));
+	submitInfo.pSignalSemaphores									= signalSemphores;
+
 	if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, InFlightFence) != VK_SUCCESS)
 		throw runtime_error("Failed to submit draw command buffer");
 	#pragma endregion
@@ -177,7 +183,7 @@ void VulkanEngineApplication::DrawFrame()
 	presentInfo.sType												= VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 	presentInfo.waitSemaphoreCount									= 1;
-	presentInfo.pWaitSemaphores										= waitSemaphores;
+	presentInfo.pWaitSemaphores										= signalSemphores;
 
 	VkSwapchainKHR swapChains[] 									= { SwapChain };
 	presentInfo.swapchainCount										= static_cast<uint32_t>(sizeof(swapChains) / sizeof(VkSwapchainKHR));
