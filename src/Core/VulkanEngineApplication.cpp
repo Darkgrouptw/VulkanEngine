@@ -587,6 +587,7 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	rasterizationInfo.cullMode										= VK_CULL_MODE_BACK_BIT;				// 去除 Back face
 	rasterizationInfo.frontFace										= VK_FRONT_FACE_CLOCKWISE;				// 逆時針的 Vertex，算 Front Face
 	rasterizationInfo.depthBiasEnable								= VK_FALSE;
+	rasterizationInfo.lineWidth										= 1.0;
 	// 當設定為 False，底下設定就不需要設定
 	//rasterizationInfo.depthBiasConstantFactor 						= 0.0f;
 	//rasterizationInfo.depthBiasClamp 								= 0.0f;
