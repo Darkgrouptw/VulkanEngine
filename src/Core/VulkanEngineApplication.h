@@ -85,13 +85,19 @@ private:
 	VkFormat SwapChainImageFormat;
 	VkExtent2D SwapChainExtent;
 
+	// Vulkan Command Buffer
+	// 這裡是卡住上限，避免畫太多資料
+	const int MAX_FRAME_IN_FLIGHTS 									= 2;
+	uint32_t CurrentFrameIndex 										= 0;
+	vector<VkCommandBuffer> CommandBuffers;
+
 	// Vulkan Semaphore & Fence
 	// Semaphore: 主要是用來當作信號使用，等 Work 執行完後會觸發 Semaphore，會指使下一個 Work 繼續執行
 	// Fence: 用來等待 Work 執行話之後，下方的程式碼才會繼續執行
 	// https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Semaphores
-	VkSemaphore ImageAvailbleSemaphore;
-	VkSemaphore RenderFinishedSemaphore;
-	VkFence InFlightFence;
+	vector<VkSemaphore> ImageAvailbleSemaphore;
+	vector<VkSemaphore> RenderFinishedSemaphore;
+	vector<VkFence> InFlightFences;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Init Function

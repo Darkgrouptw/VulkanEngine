@@ -79,15 +79,21 @@ void VulkanEngineApplication::MainLoop()
 	{
 		glfwPollEvents();																					// 抓出 GFLW 的事件 Queue
 		DrawFrame();
+
+		// 切換下一張
+		CurrentFrameIndex = (CurrentFrameIndex + 1) % MAX_FRAME_IN_FLIGHTS;
 	}
 	vkDeviceWaitIdle(Device);
 }
 void VulkanEngineApplication::Destroy()
 {
 	#pragma region SyncObjects
-	vkDestroySemaphore(Device, ImageAvailbleSemaphore, nullptr);
-	vkDestroySemaphore(Device, RenderFinishedSemaphore, nullptr);
-	vkDestroyFence(Device, InFlightFence, nullptr);
+	for (int i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
+	{
+		vkDestroySemaphore(Device, ImageAvailbleSemaphore[i], nullptr);
+		vkDestroySemaphore(Device, RenderFinishedSemaphore[i], nullptr);
+		vkDestroyFence(Device, InFlightFences[i], nullptr);
+	}
 	#pragma endregion
 	#pragma region Command Burffer
 	// 不用 Destroy
@@ -144,12 +150,12 @@ void VulkanEngineApplication::DrawFrame()
 	// 4. Submit Command Buffer
 	// 5. 顯示 Swap Chain Image
 	#pragma region 1.
-	vkWaitForFences(Device, 1, &InFlightFence, VK_TRUE, UINT64_MAX);
-	vkResetFences(Device, 1, &InFlightFence);																// Reset Fences
+	vkWaitForFences(Device, 1, &InFlightFences[CurrentFrameIndex], VK_TRUE, UINT64_MAX);
+	vkResetFences(Device, 1, &InFlightFences[CurrentFrameIndex]);											// Reset Fences
 	#pragma endregion
 	#pragma region 2.
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(Device, SwapChain, UINT64_MAX, ImageAvailbleSemaphore, VK_NULL_HANDLE, &imageIndex);
+	vkAcquireNextImageKHR(Device, SwapChain, UINT64_MAX, ImageAvailbleSemaphore[CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
 	#pragma endregion
 	#pragma region 3.
 	// Reset & Write
@@ -161,7 +167,7 @@ void VulkanEngineApplication::DrawFrame()
 	submitInfo.sType												= VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	
 	// 等待 Semaphore 完成，在做 pass
-	VkSemaphore waitSemaphores[] 									= { ImageAvailbleSemaphore };
+	VkSemaphore waitSemaphores[] 									= { ImageAvailbleSemaphore[CurrentFrameIndex] };
 	VkPipelineStageFlags waitStages[]								= { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount									= static_cast<uint32_t>(sizeof(waitSemaphores) / sizeof(VkSemaphore));
 	submitInfo.pWaitSemaphores										= waitSemaphores;
@@ -171,11 +177,11 @@ void VulkanEngineApplication::DrawFrame()
 	submitInfo.pCommandBuffers										= &CommandBuffer;
 
 	// 完成此 Submit 要觸發 singalSempahore
-	VkSemaphore signalSemphores[]									= { RenderFinishedSemaphore };
+	VkSemaphore signalSemphores[]									= { RenderFinishedSemaphore[CurrentFrameIndex] };
 	submitInfo.signalSemaphoreCount									= static_cast<uint32_t>(sizeof(signalSemphores) / sizeof(VkSemaphore));
 	submitInfo.pSignalSemaphores									= signalSemphores;
 
-	if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, InFlightFence) != VK_SUCCESS)
+	if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, InFlightFences[CurrentFrameIndex]) != VK_SUCCESS)
 		throw runtime_error("Failed to submit draw command buffer");
 	#pragma endregion
 	#pragma region 5.
@@ -713,17 +719,23 @@ void VulkanEngineApplication::__CreateCommandPool()
 }
 void VulkanEngineApplication::__CreateCommandBuffer()
 {
+	CommandBuffers.resize(MAX_FRAME_IN_FLIGHTS);
+	
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocateInfo.commandPool										= CommandPool;
 	allocateInfo.level												= VK_COMMAND_BUFFER_LEVEL_PRIMARY;		// 如果是 Primary，代表直接送 Command Buffer，無法被其他 Command Buffer 讀取
-	allocateInfo.commandBufferCount									= 1;
+	allocateInfo.commandBufferCount									= static_cast<uint32_t>(CommandBuffers.size());
 
-	if (vkAllocateCommandBuffers(Device, &allocateInfo, &CommandBuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(Device, &allocateInfo, CommandBuffers.data()) != VK_SUCCESS)
 		throw runtime_error("Failed to create command buffer");
 }
 void VulkanEngineApplication::__CreateSyncObjects()
 {
+	ImageAvailbleSemaphore.resize(MAX_FRAME_IN_FLIGHTS);
+	RenderFinishedSemaphore.resize(MAX_FRAME_IN_FLIGHTS);
+	InFlightFences.resize(MAX_FRAME_IN_FLIGHTS);
+
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType												= VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -731,10 +743,13 @@ void VulkanEngineApplication::__CreateSyncObjects()
 	fenceInfo.sType													= VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags													= VK_FENCE_CREATE_SIGNALED_BIT;			// Create 完後，在第一次 DrawFrame 的時候就不會卡住
 
-	if (vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &ImageAvailbleSemaphore) 						!= VK_SUCCESS ||
-		vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &RenderFinishedSemaphore) 						!= VK_SUCCESS ||
-		vkCreateFence(Device, &fenceInfo, nullptr, &InFlightFence)											!= VK_SUCCESS)
-		throw runtime_error("Failed to create sync objects");
+	for (int i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
+	{
+		if (vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &ImageAvailbleSemaphore[i]) 					!= VK_SUCCESS ||
+			vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &RenderFinishedSemaphore[i]) 				!= VK_SUCCESS ||
+			vkCreateFence(Device, &fenceInfo, nullptr, &InFlightFences[i])									!= VK_SUCCESS)
+			throw runtime_error("Failed to create sync objects");
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
