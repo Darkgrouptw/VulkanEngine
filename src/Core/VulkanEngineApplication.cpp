@@ -79,14 +79,14 @@ void VulkanEngineApplication::MainLoop()
 	{
 		glfwPollEvents();																					// 抓出 GFLW 的事件 Queue
 		DrawFrame();
-
-		// 切換下一張
-		CurrentFrameIndex = (CurrentFrameIndex + 1) % MAX_FRAME_IN_FLIGHTS;
 	}
 	vkDeviceWaitIdle(Device);
 }
 void VulkanEngineApplication::Destroy()
 {
+	#pragma region SwapChain
+	__CleanupSwapChain();
+	#pragma endregion
 	#pragma region SyncObjects
 	for (int i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
 	{
@@ -101,23 +101,12 @@ void VulkanEngineApplication::Destroy()
 	#pragma region Command Pool
 	vkDestroyCommandPool(Device, CommandPool, nullptr);
 	#pragma endregion
-	#pragma region Frame Buffer
-	for(auto &frameBuffer : SwapChainFrameBuffers)
-		vkDestroyFramebuffer(Device, frameBuffer, nullptr);
-	#pragma endregion
 	#pragma region Graphics Pipeline
 	vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
 	#pragma endregion
 	#pragma region Render Pass
 	vkDestroyRenderPass(Device, RenderPass, nullptr);
-	#pragma endregion
-	#pragma region Image Views
-	for(auto& imageView : SwapChainImageViews)
-		vkDestroyImageView(Device, imageView, nullptr);
-	#pragma endregion
-	#pragma region Swap Cahin
-	vkDestroySwapchainKHR(Device, SwapChain, nullptr);
 	#pragma endregion
 	#pragma region Device
 	vkDestroyDevice(Device, nullptr);
@@ -151,16 +140,28 @@ void VulkanEngineApplication::DrawFrame()
 	// 5. 顯示 Swap Chain Image
 	#pragma region 1.
 	vkWaitForFences(Device, 1, &InFlightFences[CurrentFrameIndex], VK_TRUE, UINT64_MAX);
-	vkResetFences(Device, 1, &InFlightFences[CurrentFrameIndex]);											// Reset Fences
 	#pragma endregion
 	#pragma region 2.
+	// 這裡要判斷是否已經過期
+	// 有兩種狀況
+	// 1. swap chain 的資料過期了 （通常發生在視窗大小改變，要重新建立新的 swap chain） 
+	// 2. 可以繼續表現到 surface 上
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(Device, SwapChain, UINT64_MAX, ImageAvailbleSemaphore[CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(Device, SwapChain, UINT64_MAX, ImageAvailbleSemaphore[CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		ReCreateSwapChain();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) // VK_SUBOPTIMAL_KHR 代表，雖然可以正常顯示到 surface 上，但是 surface 其實不需要了
+		throw runtime_error("Failed to acquire swap chain image");
+
+	vkResetFences(Device, 1, &InFlightFences[CurrentFrameIndex]);											// Reset Fences
 	#pragma endregion
 	#pragma region 3.
 	// Reset & Write
-	vkResetCommandBuffer(CommandBuffer, 0);																	// 後面的參數 Flag，目前還不用，暫時先留 0
-	__SetupCommandBuffer(CommandBuffer, imageIndex);
+	vkResetCommandBuffer(CommandBuffers[CurrentFrameIndex], 0);												// 後面的參數 Flag，目前還不用，暫時先留 0
+	__SetupCommandBuffer(CommandBuffers[CurrentFrameIndex], imageIndex);
 	#pragma endregion
 	#pragma region 4.
 	VkSubmitInfo submitInfo{};
@@ -174,7 +175,7 @@ void VulkanEngineApplication::DrawFrame()
 	submitInfo.pWaitDstStageMask									= waitStages;
 
 	submitInfo.commandBufferCount									= 1;
-	submitInfo.pCommandBuffers										= &CommandBuffer;
+	submitInfo.pCommandBuffers										= &CommandBuffers[CurrentFrameIndex];
 
 	// 完成此 Submit 要觸發 singalSempahore
 	VkSemaphore signalSemphores[]									= { RenderFinishedSemaphore[CurrentFrameIndex] };
@@ -195,9 +196,22 @@ void VulkanEngineApplication::DrawFrame()
 	presentInfo.swapchainCount										= static_cast<uint32_t>(sizeof(swapChains) / sizeof(VkSwapchainKHR));
 	presentInfo.pSwapchains											= swapChains;
 	presentInfo.pImageIndices										= &imageIndex;
-
+	
 	vkQueuePresentKHR(GraphicsQueue, &presentInfo);
+
+	// 切換下一張
+	CurrentFrameIndex = (CurrentFrameIndex + 1) % MAX_FRAME_IN_FLIGHTS;
 	#pragma endregion
+}
+void VulkanEngineApplication::ReCreateSwapChain()
+{
+	// 等待動作都 Idle 完之後，再繼續做清除的動作
+	vkDeviceWaitIdle(Device);
+
+	__CleanupSwapChain();
+	__CreateSwapChain();
+	__CreateImageViews();
+	__CreateFrameBuffer();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -521,7 +535,7 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 {
 	// 讀取檔案並建立 Shader Module
 	#pragma region VkShaderModule
-#if !defined(__APPLE__)
+#if defined(__APPLE__)
 	auto vertexShader 												= __ReadShaderFile("Shaders/Test.vert.spv");
 	auto fragmentShader												= __ReadShaderFile("Shaders/Test.frag.spv");
 #else
@@ -983,7 +997,20 @@ VkExtent2D VulkanEngineApplication::__ChooseSwapExtent(const VkSurfaceCapabiliti
 	actualExtent.height = clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 	return actualExtent;
 }
-
+void VulkanEngineApplication::__CleanupSwapChain()
+{
+	#pragma region Frame Buffer
+	for(auto &frameBuffer : SwapChainFrameBuffers)
+		vkDestroyFramebuffer(Device, frameBuffer, nullptr);
+	#pragma endregion
+	#pragma region Image Views
+	for(auto& imageView : SwapChainImageViews)
+		vkDestroyImageView(Device, imageView, nullptr);
+	#pragma endregion
+	#pragma region Swap Cahin
+	vkDestroySwapchainKHR(Device, SwapChain, nullptr);
+	#pragma endregion
+}
 
 #if defined(VKENGINE_DEBUG_DETAILS)
 bool VulkanEngineApplication::__CheckValidationLayerSupport()

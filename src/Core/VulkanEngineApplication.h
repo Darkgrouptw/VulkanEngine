@@ -53,6 +53,7 @@ private:
 	void Destroy();																							// 清空其他的資料
 	
 	void DrawFrame();																						// 繪製畫面
+	void ReCreateSwapChain();																				// 重新建立 SwapChain
 
 	// 視窗設定
 	GLFWwindow* Window												= NULL;									// GLFW Window
@@ -71,7 +72,6 @@ private:
 	VkRenderPass RenderPass;
 	VkPipeline GraphicsPipeline;
 	VkCommandPool CommandPool;
-	VkCommandBuffer CommandBuffer;
 
 	// Vulkan Queue
 	VkQueue GraphicsQueue;
@@ -139,6 +139,7 @@ private:
 	VkSurfaceFormatKHR __ChooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>&);						// 選擇裝置的 SurfaceFormat
 	VkPresentModeKHR __ChooseSwapPresentMode(const vector<VkPresentModeKHR>&);								// 選擇裝置的 PresentMode
 	VkExtent2D __ChooseSwapExtent(const VkSurfaceCapabilitiesKHR&);											// 根據裝置的 Capabillities 選擇 Extent
+	void __CleanupSwapChain();																				// 清空 SwapChain
 
 	// 檢查項目
 	vector<const char*> deviceExtensionNames						= 
