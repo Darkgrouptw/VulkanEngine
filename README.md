@@ -1,4 +1,9 @@
 # Vulkan Engine
+It's a side project that practices to use Vulkan to do the render stuff.
+## Outline
+* [Precondition](#Precondition)
+* [Build](#Build)
+* [Practice](#Practice)
 ## Precondition
 * CMake
 * Vulkan
@@ -24,3 +29,9 @@ make clean
 make
 make Shaders
 ```
+
+## Practice
+No | Practice Content | Link | Picture
+---|---|---|---
+01 | Triangle | [Link](https://github.com/Darkgrouptw/VulkanEngine/tree/Practice-01) | ![Practice-01](Images/Practice-01.png)
+00 | Open GLFW window that use Vulkan | [Link](#https://github.com/Darkgrouptw/VulkanEngine/tree/Practice-00) | ![Practice-00](Images/Practice-00.png)
