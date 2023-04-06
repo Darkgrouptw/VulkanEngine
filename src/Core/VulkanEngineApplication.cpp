@@ -585,12 +585,15 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	// 6. Color Blending
 	// 7. FrameBuffer
 	#pragma region 1. Vertex Input
+	auto attribeDesc												= VertexBuffer::GetAttributeDescription();
+	auto bindingDesc												= VertexBuffer::GetBindingDescription();
+
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType											= VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexAttributeDescriptionCount					= 0;
-	vertexInputInfo.pVertexAttributeDescriptions					= nullptr;
-	vertexInputInfo.vertexBindingDescriptionCount					= 0;
-	vertexInputInfo.pVertexBindingDescriptions						= nullptr;
+	vertexInputInfo.vertexAttributeDescriptionCount					= static_cast<uint32_t>(attribeDesc.size());
+	vertexInputInfo.pVertexAttributeDescriptions					= attribeDesc.data();
+	vertexInputInfo.vertexBindingDescriptionCount					= 1;
+	vertexInputInfo.pVertexBindingDescriptions						= &bindingDesc;
 	#pragma endregion
 	#pragma region 2. Input Assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
