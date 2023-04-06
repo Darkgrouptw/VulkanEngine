@@ -2,10 +2,8 @@
 /*
 * Vulkan 系統的 Application
 */
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#include <glm/glm.hpp>
+#include "Common/Common.h"
+#include "Components/VertexBuffer.h"
 
 #include <iostream>
 #include <vector>
@@ -21,12 +19,6 @@ using namespace std;
 
 // 測試 Vulkan 的一些細節使用
 #define VKENGINE_DEBUG_DETAILS
-
-struct Vertex
-{
-	glm::vec3 Pos;
-	glm::vec2 Color;
-};
 
 // 在 Vulkan 中，有很多不同的 Queue，分別各次處理不同的 operation
 struct QueueFamilyIndices
@@ -53,7 +45,6 @@ class VulkanEngineApplication
 {
 public:
 	void Run();
-
 
 private:
 	void InitWindow();																						// 初始化視窗
