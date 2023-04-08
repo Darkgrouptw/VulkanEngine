@@ -51,8 +51,6 @@ endif()
 # 3c. GLM
 if (NOT DEFINED GLM_PATH)
     message(FATAL ERROR "Not Found GLM PATH")
-else()
-    set(GLM_INCLUDE_DIRS "${GLM_PATH}/include")
 endif()
 
 # 3d. Final
@@ -67,7 +65,7 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${Vulkan_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS}
-    ${GLM_INCLUDE_DIRS}
+    ${GLM_PATH}
     "./src"
 )
 
