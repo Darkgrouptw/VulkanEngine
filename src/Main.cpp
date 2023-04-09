@@ -6,7 +6,7 @@ using namespace std;
 
 int main() 
 {
-    VulkanEngine::VulkanEngineApplication application;
+    VulkanEngine::Application application;
     try
     {
         application.Run();

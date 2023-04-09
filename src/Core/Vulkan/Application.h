@@ -37,7 +37,7 @@ namespace VulkanEngine
 		vector<VkPresentModeKHR> PresentModes;																	// 可以顯示的 Mode Ex: VK_PRESENT_MODE_FIFO_KHR
 	};
 
-	class VulkanEngineApplication
+	class Application
 	{
 	public:
 		void Run();

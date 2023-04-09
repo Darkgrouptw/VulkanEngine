@@ -38,7 +38,7 @@ namespace VulkanEngine
 	}
 #pragma endregion
 #pragma region Public
-	void VulkanEngineApplication::Run()
+	void Application::Run()
 	{
 		InitWindow();
 		InitVulkan();
@@ -47,7 +47,7 @@ namespace VulkanEngine
 	}
 #pragma endregion
 #pragma region Private
-	void VulkanEngineApplication::InitWindow()
+	void Application::InitWindow()
 	{
 		// 初始化
 		glfwInit();
@@ -60,7 +60,7 @@ namespace VulkanEngine
 		cout << "glfwVulkanSupported: " << (glfwVulkanSupported() ? "True" : "False") << endl;
 #endif
 	}
-	void VulkanEngineApplication::InitVulkan()
+	void Application::InitVulkan()
 	{
 		__CreateVKInstance();
 		__SetupDebugMessenger();
@@ -76,7 +76,7 @@ namespace VulkanEngine
 		__CreateCommandBuffer();
 		__CreateSyncObjects();
 	}
-	void VulkanEngineApplication::MainLoop()
+	void Application::MainLoop()
 	{
 		while (!glfwWindowShouldClose(Window))																	// 接到是否關閉此視窗的 Flag
 		{
@@ -85,7 +85,7 @@ namespace VulkanEngine
 		}
 		vkDeviceWaitIdle(Device);
 	}
-	void VulkanEngineApplication::Destroy()
+	void Application::Destroy()
 	{
 #pragma region SwapChain
 		__CleanupSwapChain();
@@ -133,7 +133,7 @@ namespace VulkanEngine
 		glfwTerminate();
 	}
 
-	void VulkanEngineApplication::DrawFrame()
+	void Application::DrawFrame()
 	{
 		// 這你需要等待幾個步驟
 		// 1. 等待前一幀的資料繪製完成
@@ -206,7 +206,7 @@ namespace VulkanEngine
 		CurrentFrameIndex = (CurrentFrameIndex + 1) % MAX_FRAME_IN_FLIGHTS;
 #pragma endregion
 	}
-	void VulkanEngineApplication::ReCreateSwapChain()
+	void Application::ReCreateSwapChain()
 	{
 		// 等待動作都 Idle 完之後，再繼續做清除的動作
 		vkDeviceWaitIdle(Device);
@@ -220,7 +220,7 @@ namespace VulkanEngine
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Init Function
 	//////////////////////////////////////////////////////////////////////////
-	void VulkanEngineApplication::__CreateVKInstance()
+	void Application::__CreateVKInstance()
 	{
 #if defined(VKENGINE_DEBUG_DETAILS)
 		EnabledValidationLayer = __CheckValidationLayerSupport();
@@ -300,7 +300,7 @@ namespace VulkanEngine
 		if (result != VK_SUCCESS)
 			throw runtime_error("Failed to create Vulkan Instance");
 	}
-	void VulkanEngineApplication::__SetupDebugMessenger()
+	void Application::__SetupDebugMessenger()
 	{
 #if !defined(VKENGINE_DEBUG_DETAILS)
 		return;
@@ -314,13 +314,13 @@ namespace VulkanEngine
 		}
 #endif
 	}
-	void VulkanEngineApplication::__CreateSurface()
+	void Application::__CreateSurface()
 	{
 		VkResult result = glfwCreateWindowSurface(Instance, Window, nullptr, &Surface);
 		if (result != VK_SUCCESS)
 			throw runtime_error("Failed to create window surface");
 	}
-	void VulkanEngineApplication::__PickPhysicalDevice()
+	void Application::__PickPhysicalDevice()
 	{
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(Instance, &deviceCount, nullptr);											// 抓出所有支援的 Device
@@ -341,7 +341,7 @@ namespace VulkanEngine
 		if (PhysiclaDevice == VK_NULL_HANDLE)
 			throw runtime_error("No Suitable GPUs");
 	}
-	void VulkanEngineApplication::__CreateLogicalDevice()
+	void Application::__CreateLogicalDevice()
 	{
 		QueueFamilyIndices indices = __FindQueueFamilies(PhysiclaDevice);
 
@@ -390,7 +390,7 @@ namespace VulkanEngine
 		vkGetDeviceQueue(Device, indices.GraphicsFamily.value(), 0, &GraphicsQueue);
 		vkGetDeviceQueue(Device, indices.PresentFamily.value(), 0, &PresentQueue);
 	}
-	void VulkanEngineApplication::__CreateSwapChain()
+	void Application::__CreateSwapChain()
 	{
 		SwapChainSupportDetails details = __QuerySwapChainSupport(PhysiclaDevice);
 		VkSurfaceFormatKHR surfaceFormat = __ChooseSwapSurfaceFormat(details.Formats);
@@ -455,7 +455,7 @@ namespace VulkanEngine
 		SwapChainImageFormat = surfaceFormat.format;
 		SwapChainExtent = extent;
 	}
-	void VulkanEngineApplication::__CreateImageViews()
+	void Application::__CreateImageViews()
 	{
 		SwapChainImageViews.resize(SwapChainImages.size());
 		for (size_t i = 0; i < SwapChainImages.size(); i++)
@@ -484,7 +484,7 @@ namespace VulkanEngine
 				throw runtime_error("Failed to create ImageView");
 		}
 	}
-	void VulkanEngineApplication::__CreateRenderPass()
+	void Application::__CreateRenderPass()
 	{
 		// 設定 Color Buffer
 		VkAttachmentDescription colorBufferAttachment{};
@@ -534,7 +534,7 @@ namespace VulkanEngine
 		if (vkCreateRenderPass(Device, &renderPassInfo, nullptr, &RenderPass) != VK_SUCCESS)
 			throw runtime_error("Failed to create render pass");
 	}
-	void VulkanEngineApplication::__CreateGraphicsPipeline()
+	void Application::__CreateGraphicsPipeline()
 	{
 		// 讀取檔案並建立 Shader Module
 #pragma region VkShaderModule
@@ -717,7 +717,7 @@ namespace VulkanEngine
 		vkDestroyShaderModule(Device, fragmentModule, nullptr);
 #pragma endregion
 	}
-	void VulkanEngineApplication::__CreateFrameBuffer()
+	void Application::__CreateFrameBuffer()
 	{
 		SwapChainFrameBuffers.resize(SwapChainImageViews.size());
 		for (size_t i = 0; i < SwapChainImageViews.size(); i++)
@@ -736,7 +736,7 @@ namespace VulkanEngine
 				throw runtime_error("Failed to create framebuffer");
 		}
 	}
-	void VulkanEngineApplication::__CreateCommandPool()
+	void Application::__CreateCommandPool()
 	{
 		QueueFamilyIndices indices = __FindQueueFamilies(PhysiclaDevice);
 		VkCommandPoolCreateInfo poolInfo{};
@@ -747,7 +747,7 @@ namespace VulkanEngine
 		if (vkCreateCommandPool(Device, &poolInfo, nullptr, &CommandPool) != VK_SUCCESS)
 			throw runtime_error("Failed to create command pool");
 	}
-	void VulkanEngineApplication::__CreateCommandBuffer()
+	void Application::__CreateCommandBuffer()
 	{
 		CommandBuffers.resize(MAX_FRAME_IN_FLIGHTS);
 
@@ -760,7 +760,7 @@ namespace VulkanEngine
 		if (vkAllocateCommandBuffers(Device, &allocateInfo, CommandBuffers.data()) != VK_SUCCESS)
 			throw runtime_error("Failed to create command buffer");
 	}
-	void VulkanEngineApplication::__CreateSyncObjects()
+	void Application::__CreateSyncObjects()
 	{
 		ImageAvailbleSemaphore.resize(MAX_FRAME_IN_FLIGHTS);
 		RenderFinishedSemaphore.resize(MAX_FRAME_IN_FLIGHTS);
@@ -785,7 +785,7 @@ namespace VulkanEngine
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Render Function
 	//////////////////////////////////////////////////////////////////////////
-	void VulkanEngineApplication::__GenerateInitViewportAndScissor(VkViewport& viewport, VkRect2D& scissor)
+	void Application::__GenerateInitViewportAndScissor(VkViewport& viewport, VkRect2D& scissor)
 	{
 		// Viewport
 		viewport.x = 0;
@@ -800,7 +800,7 @@ namespace VulkanEngine
 		scissor.offset = { 0, 0 };
 		scissor.extent = SwapChainExtent;
 	}
-	void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+	void Application::__SetupCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 	{
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -849,7 +849,7 @@ namespace VulkanEngine
 	//////////////////////////////////////////////////////////////////////////
 	// 比較 Minor 的 Helper Function
 	//////////////////////////////////////////////////////////////////////////
-	void VulkanEngineApplication::__PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& debugCreateInfo)
+	void Application::__PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& debugCreateInfo)
 	{
 		debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 		debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -857,7 +857,7 @@ namespace VulkanEngine
 		debugCreateInfo.pfnUserCallback = debugCallback;
 		debugCreateInfo.pUserData = nullptr;
 	}
-	bool VulkanEngineApplication::__CheckDeviceExtensionSupport(VkPhysicalDevice device)
+	bool Application::__CheckDeviceExtensionSupport(VkPhysicalDevice device)
 	{
 		uint32_t extensionCount = 0;
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -870,7 +870,7 @@ namespace VulkanEngine
 				return false;
 		return true;
 	}
-	bool VulkanEngineApplication::__IsDeviceSuitable(VkPhysicalDevice device)
+	bool Application::__IsDeviceSuitable(VkPhysicalDevice device)
 	{
 		// 先檢查 Device Extension 是否都支援
 		if (!__CheckDeviceExtensionSupport(device))
@@ -899,7 +899,7 @@ namespace VulkanEngine
 #endif
 		return true;
 	}
-	QueueFamilyIndices VulkanEngineApplication::__FindQueueFamilies(VkPhysicalDevice device)
+	QueueFamilyIndices Application::__FindQueueFamilies(VkPhysicalDevice device)
 	{
 		QueueFamilyIndices indices;
 
@@ -927,7 +927,7 @@ namespace VulkanEngine
 		}
 		return indices;																								// 無正常的可以處理 Graphics 的 Queue */
 	}
-	vector<char> VulkanEngineApplication::__ReadShaderFile(const string& path)
+	vector<char> Application::__ReadShaderFile(const string& path)
 	{
 		// 讀取檔案
 		// ate: 從檔案的結果開始讀（主要是判斷檔案的大小，之後還可以移動此指標到想要的位置）
@@ -943,7 +943,7 @@ namespace VulkanEngine
 		file.close();
 		return buffer;
 	}
-	VkShaderModule VulkanEngineApplication::__CreateShaderModule(const vector<char>& code)
+	VkShaderModule Application::__CreateShaderModule(const vector<char>& code)
 	{
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -959,7 +959,7 @@ namespace VulkanEngine
 	//////////////////////////////////////////////////////////////////////////
 	// 比較 Swap Chain 的 Function
 	//////////////////////////////////////////////////////////////////////////
-	SwapChainSupportDetails VulkanEngineApplication::__QuerySwapChainSupport(VkPhysicalDevice device)
+	SwapChainSupportDetails Application::__QuerySwapChainSupport(VkPhysicalDevice device)
 	{
 		SwapChainSupportDetails details;
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, Surface, &details.Capbilities);
@@ -982,21 +982,21 @@ namespace VulkanEngine
 		}
 		return details;
 	}
-	VkSurfaceFormatKHR VulkanEngineApplication::__ChooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& availableFormats)
+	VkSurfaceFormatKHR Application::__ChooseSwapSurfaceFormat(const vector<VkSurfaceFormatKHR>& availableFormats)
 	{
 		for (const auto& format : availableFormats)
 			if (format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR && format.format == VK_FORMAT_R8G8B8A8_SRGB)
 				return format;
 		return availableFormats[0];
 	}
-	VkPresentModeKHR VulkanEngineApplication::__ChooseSwapPresentMode(const vector<VkPresentModeKHR>& availablePresentModes)
+	VkPresentModeKHR Application::__ChooseSwapPresentMode(const vector<VkPresentModeKHR>& availablePresentModes)
 	{
 		for (const auto& mode : availablePresentModes)
 			if (mode == VK_PRESENT_MODE_MAILBOX_KHR)					// 這個模式最比 FIFO 還省電，且不會造成 Tearing
 				return mode;
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
-	VkExtent2D VulkanEngineApplication::__ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+	VkExtent2D Application::__ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	{
 		// 如果內部值是正常的
 		if (capabilities.currentExtent.width != numeric_limits<uint32_t>::max())
@@ -1013,7 +1013,7 @@ namespace VulkanEngine
 		actualExtent.height = clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 		return actualExtent;
 	}
-	void VulkanEngineApplication::__CleanupSwapChain()
+	void Application::__CleanupSwapChain()
 	{
 #pragma region Frame Buffer
 		for (auto& frameBuffer : SwapChainFrameBuffers)
@@ -1029,7 +1029,7 @@ namespace VulkanEngine
 	}
 
 #if defined(VKENGINE_DEBUG_DETAILS)
-	bool VulkanEngineApplication::__CheckValidationLayerSupport()
+	bool Application::__CheckValidationLayerSupport()
 	{
 		uint32_t layerCount = 0;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
