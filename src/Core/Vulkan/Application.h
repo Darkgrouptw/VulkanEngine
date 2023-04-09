@@ -4,6 +4,8 @@
 */
 #include "Common/Common.h"
 
+#include "Components/WindowManager.h"
+
 #include <set>
 #include <cstdint>
 #include <limits>
@@ -44,18 +46,17 @@ namespace VulkanEngine
 
 
 	private:
-		void InitWindow();																						// 初始化視窗
+		void InitAllComponents();																				// 初始化所有的元件
+
+		WindowManager* Window;
+
+
 		void InitVulkan();																						// 初始化 Vulkan
 		void MainLoop();																						// Main
 		void Destroy();																							// 清空其他的資料
 
 		void DrawFrame();																						// 繪製畫面
 		void ReCreateSwapChain();																				// 重新建立 SwapChain
-
-		// 視窗設定
-		GLFWwindow* Window = NULL;									// GLFW Window
-		const int WIDTH = 1600;									// 長
-		const int HEIGHT = 900;									// 寬
 
 		// Vulkan
 		VkInstance Instance;
@@ -101,7 +102,6 @@ namespace VulkanEngine
 		//////////////////////////////////////////////////////////////////////////
 		void __CreateVKInstance();																				// Vulkan Instance
 		void __SetupDebugMessenger();																			// 設定 Vulkan 的 Debug 工具
-		void __CreateSurface();																					// 建立和視窗溝通的 Surface (GLFW & Vulkan)
 		void __PickPhysicalDevice();																			// 選擇顯卡
 		void __CreateLogicalDevice();																			// 根據對應的顯卡，去建立 Logical Device Interface
 		void __CreateSwapChain();																				// 建立 Swap Chain

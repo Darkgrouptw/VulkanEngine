@@ -40,31 +40,25 @@ namespace VulkanEngine
 #pragma region Public
 	void Application::Run()
 	{
-		InitWindow();
+		InitAllComponents();
 		InitVulkan();
 		MainLoop();
 		Destroy();
 	}
 #pragma endregion
-#pragma region Private
-	void Application::InitWindow()
+#pragma region PrivateV2
+	void Application::InitAllComponents()
 	{
-		// 初始化
-		glfwInit();
-
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);															// 預設初始化設定預設是 OpenGL，所以只用 NO_API
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);																// 設定不做 Resize
-
-		Window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-#if defined(VKENGINE_DEBUG_DETAILS)
-		cout << "glfwVulkanSupported: " << (glfwVulkanSupported() ? "True" : "False") << endl;
-#endif
+		Window = new WindowManager();
 	}
+#pragma endregion
+#pragma region Private
+
 	void Application::InitVulkan()
 	{
 		__CreateVKInstance();
 		__SetupDebugMessenger();
-		__CreateSurface();
+		Window->CreateWindowSurface(Instance, &Surface);
 		__PickPhysicalDevice();
 		__CreateLogicalDevice();
 		__CreateSwapChain();
@@ -78,7 +72,7 @@ namespace VulkanEngine
 	}
 	void Application::MainLoop()
 	{
-		while (!glfwWindowShouldClose(Window))																	// 接到是否關閉此視窗的 Flag
+		while (!Window->ShouldClose())																	
 		{
 			glfwPollEvents();																					// 抓出 GFLW 的事件 Queue
 			DrawFrame();
@@ -127,10 +121,7 @@ namespace VulkanEngine
 #pragma region Instance
 		vkDestroyInstance(Instance, nullptr);
 #pragma endregion
-
-		// 關閉 GLFW
-		glfwDestroyWindow(Window);
-		glfwTerminate();
+		delete Window;
 	}
 
 	void Application::DrawFrame()
@@ -313,12 +304,6 @@ namespace VulkanEngine
 				throw std::runtime_error("Failed to set up debug messenger");
 		}
 #endif
-	}
-	void Application::__CreateSurface()
-	{
-		VkResult result = glfwCreateWindowSurface(Instance, Window, nullptr, &Surface);
-		if (result != VK_SUCCESS)
-			throw runtime_error("Failed to create window surface");
 	}
 	void Application::__PickPhysicalDevice()
 	{
@@ -1002,15 +987,9 @@ namespace VulkanEngine
 		if (capabilities.currentExtent.width != numeric_limits<uint32_t>::max())
 			return capabilities.currentExtent;
 
-		int width, height;
-		glfwGetFramebufferSize(Window, &width, &height);
-		VkExtent2D actualExtent =
-		{
-			static_cast<uint32_t>(width),
-			static_cast<uint32_t>(height)
-		};
-		actualExtent.width = clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-		actualExtent.height = clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+		auto actualExtent = Window->GetExtentSize();
+		actualExtent.width = clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+		actualExtent.height = clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 		return actualExtent;
 	}
 	void Application::__CleanupSwapChain()
