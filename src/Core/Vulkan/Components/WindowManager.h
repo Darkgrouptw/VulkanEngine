@@ -2,6 +2,9 @@
 
 namespace VulkanEngine
 {
+	/// <summary>
+	/// 管理 GLFW 的 Window
+	/// </summary>
 	class WindowManager
 	{
 	public:

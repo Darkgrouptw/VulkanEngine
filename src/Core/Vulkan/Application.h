@@ -1,7 +1,4 @@
 #pragma once
-/*
-* Vulkan 系統的 Application
-*/
 #include "Common/Common.h"
 
 #include "Components/WindowManager.h"
@@ -39,6 +36,9 @@ namespace VulkanEngine
 		vector<VkPresentModeKHR> PresentModes;																	// 可以顯示的 Mode Ex: VK_PRESENT_MODE_FIFO_KHR
 	};
 
+	/// <summary>
+	/// Vulkan 系統的 Application
+	/// </summary>
 	class Application
 	{
 	public:
