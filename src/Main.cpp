@@ -1,12 +1,12 @@
 #include <iostream>
 
-#include "Core/VulkanEngineApplication.h"
+#include "Core/Vulkan/Application.h"
 
 using namespace std;
 
 int main() 
 {
-    VulkanEngineApplication application;
+    VulkanEngine::VulkanEngineApplication application;
     try
     {
         application.Run();
