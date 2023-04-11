@@ -85,6 +85,9 @@ private:
 	VkFormat SwapChainImageFormat;
 	VkExtent2D SwapChainExtent;
 
+	// Vulkan Buffer
+	VkBuffer VertexBuffer;
+
 	// Vulkan Command Buffer
 	// 這裡是卡住上限，避免畫太多資料
 	const int MAX_FRAME_IN_FLIGHTS 									= 2;
@@ -113,6 +116,7 @@ private:
 	void __CreateGraphicsPipeline();																		// 建立 Graphics Pipeline
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateCommandPool();																				// 建立 Command Pool
+	void __CreateVertexBuffer();																			// 建立 Vertex Buffer
 	void __CreateCommandBuffer();																			// 建立 Command Buffer
 	void __CreateSyncObjects();
 

@@ -70,6 +70,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateGraphicsPipeline();
 	__CreateFrameBuffer();
 	__CreateCommandPool();
+	__CreateVertexBuffer();
 	__CreateCommandBuffer();
 	__CreateSyncObjects();
 }
@@ -94,6 +95,9 @@ void VulkanEngineApplication::Destroy()
 		vkDestroySemaphore(Device, RenderFinishedSemaphore[i], nullptr);
 		vkDestroyFence(Device, InFlightFences[i], nullptr);
 	}
+	#pragma endregion
+	#pragma region VertexBuffer
+	vkDestroyBuffer(Device, VertexBuffer, nullptr);
 	#pragma endregion
 	#pragma region Command Burffer
 	// 不用 Destroy
@@ -747,6 +751,22 @@ void VulkanEngineApplication::__CreateCommandPool()
 	if (vkCreateCommandPool(Device, &poolInfo, nullptr, &CommandPool) != VK_SUCCESS)
 		throw runtime_error("Failed to create command pool");
 }
+void VulkanEngineApplication::__CreateVertexBuffer()
+{
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType												= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size													= sizeof(VertexBuffer) * vertices.size();
+	bufferInfo.usage												= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.sharingMode											= VK_SHARING_MODE_EXCLUSIVE;			// 只有在 Graphics Queue 會用到，暫時先給 Exclusive
+
+	if (vkCreateBuffer(Device, &bufferInfo, nullptr, &VertexBuffer) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create vertex buffer");
+
+	// 設定 Buffer 內的大小
+	VkMemoryRequirements memRequirements{};
+	vkGetBufferMemoryRequirements(Device, VertexBuffer, &memRequirements);
+	//VkMemoryAllocateInfo
+}
 void VulkanEngineApplication::__CreateCommandBuffer()
 {
 	CommandBuffers.resize(MAX_FRAME_IN_FLIGHTS);
@@ -1040,7 +1060,7 @@ bool VulkanEngineApplication::__CheckValidationLayerSupport()
 	for (const char* layerName : ValidationLayersNames)
 	{
 		bool IsLayerFound = false;
-		for(const auto currentProperties : layerProperties)
+		for(const auto& currentProperties : layerProperties)
 			if (strcmp(layerName, currentProperties.layerName) == 0)
 			{
 				IsLayerFound = true;
