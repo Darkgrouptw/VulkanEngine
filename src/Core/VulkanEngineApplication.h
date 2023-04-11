@@ -126,7 +126,6 @@ private:
 	//////////////////////////////////////////////////////////////////////////
 	void __GenerateInitViewportAndScissor(VkViewport&, VkRect2D&);											// 產生初始的 Viewport & Scissor
 	void __SetupCommandBuffer(VkCommandBuffer, uint32_t);													// 將要執行的 Command 寫入 Command Buffer
-	uint32_t __FindMemoryType(uint32_t, VkMemoryPropertyFlags);												// 找到合適的 Memory Type
 
 	//////////////////////////////////////////////////////////////////////////
 	// 比較 Minor 的 Helper Function
@@ -137,6 +136,8 @@ private:
 	QueueFamilyIndices __FindQueueFamilies(VkPhysicalDevice);												// 找顯卡中 對應 Queue 的 Indices
 	vector<char> __ReadShaderFile(const string&);															// 讀取 ShaderFile
 	VkShaderModule __CreateShaderModule(const vector<char>&);												// 產生 Shader Module
+	uint32_t __FindMemoryType(uint32_t, VkMemoryPropertyFlags);												// 找到合適的 Memory Type
+	void __CreateBuffer(VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags, VkBuffer&, VkDeviceMemory &); // Create Buffer
 	
 	//////////////////////////////////////////////////////////////////////////
 	// Swap Chain 的 Helper Function
