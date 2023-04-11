@@ -3,7 +3,7 @@
 * Vulkan 系統的 Application
 */
 #include "Common/Common.h"
-#include "Components/VertexBuffer.h"
+#include "Components/VertexBufferInfo.h"
 
 #include <iostream>
 #include <vector>
@@ -87,6 +87,7 @@ private:
 
 	// Vulkan Buffer
 	VkBuffer VertexBuffer;
+	VkDeviceMemory VertexBufferMemory;
 
 	// Vulkan Command Buffer
 	// 這裡是卡住上限，避免畫太多資料

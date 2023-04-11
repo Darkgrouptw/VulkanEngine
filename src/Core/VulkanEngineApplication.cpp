@@ -98,6 +98,7 @@ void VulkanEngineApplication::Destroy()
 	#pragma endregion
 	#pragma region VertexBuffer
 	vkDestroyBuffer(Device, VertexBuffer, nullptr);
+	vkFreeMemory(Device, VertexBufferMemory, nullptr);
 	#pragma endregion
 	#pragma region Command Burffer
 	// 不用 Destroy
@@ -587,8 +588,8 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	// 6. Color Blending
 	// 7. FrameBuffer
 	#pragma region 1. Vertex Input
-	auto attribeDesc												= VertexBuffer::GetAttributeDescription();
-	auto bindingDesc												= VertexBuffer::GetBindingDescription();
+	auto attribeDesc												= VertexBufferInfo::GetAttributeDescription();
+	auto bindingDesc												= VertexBufferInfo::GetBindingDescription();
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType											= VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -753,7 +754,7 @@ void VulkanEngineApplication::__CreateVertexBuffer()
 {
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType												= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size													= sizeof(VertexBuffer) * vertices.size();
+	bufferInfo.size													= sizeof(VertexBufferInfo) * vertices.size();
 	bufferInfo.usage												= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 	bufferInfo.sharingMode											= VK_SHARING_MODE_EXCLUSIVE;			// 只有在 Graphics Queue 會用到，暫時先給 Exclusive
 
@@ -767,7 +768,16 @@ void VulkanEngineApplication::__CreateVertexBuffer()
 	VkMemoryAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocateInfo.allocationSize										= memRequirements.size;
-	allocateInfo.memoryTypeIndex									= __FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	allocateInfo.memoryTypeIndex									= __FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);	// 需要開啟這兩個 tag 才可以從 CPU 送上資料到 GPU
+	if (vkAllocateMemory(Device, &allocateInfo, nullptr, &VertexBufferMemory) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create vertex buffer memory");
+
+	vkBindBufferMemory(Device, VertexBuffer, VertexBufferMemory, 0);
+
+	void* data;
+	vkMapMemory(Device, VertexBufferMemory, 0, bufferInfo.size, 0, &data);
+	memcpy(data, vertices.data(), bufferInfo.size);
+	vkUnmapMemory(Device, VertexBufferMemory);
 }
 void VulkanEngineApplication::__CreateCommandBuffer()
 {
@@ -858,8 +868,11 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		// 畫三角形 
-		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+		// 送 Buffer 上去 
+		VkBuffer buffers[]											= { VertexBuffer };
+		VkDeviceSize offsets[]										= { 0 };
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+		vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
 	}
 	vkCmdEndRenderPass(commandBuffer);
@@ -876,7 +889,7 @@ uint32_t VulkanEngineApplication::__FindMemoryType(uint32_t typeFiler, VkMemoryP
 	cout << "Memory Type Count: " << memProperties.memoryTypeCount << endl;
 #endif
 	for(uint32_t i = 0 ; i < memProperties.memoryTypeCount; i++)
-		if (typeFiler & (1 << i))
+		if (typeFiler & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 			return i;
 	throw runtime_error("Failed to find suitable memory type");
 }
