@@ -2,6 +2,7 @@
 #include "Common/Common.h"
 
 #include "Components/WindowManager.h"
+#include "Components/VulkanManager.h"
 
 #include <set>
 #include <cstdint>
@@ -48,7 +49,8 @@ namespace VulkanEngine
 	private:
 		void InitAllComponents();																				// 初始化所有的元件
 
-		WindowManager* Window;
+		WindowManager* WindowM;
+		VulkanManager* VulkanM;
 
 
 		void InitVulkan();																						// 初始化 Vulkan
@@ -59,8 +61,6 @@ namespace VulkanEngine
 		void ReCreateSwapChain();																				// 重新建立 SwapChain
 
 		// Vulkan
-		VkInstance Instance;
-		VkDebugUtilsMessengerEXT DebugMessenger;
 		VkSurfaceKHR Surface;
 		VkPhysicalDevice PhysiclaDevice = VK_NULL_HANDLE;
 		VkDevice Device;
@@ -100,8 +100,6 @@ namespace VulkanEngine
 		//////////////////////////////////////////////////////////////////////////
 		// Helper Init Function
 		//////////////////////////////////////////////////////////////////////////
-		void __CreateVKInstance();																				// Vulkan Instance
-		void __SetupDebugMessenger();																			// 設定 Vulkan 的 Debug 工具
 		void __PickPhysicalDevice();																			// 選擇顯卡
 		void __CreateLogicalDevice();																			// 根據對應的顯卡，去建立 Logical Device Interface
 		void __CreateSwapChain();																				// 建立 Swap Chain
@@ -122,7 +120,6 @@ namespace VulkanEngine
 		//////////////////////////////////////////////////////////////////////////
 		// 比較 Minor 的 Helper Function
 		//////////////////////////////////////////////////////////////////////////
-		void __PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT&);							// 設定 Type
 		bool __CheckDeviceExtensionSupport(VkPhysicalDevice);													// 檢查 DeviceExtension 是否支援某幾項
 		bool __IsDeviceSuitable(VkPhysicalDevice);																// 是否為合適的顯卡
 		QueueFamilyIndices __FindQueueFamilies(VkPhysicalDevice);												// 找顯卡中 對應 Queue 的 Indices
@@ -143,15 +140,5 @@ namespace VulkanEngine
 		{
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 		};
-
-		// Debug Vulkan 的功能
-#if defined(VKENGINE_DEBUG_DETAILS)
-		bool EnabledValidationLayer = false;								// 是否底層有支援這個功能
-		vector<const char*> ValidationLayersNames = 										// 判斷是否有底下的標籤，就代表是否可以開啟這個功能
-		{
-			"VK_LAYER_KHRONOS_validation"
-		};
-		bool __CheckValidationLayerSupport();																	// 檢查 Vulkan Validtion Layer 是否支援
-#endif
 	};
 }
