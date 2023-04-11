@@ -28,6 +28,7 @@ struct VertexBuffer
         desc[1].location                                            = 1;
         desc[1].format                                              = VK_FORMAT_R32G32B32_SFLOAT;
         desc[1].offset                                              = offsetof(VertexBuffer, Color);
+        return desc;
     }
 
     // 設定 Vulkan 的 Binding Description

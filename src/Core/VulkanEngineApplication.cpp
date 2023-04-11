@@ -303,9 +303,7 @@ void VulkanEngineApplication::__CreateVKInstance()
 }
 void VulkanEngineApplication::__SetupDebugMessenger()
 {
-#if !defined(VKENGINE_DEBUG_DETAILS)
-	return;
-#else
+#if defined(VKENGINE_DEBUG_DETAILS)
 	if (EnabledValidationLayer)
 	{
 		VkDebugUtilsMessengerCreateInfoEXT createInfo{};
@@ -765,7 +763,11 @@ void VulkanEngineApplication::__CreateVertexBuffer()
 	// 設定 Buffer 內的大小
 	VkMemoryRequirements memRequirements{};
 	vkGetBufferMemoryRequirements(Device, VertexBuffer, &memRequirements);
-	//VkMemoryAllocateInfo
+	
+	VkMemoryAllocateInfo allocateInfo{};
+	allocateInfo.sType												= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.allocationSize										= memRequirements.size;
+	allocateInfo.memoryTypeIndex									= __FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
 void VulkanEngineApplication::__CreateCommandBuffer()
 {
@@ -864,6 +866,19 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 		throw runtime_error("Failed to record command buffer");
+}
+uint32_t VulkanEngineApplication::__FindMemoryType(uint32_t typeFiler, VkMemoryPropertyFlags properties)
+{
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(PhysiclaDevice, &memProperties);
+#if defined(VKENGINE_DEBUG_DETAILS)
+	cout << "Memory Type Bits: " << typeFiler << endl;
+	cout << "Memory Type Count: " << memProperties.memoryTypeCount << endl;
+#endif
+	for(uint32_t i = 0 ; i < memProperties.memoryTypeCount; i++)
+		if (typeFiler & (1 << i))
+			return i;
+	throw runtime_error("Failed to find suitable memory type");
 }
 
 //////////////////////////////////////////////////////////////////////////

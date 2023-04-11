@@ -125,6 +125,7 @@ private:
 	//////////////////////////////////////////////////////////////////////////
 	void __GenerateInitViewportAndScissor(VkViewport&, VkRect2D&);											// 產生初始的 Viewport & Scissor
 	void __SetupCommandBuffer(VkCommandBuffer, uint32_t);													// 將要執行的 Command 寫入 Command Buffer
+	uint32_t __FindMemoryType(uint32_t, VkMemoryPropertyFlags);												// 找到合適的 Memory Type
 
 	//////////////////////////////////////////////////////////////////////////
 	// 比較 Minor 的 Helper Function
