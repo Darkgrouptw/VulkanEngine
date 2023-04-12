@@ -71,6 +71,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateFrameBuffer();
 	__CreateCommandPool();
 	__CreateVertexBuffer();
+	__CreateIndexBuffer();
 	__CreateCommandBuffer();
 	__CreateSyncObjects();
 }
@@ -752,20 +753,43 @@ void VulkanEngineApplication::__CreateCommandPool()
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {
+	// 這裡會分成兩個 Buffer 的原因
+	// 主要是因為資料上傳後就不會遭受到修改
+	// 所以理想上會使用 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT (也就是無法從 CPU 去讀取)
 	VkDeviceSize bufferSize											= sizeof(VertexBufferInfo) * vertices.size();
+
+	VkBuffer stageBuffer;
+	VkDeviceMemory stageBufferMemory;
 
 	__CreateBuffer(
 		bufferSize,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 																	// 此 Buffer 可以當作 Memory transfor operation 的 source
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,							// 需要開啟這兩個 tag 才可以從 CPU 送上資料到 GPU
-		VertexBuffer,
-		VertexBufferMemory
+		stageBuffer,
+		stageBufferMemory
 		);
 
 	void* data;
-	vkMapMemory(Device, VertexBufferMemory, 0, bufferSize, 0, &data);
+	vkMapMemory(Device, stageBufferMemory, 0, bufferSize, 0, &data);
 	memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
-	vkUnmapMemory(Device, VertexBufferMemory);
+	vkUnmapMemory(Device, stageBufferMemory);
+
+	__CreateBuffer(
+		bufferSize,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 								// Memory Buffer Dst & Usage
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,																// Local 的 Memory （不需上傳）
+		VertexBuffer,
+		VertexBufferMemory
+		);
+	__CopyBuffer(stageBuffer, VertexBuffer, bufferSize);
+
+	// 清除 Buffer & Buffer Memory
+	vkDestroyBuffer(Device, stageBuffer, nullptr);
+	vkFreeMemory(Device, stageBufferMemory, nullptr);
+}
+void VulkanEngineApplication::__CreateIndexBuffer()
+{
+
 }
 void VulkanEngineApplication::__CreateCommandBuffer()
 {
@@ -1015,6 +1039,40 @@ void VulkanEngineApplication::__CreateBuffer(VkDeviceSize size, VkBufferUsageFla
 		throw std::runtime_error("Failed to create vertex buffer memory");
 
 	vkBindBufferMemory(Device, VertexBuffer, VertexBufferMemory, 0);
+}
+void VulkanEngineApplication::__CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+	VkCommandBufferAllocateInfo allocateInfo{};
+	allocateInfo.sType												= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocateInfo.level												= VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocateInfo.commandPool										= CommandPool;
+	allocateInfo.commandBufferCount									= 1;
+
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(Device, &allocateInfo, &commandBuffer);
+
+	// Command Buffer
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType													= VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags													= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;	// 只 Copy 一次
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	{
+		VkBufferCopy copyRegion{};
+		copyRegion.size												= size;
+		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+	}
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType												= VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount									= 1;
+	submitInfo.pCommandBuffers										= &commandBuffer;
+	
+	vkQueueSubmit(GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(GraphicsQueue);
+
+	// Free Buffer
+	vkFreeCommandBuffers(Device, CommandPool, 1, &commandBuffer);
 }
 
 //////////////////////////////////////////////////////////////////////////

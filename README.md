@@ -33,5 +33,6 @@ make Shaders
 ## Practice
 No | Practice Content | Link | Picture
 ---|---|---|---
+02 | Vertex Buffer | Link | ![StageIndex](Images/Practice-02a.svg)
 01 | Triangle | [Link](https://github.com/Darkgrouptw/VulkanEngine/tree/Practice-01) | ![Practice-01](Images/Practice-01.png)
 00 | Open GLFW window that use Vulkan | [Link](#https://github.com/Darkgrouptw/VulkanEngine/tree/Practice-00) | ![Practice-00](Images/Practice-00.png)
