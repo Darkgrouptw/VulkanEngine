@@ -67,6 +67,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateSwapChain();
 	__CreateImageViews();
 	__CreateRenderPass();
+	__CreateDescriptorSetLayout();
 	__CreateGraphicsPipeline();
 	__CreateFrameBuffer();
 	__CreateCommandPool();
@@ -537,6 +538,14 @@ void VulkanEngineApplication::__CreateRenderPass()
 
 	if (vkCreateRenderPass(Device, &renderPassInfo, nullptr, &RenderPass) != VK_SUCCESS)
 		throw runtime_error("Failed to create render pass");
+}
+void VulkanEngineApplication::__CreateDescriptorSetLayout()
+{
+	VkDescriptorSetLayoutBinding uboLayout{};
+	uboLayout.binding 												= 0;
+	uboLayout.descriptorType										= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;	// Uniform Buffer
+	uboLayout.descriptorCount										= 1;
+	uboLayout.stageFlags											= VK_SHADER_STAGE_VERTEX_BIT;			// 使用於 Vertex Buffer 的 Uniform Buffer
 }
 void VulkanEngineApplication::__CreateGraphicsPipeline()
 {
