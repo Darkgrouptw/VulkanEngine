@@ -1,7 +1,6 @@
 #pragma once
 #include "../Common/Common.h"
 
-#include <glm/glm.hpp>
 #include <vector>
 
 using namespace std;

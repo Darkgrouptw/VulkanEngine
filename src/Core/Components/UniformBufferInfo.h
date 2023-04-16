@@ -1,8 +1,6 @@
 #pragma once
 #include "../Common/Common.h"
 
-#include <glm/glm.hpp>
-
 // MVP
 struct UniformBufferInfo
 {

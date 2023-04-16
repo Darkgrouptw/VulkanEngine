@@ -4,6 +4,7 @@
 */
 #include "Common/Common.h"
 #include "Components/VertexBufferInfo.h"
+#include "Components/UniformBufferInfo.h"
 
 #include <iostream>
 #include <vector>
@@ -14,6 +15,7 @@
 #include <fstream>
 #include <algorithm>
 #include <filesystem>
+#include <chrono>
 
 using namespace std;
 
@@ -54,6 +56,7 @@ private:
 	
 	void DrawFrame();																						// 繪製畫面
 	void ReCreateSwapChain();																				// 重新建立 SwapChain
+	void UpdateUniformBuffer(uint32_t);																		// 更新 Uniform Buffer
 
 	// 視窗設定
 	GLFWwindow* Window												= NULL;									// GLFW Window
@@ -68,6 +71,7 @@ private:
 	VkDevice Device;
 	
 	// Vulkan Pipeline
+	VkDescriptorSetLayout DescriptorLayout;
 	VkPipelineLayout PipelineLayout;
 	VkRenderPass RenderPass;
 	VkPipeline GraphicsPipeline;
@@ -88,6 +92,11 @@ private:
 	// Vulkan Buffer
 	VkBuffer VertexBuffer, IndexBuffer;
 	VkDeviceMemory VertexBufferMemory, IndexBufferMemory;
+
+	// Vulkan Uniform Buffer
+	vector<VkBuffer> UniformBufferList;
+	vector<VkDeviceMemory> UniformBufferMemoryList;
+	vector<void*> UniformBufferMappedDataList;
 
 	// Vulkan Command Buffer
 	// 這裡是卡住上限，避免畫太多資料
@@ -120,6 +129,7 @@ private:
 	void __CreateCommandPool();																				// 建立 Command Pool
 	void __CreateVertexBuffer();																			// 建立 Vertex Buffer
 	void __CreateIndexBuffer();																				// 建立 Index Buffer
+	void __CreateUniformBuffer();																			// 建立 Uniform Buffer
 	void __CreateCommandBuffer();																			// 建立 Command Buffer
 	void __CreateSyncObjects();
 

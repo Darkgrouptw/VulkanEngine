@@ -73,6 +73,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateCommandPool();
 	__CreateVertexBuffer();
 	__CreateIndexBuffer();
+	__CreateUniformBuffer();
 	__CreateCommandBuffer();
 	__CreateSyncObjects();
 }
@@ -98,6 +99,13 @@ void VulkanEngineApplication::Destroy()
 		vkDestroyFence(Device, InFlightFences[i], nullptr);
 	}
 	#pragma endregion
+	#pragma region UniformBuffer
+	for (size_t i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
+	{
+		vkDestroyBuffer(Device, UniformBufferList[i], nullptr);
+		vkFreeMemory(Device, UniformBufferMemoryList[i], nullptr);
+	}
+	#pragma endregion
 	#pragma region VertexBuffer
 	vkDestroyBuffer(Device, IndexBuffer, nullptr);
 	vkFreeMemory(Device, IndexBufferMemory, nullptr);
@@ -114,6 +122,9 @@ void VulkanEngineApplication::Destroy()
 	#pragma region Graphics Pipeline
 	vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
+	#pragma endregion
+	#pragma region Descriptor Set Layout
+	vkDestroyDescriptorSetLayout(Device, DescriptorLayout, nullptr);
 	#pragma endregion
 	#pragma region Render Pass
 	vkDestroyRenderPass(Device, RenderPass, nullptr);
@@ -144,7 +155,7 @@ void VulkanEngineApplication::DrawFrame()
 {
 	// 這你需要等待幾個步驟
 	// 1. 等待前一幀的資料繪製完成
-	// 2. 取得 Swap Chain 的圖片
+	// 2. 取得 Swap Chain 的圖片，更新 Uniform Buffer 和重新 Reset Fences
 	// 3. 設定 Commands 到 Command Buffer 中來繪製整個場景到 Image 中
 	// 4. Submit Command Buffer
 	// 5. 顯示 Swap Chain Image
@@ -165,6 +176,9 @@ void VulkanEngineApplication::DrawFrame()
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) // VK_SUBOPTIMAL_KHR 代表，雖然可以正常顯示到 surface 上，但是 surface 其實不需要了
 		throw runtime_error("Failed to acquire swap chain image");
+
+	// 更新 UniformBuffer
+	UpdateUniformBuffer(CurrentFrameIndex);
 
 	vkResetFences(Device, 1, &InFlightFences[CurrentFrameIndex]);											// Reset Fences
 	#pragma endregion
@@ -222,6 +236,12 @@ void VulkanEngineApplication::ReCreateSwapChain()
 	__CreateSwapChain();
 	__CreateImageViews();
 	__CreateFrameBuffer();
+}
+void VulkanEngineApplication::UpdateUniformBuffer(uint32_t frameIndex)
+{
+	// 只有第一幀的時候設定
+	//static auto startTime											= chrono::high_resolution_clock::now();
+	//auto currentTime												= chrono::high_resolution_clock::now();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -546,6 +566,14 @@ void VulkanEngineApplication::__CreateDescriptorSetLayout()
 	uboLayout.descriptorType										= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;	// Uniform Buffer
 	uboLayout.descriptorCount										= 1;
 	uboLayout.stageFlags											= VK_SHADER_STAGE_VERTEX_BIT;			// 使用於 Vertex Buffer 的 Uniform Buffer
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount											= 1;
+	layoutInfo.pBindings											= &uboLayout;
+
+	if (vkCreateDescriptorSetLayout(Device, &layoutInfo, nullptr, &DescriptorLayout) != VK_SUCCESS)
+		throw runtime_error("Failed to create descriptor set layout");
 }
 void VulkanEngineApplication::__CreateGraphicsPipeline()
 {
@@ -696,8 +724,8 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	// 設定 Layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType										= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount								= 0;
-	pipelineLayoutInfo.pSetLayouts									= nullptr;
+	pipelineLayoutInfo.setLayoutCount								= 1;
+	pipelineLayoutInfo.pSetLayouts									= &DescriptorLayout;					// Uniform Layout
 	pipelineLayoutInfo.pushConstantRangeCount						= 0;
 	pipelineLayoutInfo.pPushConstantRanges							= nullptr;
 
@@ -832,6 +860,27 @@ void VulkanEngineApplication::__CreateIndexBuffer()
 	vkDestroyBuffer(Device, stageBuffer, nullptr);
 	vkFreeMemory(Device, stageBufferMemory, nullptr);
 }
+void VulkanEngineApplication::__CreateUniformBuffer()
+{
+	VkDeviceSize bufferSize 										= sizeof(UniformBufferInfo);
+
+	UniformBufferList.resize(MAX_FRAME_IN_FLIGHTS);
+	UniformBufferMemoryList.resize(MAX_FRAME_IN_FLIGHTS);
+	UniformBufferMappedDataList.resize(MAX_FRAME_IN_FLIGHTS);
+
+	for (size_t i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
+	{
+		__CreateBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			UniformBufferList[i],
+			UniformBufferMemoryList[i]);
+
+		vkMapMemory(Device, UniformBufferMemoryList[i], 0, bufferSize, 0, &UniformBufferMappedDataList[i]);
+	}
+	
+}
 void VulkanEngineApplication::__CreateCommandBuffer()
 {
 	CommandBuffers.resize(MAX_FRAME_IN_FLIGHTS);
@@ -938,6 +987,7 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 		throw runtime_error("Failed to record command buffer");
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 // 比較 Minor 的 Helper Function
