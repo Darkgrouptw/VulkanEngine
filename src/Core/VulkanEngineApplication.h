@@ -71,7 +71,7 @@ private:
 	VkDevice Device;
 	
 	// Vulkan Pipeline
-	VkDescriptorSetLayout DescriptorLayout;
+	VkDescriptorSetLayout DescriptorSetLayout;
 	VkPipelineLayout PipelineLayout;
 	VkRenderPass RenderPass;
 	VkPipeline GraphicsPipeline;

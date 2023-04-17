@@ -102,7 +102,6 @@ void VulkanEngineApplication::Destroy()
 	#pragma endregion
 	#pragma region Uniform Descriptor
 	vkDestroyDescriptorPool(Device, DescriptorPool, nullptr);
-	vkDestroyDescriptorSetLayout(Device, DescriptorLayout, nullptr);
 	#pragma endregion
 	#pragma region UniformBuffer
 	for (size_t i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
@@ -129,7 +128,7 @@ void VulkanEngineApplication::Destroy()
 	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
 	#pragma endregion
 	#pragma region Descriptor Set Layout
-	vkDestroyDescriptorSetLayout(Device, DescriptorLayout, nullptr);
+	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
 	#pragma endregion
 	#pragma region Render Pass
 	vkDestroyRenderPass(Device, RenderPass, nullptr);
@@ -600,7 +599,7 @@ void VulkanEngineApplication::__CreateDescriptorSetLayout()
 	layoutInfo.bindingCount											= 1;
 	layoutInfo.pBindings											= &uboLayout;
 
-	if (vkCreateDescriptorSetLayout(Device, &layoutInfo, nullptr, &DescriptorLayout) != VK_SUCCESS)
+	if (vkCreateDescriptorSetLayout(Device, &layoutInfo, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
 		throw runtime_error("Failed to create descriptor set layout");
 }
 void VulkanEngineApplication::__CreateGraphicsPipeline()
@@ -693,7 +692,7 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	rasterizationInfo.depthClampEnable								= VK_FALSE;								// 對於 Shadow Map 可能會有需要 Near 到 Far 之間的資訊，其他都不需要設為 True
 	rasterizationInfo.rasterizerDiscardEnable						= VK_FALSE;								// 如果設定成 True，會造成 geometry 不會傳入 rasterization
 	rasterizationInfo.cullMode										= VK_CULL_MODE_BACK_BIT;				// 去除 Back face
-	rasterizationInfo.frontFace										= VK_FRONT_FACE_CLOCKWISE;				// 逆時針的 Vertex，算 Front Face
+	rasterizationInfo.frontFace										= VK_FRONT_FACE_COUNTER_CLOCKWISE;		// 逆時針的 Vertex，算 Front Face
 	rasterizationInfo.depthBiasEnable								= VK_FALSE;
 	rasterizationInfo.lineWidth										= 1.0;
 	// 當設定為 False，底下設定就不需要設定
@@ -753,7 +752,7 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType										= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount								= 1;
-	pipelineLayoutInfo.pSetLayouts									= &DescriptorLayout;					// Uniform Layout
+	pipelineLayoutInfo.pSetLayouts									= &DescriptorSetLayout;					// Uniform Layout
 	pipelineLayoutInfo.pushConstantRangeCount						= 0;
 	pipelineLayoutInfo.pPushConstantRanges							= nullptr;
 
@@ -926,7 +925,7 @@ void VulkanEngineApplication::__CreateDescriptor()
 		throw runtime_error("Failed to create descriptor pool");
 	#pragma endregion
 	#pragma region Descriptor Set
-	vector<VkDescriptorSetLayout> layouts(MAX_FRAME_IN_FLIGHTS, DescriptorLayout);
+	vector<VkDescriptorSetLayout> layouts(MAX_FRAME_IN_FLIGHTS, DescriptorSetLayout);
 
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -1053,13 +1052,12 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 		VkDeviceSize offsets[]										= { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescriptorSets[imageIndex], 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescriptorSets[CurrentFrameIndex], 0, nullptr);
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 		// 原先是這兩個配
 		//vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-
 	}
 	vkCmdEndRenderPass(commandBuffer);
 

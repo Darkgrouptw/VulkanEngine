@@ -10,7 +10,6 @@ struct VertexBufferInfo
     glm::vec2 Position;
     glm::vec3 Color;
 
-
     // 設定 Vulkan 的 Vertex Input
     static vector<VkVertexInputAttributeDescription> GetAttributeDescription()
     {
