@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "Core/VulkanEngineApplication.h"
 
 using namespace std;

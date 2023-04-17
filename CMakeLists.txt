@@ -13,7 +13,6 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project(VulkanEngine)
 set(CMAKE_CXX_STANDARD 20)
 
-
 # 3. Setup Library Stuff
 # 3a. Vulkan
 if (DEFINED VULKAN_SDK_PATH)
@@ -53,19 +52,27 @@ if (NOT DEFINED GLM_PATH)
     message(FATAL ERROR "Not Found GLM PATH")
 endif()
 
-# 3d. Final
+# 3d. IMGUI
+SET (IMGUI_INCLUDE_DIR "Plugins/imgui")
+
+# 3e. Final
 file(GLOB_RECURSE SOURCE_FILES
      "src/*.h"
      "src/*.cpp"
 )
+
+
 # message("All Files: ${SOURCE_FILES}")
 add_executable(${PROJECT_NAME} 
     ${SOURCE_FILES}
 )
+
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${Vulkan_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS}
     ${GLM_PATH}
+    ${IMGUI_INCLUDE_DIR}
+    "./Plugins"
     "./src"
 )
 
