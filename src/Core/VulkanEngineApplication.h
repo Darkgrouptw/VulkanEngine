@@ -98,6 +98,9 @@ private:
 	vector<VkDeviceMemory> UniformBufferMemoryList;
 	vector<void*> UniformBufferMappedDataList;
 
+	VkDescriptorPool DescriptorPool;
+	vector<VkDescriptorSet> DescriptorSets;
+
 	// Vulkan Command Buffer
 	// 這裡是卡住上限，避免畫太多資料
 	const int MAX_FRAME_IN_FLIGHTS 									= 2;
@@ -130,6 +133,7 @@ private:
 	void __CreateVertexBuffer();																			// 建立 Vertex Buffer
 	void __CreateIndexBuffer();																				// 建立 Index Buffer
 	void __CreateUniformBuffer();																			// 建立 Uniform Buffer
+	void __CreateDescriptor();																				// 建立 Descriptor Pool & Set (給 Unifrom Buffer 用)
 	void __CreateCommandBuffer();																			// 建立 Command Buffer
 	void __CreateSyncObjects();
 

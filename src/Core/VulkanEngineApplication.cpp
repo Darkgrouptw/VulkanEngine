@@ -74,6 +74,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateVertexBuffer();
 	__CreateIndexBuffer();
 	__CreateUniformBuffer();
+	__CreateDescriptor();
 	__CreateCommandBuffer();
 	__CreateSyncObjects();
 }
@@ -98,6 +99,10 @@ void VulkanEngineApplication::Destroy()
 		vkDestroySemaphore(Device, RenderFinishedSemaphore[i], nullptr);
 		vkDestroyFence(Device, InFlightFences[i], nullptr);
 	}
+	#pragma endregion
+	#pragma region Uniform Descriptor
+	vkDestroyDescriptorPool(Device, DescriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(Device, DescriptorLayout, nullptr);
 	#pragma endregion
 	#pragma region UniformBuffer
 	for (size_t i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
@@ -240,8 +245,31 @@ void VulkanEngineApplication::ReCreateSwapChain()
 void VulkanEngineApplication::UpdateUniformBuffer(uint32_t frameIndex)
 {
 	// 只有第一幀的時候設定
-	//static auto startTime											= chrono::high_resolution_clock::now();
-	//auto currentTime												= chrono::high_resolution_clock::now();
+	static auto startTime											= chrono::high_resolution_clock::now();
+	auto currentTime												= chrono::high_resolution_clock::now();
+	float duration													= chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
+
+	// MVP
+	UniformBufferInfo bufferData{};
+	bufferData.ModelMatrix											= glm::rotate(
+																		glm::mat4(1.f),
+																		duration * glm::radians(90.f),
+																		glm::vec3(0, 0, 1)
+																	);
+	bufferData.ViewMatrix											= glm::lookAt(
+																		glm::vec3(2, 2, 2),
+																		glm::vec3(0, 0, 0),
+																		glm::vec3(0, 0, 1)
+																	);
+	bufferData.ProjectionMatrix										= glm::perspective(
+																		glm::radians(45.f),
+																		(float)SwapChainExtent.width / SwapChainExtent.height,
+																		0.1f,
+																		10.f);
+	// 這裡必須要反轉
+	// 因為 GLM 是針對 OpenGL 做的 (y 的方向是相反的)
+	bufferData.ProjectionMatrix[1][1]								*= -1;
+	memcpy(UniformBufferMappedDataList[frameIndex], &bufferData, sizeof(UniformBufferInfo));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -881,6 +909,56 @@ void VulkanEngineApplication::__CreateUniformBuffer()
 	}
 	
 }
+void VulkanEngineApplication::__CreateDescriptor()
+{
+	#pragma region Descriptor Pool
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type													= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount										= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType													= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount											= 1;
+	poolInfo.pPoolSizes												= &poolSize;
+	poolInfo.maxSets												= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
+
+	if (vkCreateDescriptorPool(Device, &poolInfo, nullptr, &DescriptorPool) != VK_SUCCESS)
+		throw runtime_error("Failed to create descriptor pool");
+	#pragma endregion
+	#pragma region Descriptor Set
+	vector<VkDescriptorSetLayout> layouts(MAX_FRAME_IN_FLIGHTS, DescriptorLayout);
+
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorPool										= DescriptorPool;
+	allocateInfo.descriptorSetCount									= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
+	allocateInfo.pSetLayouts										= layouts.data();
+
+	DescriptorSets.resize(MAX_FRAME_IN_FLIGHTS);
+	if (vkAllocateDescriptorSets(Device, &allocateInfo, DescriptorSets.data()) != VK_SUCCESS)
+		throw runtime_error("Failed to create allocate descriptor set");
+
+	for (size_t i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
+	{
+		VkDescriptorBufferInfo bufferinfo{};
+		bufferinfo.buffer											= UniformBufferList[i];
+		bufferinfo.offset											= 0;
+		bufferinfo.range											= sizeof(UniformBufferInfo);
+
+		VkWriteDescriptorSet descriptorWrite{};
+		descriptorWrite.sType										= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet										= DescriptorSets[i];
+		descriptorWrite.dstBinding									= 0;
+		descriptorWrite.dstArrayElement								= 0;
+
+		descriptorWrite.descriptorType								= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount								= 1;
+		descriptorWrite.pBufferInfo									= &bufferinfo;
+
+		vkUpdateDescriptorSets(Device, 1, &descriptorWrite, 0, nullptr);
+	}
+	#pragma endregion
+}
 void VulkanEngineApplication::__CreateCommandBuffer()
 {
 	CommandBuffers.resize(MAX_FRAME_IN_FLIGHTS);
@@ -975,6 +1053,7 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 		VkDeviceSize offsets[]										= { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescriptorSets[imageIndex], 0, nullptr);
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 		// 原先是這兩個配
