@@ -7,9 +7,11 @@
 
 class IMGUIWindowManager
 {
-private:
-    /* data */
 public:
-    IMGUIWindowManager(/* args */);
+    IMGUIWindowManager();
     ~IMGUIWindowManager();
+
+    void Render();
+private:
+    static ImGui_ImplVulkanH_Window WD;
 };

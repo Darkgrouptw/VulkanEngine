@@ -77,6 +77,9 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateDescriptor();
 	__CreateCommandBuffer();
 	__CreateSyncObjects();
+
+	// 初始化 IMGUI
+	IMGUIWindowM													= new IMGUIWindowManager();
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -153,6 +156,9 @@ void VulkanEngineApplication::Destroy()
 	// 關閉 GLFW
 	glfwDestroyWindow(Window);
 	glfwTerminate();
+
+	// Delete
+	delete IMGUIWindowM;
 }
 
 void VulkanEngineApplication::DrawFrame()
@@ -230,6 +236,8 @@ void VulkanEngineApplication::DrawFrame()
 	// 切換下一張
 	CurrentFrameIndex = (CurrentFrameIndex + 1) % MAX_FRAME_IN_FLIGHTS;
 	#pragma endregion
+	
+	IMGUIWindowM->Render();
 }
 void VulkanEngineApplication::ReCreateSwapChain()
 {

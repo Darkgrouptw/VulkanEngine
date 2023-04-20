@@ -5,6 +5,7 @@
 #include "Common/Common.h"
 #include "Components/VertexBufferInfo.h"
 #include "Components/UniformBufferInfo.h"
+#include "Components/IMGUIWindowManager.h"
 
 #include <iostream>
 #include <vector>
@@ -62,6 +63,9 @@ private:
 	GLFWwindow* Window												= NULL;									// GLFW Window
 	const int WIDTH													= 1600;									// 長
 	const int HEIGHT												= 900;									// 寬
+
+	// IMGUI
+	IMGUIWindowManager* IMGUIWindowM;
 
 	// Vulkan
 	VkInstance Instance;

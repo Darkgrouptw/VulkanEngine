@@ -54,17 +54,21 @@ endif()
 
 # 3d. IMGUI
 SET (IMGUI_INCLUDE_DIR "Plugins/imgui")
+SET (IMGUI_CPP_FILE "Plugins/imgui/imgui.cpp")
+list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_draw.cpp")
+list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_widgets.cpp")
+list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_tables.cpp")
 
 # 3e. Final
 file(GLOB_RECURSE SOURCE_FILES
-     "src/*.h"
-     "src/*.cpp"
+    "src/*.h"
+    "src/*.cpp"
 )
 
-
 # message("All Files: ${SOURCE_FILES}")
-add_executable(${PROJECT_NAME} 
+add_executable(${PROJECT_NAME}
     ${SOURCE_FILES}
+    ${IMGUI_CPP_FILE}
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
