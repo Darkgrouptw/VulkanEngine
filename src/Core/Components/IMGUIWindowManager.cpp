@@ -5,9 +5,8 @@ IMGUIWindowManager::IMGUIWindowManager()
 {
     IMGUI_CHECKVERSION();
 
-    ImGui::Begin("Hello World");
-    ImGui::Text("AAA");
-    ImGui::End();
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
 }
 IMGUIWindowManager::~IMGUIWindowManager()
 {
@@ -15,6 +14,10 @@ IMGUIWindowManager::~IMGUIWindowManager()
 
 void IMGUIWindowManager::Render()
 {
+    ImGui::NewFrame();
+    ImGui::Begin("Hello World");
+    ImGui::Text("AAA");
+    ImGui::End();
     ImGui::Render();
 }
 #pragma endregion

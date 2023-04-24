@@ -55,6 +55,8 @@ endif()
 # 3d. IMGUI
 SET (IMGUI_INCLUDE_DIR "Plugins/imgui")
 SET (IMGUI_CPP_FILE "Plugins/imgui/imgui.cpp")
+list(APPEND IMGUI_CPP_FILE "Plugins/imgui/backends/imgui_impl_glfw.cpp")
+list(APPEND IMGUI_CPP_FILE "Plugins/imgui/backends/imgui_impl_vulkan.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_draw.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_widgets.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_tables.cpp")
