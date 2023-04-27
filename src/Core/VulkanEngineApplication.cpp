@@ -79,7 +79,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateSyncObjects();
 
 	// 初始化 IMGUI
-	IMGUIWindowM													= new IMGUIWindowManager();
+	IMGUIWindowM													= new IMGUIWindowManager(Window);
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -978,6 +978,9 @@ void VulkanEngineApplication::__CreateCommandBuffer()
 
 	if (vkAllocateCommandBuffers(Device, &allocateInfo, CommandBuffers.data()) != VK_SUCCESS)
 		throw runtime_error("Failed to create command buffer");
+
+	// IMGUI
+	
 }
 void VulkanEngineApplication::__CreateSyncObjects()
 {

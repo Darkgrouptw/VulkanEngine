@@ -8,7 +8,7 @@
 class IMGUIWindowManager
 {
 public:
-    IMGUIWindowManager();
+    IMGUIWindowManager(GLFWwindow*);
     ~IMGUIWindowManager();
 
     void Render();
