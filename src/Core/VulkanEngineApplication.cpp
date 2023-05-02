@@ -79,7 +79,15 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateSyncObjects();
 
 	// 初始化 IMGUI
-	IMGUIWindowM													= new IMGUIWindowManager(Window);
+	// ImGui_ImplVulkan_InitInfo initInfo{};
+	// initInfo.Instance 												= Instance;
+	// initInfo.PhysicalDevice											= PhysiclaDevice;
+	// initInfo.Device													= Device;
+	// initInfo.Queue													= GraphicsQueue;
+	// initInfo.QueueFamily											= indices.GraphicsFamily.value();
+	// initinfo
+	//IMGUIWindowM													= new IMGUIWindowManager(Window);
+
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -403,10 +411,10 @@ void VulkanEngineApplication::__PickPhysicalDevice()
 }
 void VulkanEngineApplication::__CreateLogicalDevice()
 {
-	QueueFamilyIndices indices										= __FindQueueFamilies(PhysiclaDevice);
+	Indices															= __FindQueueFamilies(PhysiclaDevice);
 
 	vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	set<uint32_t> uniqueQueueFamilies 								= {indices.GraphicsFamily.value(), indices.PresentFamily.value()};
+	set<uint32_t> uniqueQueueFamilies 								= {Indices.GraphicsFamily.value(), Indices.PresentFamily.value()};
 
 	float queuePriority 											= 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -447,8 +455,8 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 	// 產生裝置完後，設定 Graphics Queue
 	if (vkCreateDevice(PhysiclaDevice, &createInfo, nullptr, &Device) != VK_SUCCESS)
 		throw runtime_error("Failed to create logical device");
-    vkGetDeviceQueue(Device, indices.GraphicsFamily.value(), 0, &GraphicsQueue);
-    vkGetDeviceQueue(Device, indices.PresentFamily.value(), 0, &PresentQueue);
+    vkGetDeviceQueue(Device, Indices.GraphicsFamily.value(), 0, &GraphicsQueue);
+    vkGetDeviceQueue(Device, Indices.PresentFamily.value(), 0, &PresentQueue);
 }
 void VulkanEngineApplication::__CreateSwapChain()
 {
@@ -481,11 +489,10 @@ void VulkanEngineApplication::__CreateSwapChain()
 	// 其他細節設定
 	createInfo.imageArrayLayers										= 1;									// 如果要使用 Stereo 就會需要兩個 (兩個輸出)，不然一般都是一個
 	createInfo.imageUsage											= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;	// 輸出的圖，可以做什麼使用的設定
-	QueueFamilyIndices indices 										= __FindQueueFamilies(PhysiclaDevice);
-	uint32_t queueFamilyIndices[]									= { indices.GraphicsFamily.value(), indices.PresentFamily.value() };
+	uint32_t queueFamilyIndices[]									= { Indices.GraphicsFamily.value(), Indices.PresentFamily.value() };
 	
 	// 判斷 Graphics & Present 是否在同一個 Queue
-	if (indices.GraphicsFamily.value() != indices.PresentFamily.value())
+	if (Indices.GraphicsFamily.value() != Indices.PresentFamily.value())
 	{
 		// 不同 Queue 可以互相 share Images
 		createInfo.imageSharingMode 								= VK_SHARING_MODE_CONCURRENT;
@@ -817,11 +824,10 @@ void VulkanEngineApplication::__CreateFrameBuffer()
 }
 void VulkanEngineApplication::__CreateCommandPool()
 {
-	QueueFamilyIndices indices 										= __FindQueueFamilies(PhysiclaDevice);
 	VkCommandPoolCreateInfo poolInfo{};
 	poolInfo.sType													= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.flags													= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	poolInfo.queueFamilyIndex										= indices.GraphicsFamily.value();
+	poolInfo.queueFamilyIndex										= Indices.GraphicsFamily.value();
 
 	if (vkCreateCommandPool(Device, &poolInfo, nullptr, &CommandPool) != VK_SUCCESS)
 		throw runtime_error("Failed to create command pool");
@@ -978,9 +984,6 @@ void VulkanEngineApplication::__CreateCommandBuffer()
 
 	if (vkAllocateCommandBuffers(Device, &allocateInfo, CommandBuffers.data()) != VK_SUCCESS)
 		throw runtime_error("Failed to create command buffer");
-
-	// IMGUI
-	
 }
 void VulkanEngineApplication::__CreateSyncObjects()
 {

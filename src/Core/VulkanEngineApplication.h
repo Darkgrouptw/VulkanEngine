@@ -82,6 +82,7 @@ private:
 	VkCommandPool CommandPool;
 
 	// Vulkan Queue
+	QueueFamilyIndices Indices;
 	VkQueue GraphicsQueue;
 	VkQueue PresentQueue;
 
