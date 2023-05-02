@@ -79,14 +79,23 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateSyncObjects();
 
 	// 初始化 IMGUI
-	// ImGui_ImplVulkan_InitInfo initInfo{};
-	// initInfo.Instance 												= Instance;
-	// initInfo.PhysicalDevice											= PhysiclaDevice;
-	// initInfo.Device													= Device;
-	// initInfo.Queue													= GraphicsQueue;
-	// initInfo.QueueFamily											= indices.GraphicsFamily.value();
-	// initinfo
-	//IMGUIWindowM													= new IMGUIWindowManager(Window);
+	ImGui_ImplVulkan_InitInfo initInfo{};
+	initInfo.Instance 												= Instance;
+	initInfo.PhysicalDevice											= PhysiclaDevice;
+	initInfo.Device													= Device;
+	initInfo.QueueFamily											= Indices.GraphicsFamily.value();
+	initInfo.Queue													= GraphicsQueue;
+	initInfo.PipelineCache											= VK_NULL_HANDLE;
+	initInfo.DescriptorPool											= DescriptorPool;
+	initInfo.Subpass												= 0;
+
+	SwapChainSupportDetails details 								= __QuerySwapChainSupport(PhysiclaDevice);
+	initInfo.MinImageCount											= details.Capbilities.minImageCount;
+	initInfo.ImageCount												= SwapChainImages.size();
+	initInfo.MSAASamples											= VK_SAMPLE_COUNT_1_BIT;
+	initInfo.Allocator												= nullptr;
+	initInfo.CheckVkResultFn										= nullptr;
+	IMGUIWindowM													= new IMGUIWindowManager(Window, &initInfo, RenderPass);
 
 }
 void VulkanEngineApplication::MainLoop()

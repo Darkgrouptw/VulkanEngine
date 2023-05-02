@@ -8,7 +8,7 @@
 class IMGUIWindowManager
 {
 public:
-    IMGUIWindowManager(GLFWwindow*, ImGui_ImplVulkan_InitInfo&);
+    IMGUIWindowManager(GLFWwindow*, ImGui_ImplVulkan_InitInfo*, VkRenderPass&);
     ~IMGUIWindowManager();
 
     void Render();

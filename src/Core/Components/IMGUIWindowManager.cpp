@@ -1,7 +1,7 @@
 #include "IMGUIWindowManager.h"
 
 #pragma region Public
-IMGUIWindowManager::IMGUIWindowManager(GLFWwindow *window, ImGui_ImplVulkan_InitInfo& info)
+IMGUIWindowManager::IMGUIWindowManager(GLFWwindow *window, ImGui_ImplVulkan_InitInfo* info, VkRenderPass& pass)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -13,7 +13,7 @@ IMGUIWindowManager::IMGUIWindowManager(GLFWwindow *window, ImGui_ImplVulkan_Init
 
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForVulkan(window, true);
-
+    ImGui_ImplVulkan_Init(info, pass);
 }
 IMGUIWindowManager::~IMGUIWindowManager()
 {
