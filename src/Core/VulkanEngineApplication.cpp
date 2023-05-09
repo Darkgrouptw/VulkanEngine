@@ -96,7 +96,7 @@ void VulkanEngineApplication::InitVulkan()
 	initInfo.Allocator												= nullptr;
 	initInfo.CheckVkResultFn										= nullptr;
 	IMGUIWindowM													= new IMGUIWindowManager(Window, &initInfo, RenderPass);
-
+	IMGUIWindowM->UploadFont(GraphicsQueue, Device);
 }
 void VulkanEngineApplication::MainLoop()
 {
