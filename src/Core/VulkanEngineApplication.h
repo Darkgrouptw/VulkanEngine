@@ -105,6 +105,7 @@ private:
 
 	VkDescriptorPool DescriptorPool;
 	vector<VkDescriptorSet> DescriptorSets;
+	VkDescriptorPool ImGuiDescriptorPool;
 
 	// Vulkan Command Buffer
 	// 這裡是卡住上限，避免畫太多資料

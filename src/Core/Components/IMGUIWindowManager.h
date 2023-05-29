@@ -15,9 +15,7 @@ public:
     IMGUIWindowManager(GLFWwindow*, ImGui_ImplVulkan_InitInfo*, VkRenderPass&);
     ~IMGUIWindowManager();
 
-    void UploadFont(VkQueue&, VkDevice&);
+    void UploadFont(VkCommandPool&, VkQueue&, VkDevice&);
     void Render();
 private:
-
-    static ImGui_ImplVulkanH_Window WD;
 };

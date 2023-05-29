@@ -86,7 +86,7 @@ void VulkanEngineApplication::InitVulkan()
 	initInfo.QueueFamily											= Indices.GraphicsFamily.value();
 	initInfo.Queue													= GraphicsQueue;
 	initInfo.PipelineCache											= VK_NULL_HANDLE;
-	initInfo.DescriptorPool											= DescriptorPool;
+	initInfo.DescriptorPool											= ImGuiDescriptorPool;
 	initInfo.Subpass												= 0;
 
 	SwapChainSupportDetails details 								= __QuerySwapChainSupport(PhysiclaDevice);
@@ -96,7 +96,7 @@ void VulkanEngineApplication::InitVulkan()
 	initInfo.Allocator												= nullptr;
 	initInfo.CheckVkResultFn										= nullptr;
 	IMGUIWindowM													= new IMGUIWindowManager(Window, &initInfo, RenderPass);
-	IMGUIWindowM->UploadFont(GraphicsQueue, Device);
+	IMGUIWindowM->UploadFont(CommandPool, GraphicsQueue, Device);
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -149,6 +149,8 @@ void VulkanEngineApplication::Destroy()
 	#pragma endregion
 	#pragma region Descriptor Set Layout
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
+	
+	vkDestroyDescriptorPool(Device, ImGuiDescriptorPool, nullptr);
 	#pragma endregion
 	#pragma region Render Pass
 	vkDestroyRenderPass(Device, RenderPass, nullptr);
@@ -980,6 +982,30 @@ void VulkanEngineApplication::__CreateDescriptor()
 		vkUpdateDescriptorSets(Device, 1, &descriptorWrite, 0, nullptr);
 	}
 	#pragma endregion
+    #pragma region Description Pool For ImGui
+    VkDescriptorPoolSize imGuiPoolSizes[] = {
+		{VK_DESCRIPTOR_TYPE_SAMPLER,                                1000},
+		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,                 1000},
+		{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,                          1000},
+		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,                          1000},
+		{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,                   1000},
+		{VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,                   1000},
+		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,                         1000},
+		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,                         1000},
+		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,                 1000},
+		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,                 1000},
+		{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,                       1000}};
+
+    VkDescriptorPoolCreateInfo imGuiPoolInfo{};
+    imGuiPoolInfo.sType                                           	= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    imGuiPoolInfo.flags                                           	= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    imGuiPoolInfo.maxSets                                         	= 1000 * IM_ARRAYSIZE(imGuiPoolSizes);
+    imGuiPoolInfo.poolSizeCount                                   	= static_cast<uint32_t>(IM_ARRAYSIZE(imGuiPoolSizes));
+    imGuiPoolInfo.pPoolSizes                                      	= imGuiPoolSizes;
+
+    if (vkCreateDescriptorPool(Device, &imGuiPoolInfo, nullptr, &ImGuiDescriptorPool) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create DescriptorPool for ImGuiDescriptorPool");
+    #pragma endregion
 }
 void VulkanEngineApplication::__CreateCommandBuffer()
 {
@@ -1087,7 +1113,6 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 		throw runtime_error("Failed to record command buffer");
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 // 比較 Minor 的 Helper Function
@@ -1242,7 +1267,8 @@ void VulkanEngineApplication::__CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffe
 	allocateInfo.commandBufferCount									= 1;
 
 	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(Device, &allocateInfo, &commandBuffer);
+	if (vkAllocateCommandBuffers(Device, &allocateInfo, &commandBuffer) != VK_SUCCESS)
+		throw runtime_error("Failed to allocate buffer for allocation");
 
 	// Command Buffer
 	VkCommandBufferBeginInfo beginInfo{};

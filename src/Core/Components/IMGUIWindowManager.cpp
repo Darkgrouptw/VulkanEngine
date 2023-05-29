@@ -22,9 +22,20 @@ IMGUIWindowManager::~IMGUIWindowManager()
     ImGui::DestroyContext();
 }
 
-void IMGUIWindowManager::UploadFont(VkQueue& queue, VkDevice& device)
+void IMGUIWindowManager::UploadFont(VkCommandPool& pool, VkQueue& queue, VkDevice& device)
 {
+    #pragma region Command Buffer
     VkCommandBuffer buffer;
+    VkCommandBufferAllocateInfo info = {};
+    info.sType                                                      = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    info.commandPool                                                = pool;
+    info.level                                                      = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    info.commandBufferCount                                         = 1;
+
+    if (vkAllocateCommandBuffers(device, &info, &buffer)            != VK_SUCCESS)
+        throw runtime_error("Failed to create command buffer for IMGUI");
+    #pragma endregion
+    #pragma region Upload Font
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType                                                 = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags                                                 |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -34,7 +45,6 @@ void IMGUIWindowManager::UploadFont(VkQueue& queue, VkDevice& device)
     
     // Create font
     ImGui_ImplVulkan_CreateFontsTexture(buffer);
-
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType                                                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -49,6 +59,7 @@ void IMGUIWindowManager::UploadFont(VkQueue& queue, VkDevice& device)
     if (vkDeviceWaitIdle(device)                                    != VK_SUCCESS)
         throw runtime_error("Failed to wait idle from uploading IMGUI font");
     ImGui_ImplVulkan_DestroyFontUploadObjects();
+    #pragma endregion
 }
 void IMGUIWindowManager::Render()
 {
