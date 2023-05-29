@@ -95,20 +95,25 @@ void VulkanEngineApplication::InitVulkan()
 	initInfo.MSAASamples											= VK_SAMPLE_COUNT_1_BIT;
 	initInfo.Allocator												= nullptr;
 	initInfo.CheckVkResultFn										= nullptr;
-	IMGUIWindowM													= new IMGUIWindowManager(Window, &initInfo, RenderPass);
-	IMGUIWindowM->UploadFont(CommandPool, GraphicsQueue, Device);
+	ImGuiWindowM													= new ImGuiWindowManager(Window, &initInfo, RenderPass);
+	ImGuiWindowM->UploadFont(CommandPool, GraphicsQueue, Device);
 }
 void VulkanEngineApplication::MainLoop()
 {
 	while (!glfwWindowShouldClose(Window))																	// 接到是否關閉此視窗的 Flag
 	{
 		glfwPollEvents();																					// 抓出 GFLW 的事件 Queue
+		
+		ImGuiWindowM->Render();
 		DrawFrame();
 	}
 	vkDeviceWaitIdle(Device);
 }
 void VulkanEngineApplication::Destroy()
 {
+	// Delete ImGui
+	delete ImGuiWindowM;
+
 	#pragma region SwapChain
 	__CleanupSwapChain();
 	#pragma endregion
@@ -175,9 +180,6 @@ void VulkanEngineApplication::Destroy()
 	// 關閉 GLFW
 	glfwDestroyWindow(Window);
 	glfwTerminate();
-
-	// Delete
-	delete IMGUIWindowM;
 }
 
 void VulkanEngineApplication::DrawFrame()
@@ -255,8 +257,6 @@ void VulkanEngineApplication::DrawFrame()
 	// 切換下一張
 	CurrentFrameIndex = (CurrentFrameIndex + 1) % MAX_FRAME_IN_FLIGHTS;
 	#pragma endregion
-	
-	IMGUIWindowM->Render();
 }
 void VulkanEngineApplication::ReCreateSwapChain()
 {

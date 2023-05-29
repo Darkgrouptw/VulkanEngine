@@ -5,7 +5,7 @@
 #include "Common/Common.h"
 #include "Components/VertexBufferInfo.h"
 #include "Components/UniformBufferInfo.h"
-#include "Components/IMGUIWindowManager.h"
+#include "Components/ImGuiWindowManager.h"
 
 #include <iostream>
 #include <vector>
@@ -65,7 +65,7 @@ private:
 	const int HEIGHT												= 900;									// 寬
 
 	// IMGUI
-	IMGUIWindowManager* IMGUIWindowM;
+	ImGuiWindowManager* ImGuiWindowM;
 
 	// Vulkan
 	VkInstance Instance;
