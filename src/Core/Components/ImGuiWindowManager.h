@@ -16,7 +16,7 @@ public:
     ~ImGuiWindowManager();
 
     void UploadFont(VkCommandPool&, VkQueue&, VkDevice&);
-    void Render();
+    void Render(VkCommandBuffer);
 private:
-    ImGuiIO io;
+    void DebugToolBox();
 };

@@ -103,8 +103,6 @@ void VulkanEngineApplication::MainLoop()
 	while (!glfwWindowShouldClose(Window))																	// 接到是否關閉此視窗的 Flag
 	{
 		glfwPollEvents();																					// 抓出 GFLW 的事件 Queue
-		
-		ImGuiWindowM->Render();
 		DrawFrame();
 	}
 	vkDeviceWaitIdle(Device);
@@ -1107,6 +1105,8 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 		// 原先是這兩個配
 		//vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+
+		ImGuiWindowM->Render(commandBuffer);
 	}
 	vkCmdEndRenderPass(commandBuffer);
 
