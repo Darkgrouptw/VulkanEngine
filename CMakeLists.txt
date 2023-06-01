@@ -61,7 +61,7 @@ list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_draw.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_widgets.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_tables.cpp")
 
-# 3e. Final
+# 4. Final
 file(GLOB_RECURSE SOURCE_FILES
     "src/*.h"
     "src/*.cpp"
@@ -100,7 +100,7 @@ else()
     )
 endif()
 
-# 4. Shader (Use glslc to compile to SPRIV)
+# 5. Shader (Use glslc to compile to SPRIV)
 # Refernce: 
 # https://github.com/blurrypiano/littleVulkanEngine/blob/main/CMakeLists.txt
 # https://github.com/google/shaderc/tree/main/glslc#311-shader-stage-specification

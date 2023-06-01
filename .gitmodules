@@ -1,6 +1,3 @@
 [submodule "Plugins/imgui"]
 	path = Plugins/imgui
 	url = https://github.com/ocornut/imgui.git
-[submodule "Plugins/KTX-Software"]
-	path = Plugins/KTX-Software
-	url = https://github.com/KhronosGroup/KTX-Software

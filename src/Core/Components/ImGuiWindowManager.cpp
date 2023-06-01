@@ -1,4 +1,4 @@
-#include "ImGuiWindowManager.h"
+#include "Core/Components/ImGuiWindowManager.h"
 
 #pragma region Public
 ImGuiWindowManager::ImGuiWindowManager(GLFWwindow *window, ImGui_ImplVulkan_InitInfo* info, VkRenderPass& pass)
