@@ -6,6 +6,7 @@
 #include "Components/VertexBufferInfo.h"
 #include "Components/UniformBufferInfo.h"
 #include "Components/ImGuiWindowManager.h"
+#include "Components/TextureManager.h"
 
 #include <iostream>
 #include <vector>
