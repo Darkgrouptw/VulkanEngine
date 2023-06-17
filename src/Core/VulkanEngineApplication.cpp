@@ -841,6 +841,10 @@ void VulkanEngineApplication::__CreateCommandPool()
 	if (vkCreateCommandPool(Device, &poolInfo, nullptr, &CommandPool) != VK_SUCCESS)
 		throw runtime_error("Failed to create command pool");
 }
+void VulkanEngineApplication::__CreateTextureImage()
+{
+	TextM = new TextureManager();
+}
 void VulkanEngineApplication::__CreateVertexBuffer()
 {
 	// 這裡會分成兩個 Buffer 的原因

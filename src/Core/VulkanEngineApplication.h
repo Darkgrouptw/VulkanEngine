@@ -122,6 +122,9 @@ private:
 	vector<VkSemaphore> RenderFinishedSemaphore;
 	vector<VkFence> InFlightFences;
 
+	// 貼圖相關
+	TextureManager* TextM;
+
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Init Function
 	//////////////////////////////////////////////////////////////////////////
@@ -137,6 +140,7 @@ private:
 	void __CreateGraphicsPipeline();																		// 建立 Graphics Pipeline
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateCommandPool();																				// 建立 Command Pool
+	void __CreateTextureImage();																			// 建立 Texture
 	void __CreateVertexBuffer();																			// 建立 Vertex Buffer
 	void __CreateIndexBuffer();																				// 建立 Index Buffer
 	void __CreateUniformBuffer();																			// 建立 Uniform Buffer
