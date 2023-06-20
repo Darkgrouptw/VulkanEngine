@@ -6,13 +6,17 @@
 #include "stb/stb_image.h"
 
 #include <vulkan/vulkan.h>
+#include <string>
+#include <filesystem>
 
 using namespace std;
 
 class TextureManager
 {
 public:
-    TextureManager();
+    TextureManager(string);
     ~TextureManager();
 private:
+    VkBuffer StagingBuffer;
+    VkDeviceMemory StagingBufferMemory;
 };
