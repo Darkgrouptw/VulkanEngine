@@ -843,7 +843,7 @@ void VulkanEngineApplication::__CreateCommandPool()
 }
 void VulkanEngineApplication::__CreateTextureImage()
 {
-	TextM = new TextureManager();
+	TextM = new TextureManager("Textures/texture.jpg");
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {

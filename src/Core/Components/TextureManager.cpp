@@ -1,5 +1,8 @@
 #include "Core/Components/TextureManager.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+
 #pragma region Public
 TextureManager::TextureManager(string path)
 {

@@ -12,5 +12,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Common
+{
+public:
+    static string GetResourcePath(string);
+};
 #endif
 
