@@ -1,11 +1,16 @@
 #include "Core/Components/TextureManager.h"
 
+// 使用 STB_IMAGE_IMPLEMENTATION 來順便 Compile 實作
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
 #pragma region Public
 TextureManager::TextureManager(string path)
 {
+	#pragma region 
+	path = Common::GetResourcePath(path);
+	return;
+	#pragma endregion
 	#pragma region 前置作業
 	// 貼圖參數
 	stbi_uc* Pixels = nullptr;

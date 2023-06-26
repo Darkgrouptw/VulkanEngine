@@ -71,6 +71,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateGraphicsPipeline();
 	__CreateFrameBuffer();
 	__CreateCommandPool();
+	__CreateTextureImage();
 	__CreateVertexBuffer();
 	__CreateIndexBuffer();
 	__CreateUniformBuffer();

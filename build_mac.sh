@@ -3,5 +3,5 @@ mkdir build
 cd build
 cmake -S ../ -B ./
 make clean
-make
+make -j8
 make Shaders
