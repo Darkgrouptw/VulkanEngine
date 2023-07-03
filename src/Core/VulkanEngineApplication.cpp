@@ -844,7 +844,33 @@ void VulkanEngineApplication::__CreateCommandPool()
 }
 void VulkanEngineApplication::__CreateTextureImage()
 {
+	#pragma region 前置作業
 	TextM = new TextureManager("Textures/texture.jpg");
+
+	auto pixels = TextM->LoadImage();
+	VkDeviceSize dataSize = TextM->GetTextureSize();
+	#pragma endregion
+	#pragma region Copy to gpu
+	VkBuffer stageBuffer;
+	VkDeviceMemory stageBufferMemory;
+
+	// 先建 Buffer
+	__CreateBuffer(
+		dataSize,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		stageBuffer,
+		stageBufferMemory
+	);
+
+	void* data;
+	vkMapMemory(Device, stageBufferMemory, 0, dataSize, 0, &data);
+	memcpy(data, pixels, static_cast<size_t>(dataSize));
+	vkUnmapMemory(Device, stageBufferMemory);
+
+	// Release CPU Data
+	TextM->ReleaseImage();
+	#pragma endregion
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {
@@ -862,7 +888,7 @@ void VulkanEngineApplication::__CreateVertexBuffer()
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,							// 需要開啟這兩個 tag 才可以從 CPU 送上資料到 GPU
 		stageBuffer,
 		stageBufferMemory
-		);
+	);
 
 	void* data;
 	vkMapMemory(Device, stageBufferMemory, 0, bufferSize, 0, &data);

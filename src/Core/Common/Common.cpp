@@ -1,11 +1,22 @@
 #include "Common.h"
 
-string Common::GetResourcePath(string path)
+string Common::GetResourcePath(string pFilePath)
 {
-    // cout << filesystem::current_path() << endl;
-    if (filesystem::is_directory("Resources"))
-    {
-    }
-        cout << filesystem::path("Resources/" + path).filename() << endl;
-    return "";
+    // 檢查的列表
+    vector<string> checkList{
+        "Resources",
+        "../Resources"
+    };
+
+    string path = pFilePath;
+    for(int i = 0; i < checkList.size(); i++) 
+        if (filesystem::is_directory(checkList[i]))
+        {
+            path = filesystem::path(checkList[i] + "/" + pFilePath);
+            break;
+        }
+    
+    if (!filesystem::exists(path))
+        throw runtime_error("File don't exist: " + path);
+    return path;
 }
