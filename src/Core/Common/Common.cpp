@@ -12,7 +12,7 @@ string Common::GetResourcePath(string pFilePath)
     for(int i = 0; i < checkList.size(); i++) 
         if (filesystem::is_directory(checkList[i]))
         {
-            path = filesystem::path(checkList[i] + "/" + pFilePath);
+            path = filesystem::path(checkList[i] + "/" + pFilePath).generic_string();
             break;
         }
     

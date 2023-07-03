@@ -7,7 +7,7 @@
 #pragma region Public
 TextureManager::TextureManager(string path)
 {
-	path = Common::GetResourcePath(path);
+	mTexturePath = Common::GetResourcePath(path);
 }
 TextureManager::~TextureManager()
 {

@@ -15,8 +15,12 @@ public:
     ImGuiWindowManager(GLFWwindow*, ImGui_ImplVulkan_InitInfo*, VkRenderPass&);
     ~ImGuiWindowManager();
 
+
+    void FetchDeviceName(VkPhysicalDevice&);
     void UploadFont(VkCommandPool&, VkQueue&, VkDevice&);
     void Render(VkCommandBuffer);
 private:
     void DebugToolBox();
+
+    string mDeviceName                                              = "";                                   // 裝置名稱
 };

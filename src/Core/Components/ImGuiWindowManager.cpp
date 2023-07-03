@@ -1,7 +1,7 @@
 #include "Core/Components/ImGuiWindowManager.h"
 
 #pragma region Public
-ImGuiWindowManager::ImGuiWindowManager(GLFWwindow *window, ImGui_ImplVulkan_InitInfo* info, VkRenderPass& pass)
+ImGuiWindowManager::ImGuiWindowManager(GLFWwindow *pWindow, ImGui_ImplVulkan_InitInfo* pInfo, VkRenderPass& pPass)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -12,8 +12,8 @@ ImGuiWindowManager::ImGuiWindowManager(GLFWwindow *window, ImGui_ImplVulkan_Init
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForVulkan(window, true);
-    ImGui_ImplVulkan_Init(info, pass);
+    ImGui_ImplGlfw_InitForVulkan(pWindow, true);
+    ImGui_ImplVulkan_Init(pInfo, pPass);
 }
 ImGuiWindowManager::~ImGuiWindowManager()
 {
@@ -22,6 +22,13 @@ ImGuiWindowManager::~ImGuiWindowManager()
     ImGui::DestroyContext();
 }
 
+void ImGuiWindowManager::FetchDeviceName(VkPhysicalDevice& pDevice)
+{
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(pDevice, &properties);
+
+    mDeviceName = string(properties.deviceName);
+}
 void ImGuiWindowManager::UploadFont(VkCommandPool& pool, VkQueue& queue, VkDevice& device)
 {
     #pragma region Command Buffer
@@ -82,6 +89,7 @@ void ImGuiWindowManager::DebugToolBox()
     ImGui::Begin("Debug toolbox");
     ImGui::BeginGroup();
     {
+        ImGui::Text("Device: %s", mDeviceName.c_str());
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
     }
     ImGui::EndGroup();

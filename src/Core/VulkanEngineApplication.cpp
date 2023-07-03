@@ -97,6 +97,7 @@ void VulkanEngineApplication::InitVulkan()
 	initInfo.Allocator												= nullptr;
 	initInfo.CheckVkResultFn										= nullptr;
 	ImGuiWindowM													= new ImGuiWindowManager(Window, &initInfo, RenderPass);
+	ImGuiWindowM->FetchDeviceName(PhysiclaDevice);
 	ImGuiWindowM->UploadFont(CommandPool, GraphicsQueue, Device);
 }
 void VulkanEngineApplication::MainLoop()
@@ -844,12 +845,10 @@ void VulkanEngineApplication::__CreateCommandPool()
 }
 void VulkanEngineApplication::__CreateTextureImage()
 {
-	#pragma region 前置作業
 	TextM = new TextureManager("Textures/texture.jpg");
 
 	auto pixels = TextM->LoadImage();
 	VkDeviceSize dataSize = TextM->GetTextureSize();
-	#pragma endregion
 	#pragma region Copy to gpu
 	VkBuffer stageBuffer;
 	VkDeviceMemory stageBufferMemory;
