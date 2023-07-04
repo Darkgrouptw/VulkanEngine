@@ -5,32 +5,49 @@
 #include "stb/stb_image.h"
 
 #pragma region Public
-TextureManager::TextureManager(string path)
+TextureManager::TextureManager(string path, function<void(VkDeviceSize, VkBuffer&, VkDeviceMemory&)> createData)
 {
-	mTexturePath = Common::GetResourcePath(path);
+	path															= Common::GetResourcePath(path);
+	auto pixels														= LoadImageToRAM(path);
+	VkDeviceSize imageSize											= mWidth * mHeight * 4; // 因為適用 RGB_Alpha
+
+	// 裝進 StageBuffer 中
+	VkBuffer stageBuffer;
+	VkDeviceMemory stageBufferMemory;
+	createData(imageSize, stageBuffer, stageBufferMemory);
+
+	//UploadImageToVRAM(pixels, &stageBuffer, &stageBufferMemory)
 }
 TextureManager::~TextureManager()
 {
 }
 
-void* TextureManager::LoadImage()
-{
-	// 貼圖參數
-	mPixels 														= stbi_load(mTexturePath.c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
-	return mPixels;
-}
-void TextureManager::ReleaseImage()
-{
-	// 刪除貼圖
-	if (mPixels != nullptr)
-		stbi_image_free(mPixels);
-}
+//void* TextureManager::LoadImage()
+//{
+//	// 貼圖參數
+//	mPixels 														= ;
+//	return mPixels;
+//}
+//void TextureManager::ReleaseImage()
+//{
+//	// 刪除貼圖
+//	if (mPixels != nullptr)
+//		stbi_image_free(mPixels);
+//}
 
-VkDeviceSize TextureManager::GetTextureSize()
-{
-	// 因為 STBI_rgb_alpha
-	return mWidth * mHeight * 4;
-}
+//VkDeviceSize TextureManager::GetTextureSize()
+//{
+//	// 因為 STBI_rgb_alpha
+//	return mWidth * mHeight * 4;
+//}
 #pragma endregion
 #pragma region Private
+stbi_uc* TextureManager::LoadImageToRAM(string path)
+{
+	return stbi_load(path.c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
+}
+void TextureManager::UploadImageToVRAM(stbi_uc*, VkBuffer&, VkDeviceMemory&)
+{
+
+}
 #pragma endregion
