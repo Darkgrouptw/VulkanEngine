@@ -19,6 +19,9 @@ public:
     void ReleaseImage();
 
     VkDeviceSize GetTextureSize();
+    int GetWidth() { return mWidth; }
+    int GetHeight() { return mHeight; }
+    int GetChannels() { return mChannels; }
 private:
     stbi_uc* mPixels;                                                                                       // 像素資料
     int mWidth, mHeight, mChannels;                                                                         // 圖片資訊

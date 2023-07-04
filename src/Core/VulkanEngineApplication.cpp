@@ -870,6 +870,19 @@ void VulkanEngineApplication::__CreateTextureImage()
 	// Release CPU Data
 	TextM->ReleaseImage();
 	#pragma endregion
+	#pragma region VkImage Create
+	VkImageCreateInfo createInfo{};
+	createInfo.sType												= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	createInfo.imageType											= VK_IMAGE_TYPE_2D;
+	createInfo.extent.width											= TextM->GetWidth();
+	createInfo.extent.height										= TextM->GetHeight();
+	createInfo.extent.depth											= 1;									// 這裡是 1 的原因，是因為他算是高度 (Texture 3D 的高)
+	createInfo.mipLevels											= 1;
+	createInfo.arrayLayers											= 1;
+
+	createInfo.format												= VK_FORMAT_R8G8B8A8_SRGB;
+	createInfo.tiling												= VK_IMAGE_TILING_OPTIMAL;				// ToDo: Check vs Linear(row-major)
+	#pragma endregion
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {
