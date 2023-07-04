@@ -68,7 +68,7 @@ private:
 	ImGuiWindowManager* ImGuiWindowM;
 
 	// Vulkan
-	VkInstance Instance;
+	VkInstance mInstance;
 	VkDebugUtilsMessengerEXT DebugMessenger;
 	VkSurfaceKHR Surface;
 	VkPhysicalDevice PhysiclaDevice									= VK_NULL_HANDLE;

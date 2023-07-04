@@ -81,7 +81,7 @@ void VulkanEngineApplication::InitVulkan()
 
 	// 初始化 IMGUI
 	ImGui_ImplVulkan_InitInfo initInfo{};
-	initInfo.Instance 												= Instance;
+	initInfo.Instance 												= mInstance;
 	initInfo.PhysicalDevice											= PhysiclaDevice;
 	initInfo.Device													= Device;
 	initInfo.QueueFamily											= Indices.GraphicsFamily.value();
@@ -164,17 +164,17 @@ void VulkanEngineApplication::Destroy()
 	vkDestroyDevice(Device, nullptr);
 	#pragma endregion
 	#pragma region Surface
-	vkDestroySurfaceKHR(Instance, Surface, nullptr);
+	vkDestroySurfaceKHR(mInstance, Surface, nullptr);
 	#pragma endregion
 	#pragma region Debug Messager
 	// 清掉 Vulkan 相關東西
 #if defined(VKENGINE_DEBUG_DETAILS)
 	if (EnabledValidationLayer)
-		DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
+		DestroyDebugUtilsMessengerEXT(mInstance, DebugMessenger, nullptr);
 #endif
 	#pragma endregion
 	#pragma region Instance
-	vkDestroyInstance(Instance, nullptr);
+	vkDestroyInstance(mInstance, nullptr);
 	#pragma endregion
 
 	// 關閉 GLFW
@@ -377,7 +377,7 @@ void VulkanEngineApplication::__CreateVKInstance()
 #endif
 
 	// 建立 VKInstance
-	VkResult result													= vkCreateInstance(&createInfo, nullptr, &Instance);
+	VkResult result													= vkCreateInstance(&createInfo, nullptr, &mInstance);
 	if (result != VK_SUCCESS)
 		throw runtime_error("Failed to create Vulkan Instance");
 }
@@ -388,28 +388,28 @@ void VulkanEngineApplication::__SetupDebugMessenger()
 	{
 		VkDebugUtilsMessengerCreateInfoEXT createInfo{};
        	__PopulateDebugMessengerCreateInfo(createInfo);
-		if (CreateDebugUtilsMessengerEXT(Instance, &createInfo, nullptr, &DebugMessenger) != VK_SUCCESS)
+		if (CreateDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &DebugMessenger) != VK_SUCCESS)
     		throw std::runtime_error("Failed to set up debug messenger");
 	}
 #endif
 }
 void VulkanEngineApplication::__CreateSurface()
 {
-	VkResult result = glfwCreateWindowSurface(Instance, Window, nullptr, &Surface);
+	VkResult result = glfwCreateWindowSurface(mInstance, Window, nullptr, &Surface);
 	if (result != VK_SUCCESS)
 		throw runtime_error("Failed to create window surface");
 }
 void VulkanEngineApplication::__PickPhysicalDevice()
 {
 	uint32_t deviceCount = 0;
-	vkEnumeratePhysicalDevices(Instance, &deviceCount, nullptr);											// 抓出所有支援的 Device
+	vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);											// 抓出所有支援的 Device
 	if (deviceCount == 0)
 		throw runtime_error("Failed to find GPUs with Vulkan Support");
 
 	// 並非所有的顯卡都符合設定
 	// 所以這邊要做更進一步的 Check (例如是否有 Geometry Shader 等)
 	vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(Instance, &deviceCount, devices.data());
+	vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
 	for(const auto& device: devices)
 		if (__IsDeviceSuitable(device))
 		{
