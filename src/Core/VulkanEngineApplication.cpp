@@ -855,46 +855,9 @@ void VulkanEngineApplication::__CreateTextureImage()
 			bufferMemory
 		);
 	};
-	TextM = new TextureManager("Textures/texture.jpg", lambdaFunction);
-
-	/*auto pixels = TextM->LoadImage();
-	VkDeviceSize dataSize = TextM->GetTextureSize();*/
-
-
-	#pragma region Copy to gpu
-	VkBuffer stageBuffer;
-	VkDeviceMemory stageBufferMemory;
-
-	// 先建 Buffer
-	
-
-	/*void* data;
-	vkMapMemory(Device, stageBufferMemory, 0, dataSize, 0, &data);
-	memcpy(data, pixels, static_cast<size_t>(dataSize));
-	vkUnmapMemory(Device, stageBufferMemory);*/
-
-	// Release CPU Data
-	//TextM->ReleaseImage();
-	#pragma endregion
-	#pragma region VkImage Create
-	//VkImageCreateInfo createInfo{};
-	//createInfo.sType												= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	//createInfo.imageType											= VK_IMAGE_TYPE_2D;
-	//createInfo.extent.width											= TextM->GetWidth();
-	//createInfo.extent.height										= TextM->GetHeight();
-	//createInfo.extent.depth											= 1;									// 這裡是 1 的原因，是因為他算是高度 (Texture 3D 的高)
-	//createInfo.mipLevels											= 1;
-	//createInfo.arrayLayers											= 1;
-
-	//createInfo.format												= VK_FORMAT_R8G8B8A8_SRGB;
-	//createInfo.tiling												= VK_IMAGE_TILING_OPTIMAL;				// ToDo: Check vs Linear(row-major)
-	//createInfo.initialLayout										= VK_IMAGE_LAYOUT_UNDEFINED;			// VK_IMAGE_LAYOUT_UNDEFINED (在初始化的時候會砍調沒有在 GPU 用掉像素資料)，VK_IMAGE_LAYOUT_PREINITIALIZED (相反，會保留) (https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImageLayout.html)
-	//
-	//createInfo.usage												= VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT; // VK_IMAGE_USAGE_SAMPLED_BIT 是設定要 VkImageCreateInfo 時設定
-	//createInfo.sharingMode											= VK_SHARING_MODE_EXCLUSIVE;
-	//createInfo.samples												= VK_SAMPLE_COUNT_1_BIT;
-	//createInfo.flags												= 0;
-	#pragma endregion
+	TextM = new TextureManager("Textures/texture.jpg", lambdaFunction, Device);
+	TextM->UploadImageToVRAM();
+	TextM->ReleaseCPUData();
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {
