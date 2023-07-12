@@ -15,15 +15,12 @@ TextureManager::TextureManager(string path, function<void(VkDeviceSize, VkBuffer
 	VkBuffer stageBuffer;
 	VkDeviceMemory stageBufferMemory;
 	pCreateData(imageSize, stageBuffer, stageBufferMemory);
-
-	//UploadImageToVRAM(pixels, stageBuffer, stageBufferMemory, pDevice);
-	//stbi_image_free(pixels);
 }
 TextureManager::~TextureManager()
 {
 }
 
-void TextureManager::UploadImageToVRAM(VkDevice& pDevice)
+void TextureManager::UploadImageToVRAM(VkDevice& pDevice, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
 {
 	#pragma region Image Create
 	VkImageCreateInfo createInfo{};
@@ -54,7 +51,11 @@ void TextureManager::UploadImageToVRAM(VkDevice& pDevice)
 	VkMemoryAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocateInfo.allocationSize										= requirement.size;
-	allocateInfo.memoryTypeIndex									= 
+	allocateInfo.memoryTypeIndex									= pFindMemoryTypeFunciton(requirement.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	if (vkAllocateMemory(pDevice, &allocateInfo, nullptr, &mImageMemory) != VK_SUCCESS)
+		throw runtime_error("Failed to allocate memory in image");
+	vkBindImageMemory(pDevice, mImage, mImageMemory, 0);
 	#pragma endregion
 }
 void TextureManager::ReleaseCPUData()

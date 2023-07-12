@@ -16,7 +16,7 @@ public:
     TextureManager(string, function<void(VkDeviceSize, VkBuffer&, VkDeviceMemory&)>, VkDevice&);
     ~TextureManager();
 
-    void UploadImageToVRAM(VkDevice&);                                                                      // 上傳到 GPU
+    void UploadImageToVRAM(VkDevice&, function<uint32_t(uint32_t, VkMemoryPropertyFlags)>);                 // 上傳到 GPU
     void ReleaseCPUData();                                                                                  // 砍掉 CPU Data
 private:
     stbi_uc* LoadImageToRAM(string);                                                                        // 讀圖到 RAM 中

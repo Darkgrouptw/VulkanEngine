@@ -845,7 +845,7 @@ void VulkanEngineApplication::__CreateCommandPool()
 }
 void VulkanEngineApplication::__CreateTextureImage()
 {
-	auto lambdaFunction = [&](VkDeviceSize dataSize, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+	auto lambdaCreateBufferFunction = [&](VkDeviceSize dataSize, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 	{
 		__CreateBuffer(
 			dataSize,
@@ -855,8 +855,12 @@ void VulkanEngineApplication::__CreateTextureImage()
 			bufferMemory
 		);
 	};
-	TextM = new TextureManager("Textures/texture.jpg", lambdaFunction, Device);
-	TextM->UploadImageToVRAM();
+	auto lambdaFindMemoryTypeFunction = [&](uint32_t typeFiler, VkMemoryPropertyFlags properties) -> uint32_t 
+	{
+		return __FindMemoryType(typeFiler, properties);
+	};
+	TextM = new TextureManager("Textures/texture.jpg", lambdaCreateBufferFunction, Device);
+	TextM->UploadImageToVRAM(Device, lambdaFindMemoryTypeFunction);
 	TextM->ReleaseCPUData();
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
