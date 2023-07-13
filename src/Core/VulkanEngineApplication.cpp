@@ -1282,6 +1282,16 @@ void VulkanEngineApplication::__CreateBuffer(VkDeviceSize size, VkBufferUsageFla
 }
 void VulkanEngineApplication::__CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
+	VkCommandBuffer buffer 											= __BeginSingleTimeCommand();
+	{
+		VkBufferCopy copyRegion{};
+		copyRegion.size												= size;
+		vkCmdCopyBuffer(buffer, srcBuffer, dstBuffer, 1, &copyRegion);
+	}
+	__EndSingleTimeCommand(buffer);
+}
+VkCommandBuffer VulkanEngineApplication::__BeginSingleTimeCommand()
+{
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocateInfo.level												= VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -1297,23 +1307,22 @@ void VulkanEngineApplication::__CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffe
 	beginInfo.sType													= VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags													= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;	// 只 Copy 一次
 	vkBeginCommandBuffer(commandBuffer, &beginInfo);
-	{
-		VkBufferCopy copyRegion{};
-		copyRegion.size												= size;
-		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-	}
-	vkEndCommandBuffer(commandBuffer);
+	return commandBuffer;
+}
+void VulkanEngineApplication::__EndSingleTimeCommand(VkCommandBuffer pBuffer)
+{
+	vkEndCommandBuffer(pBuffer);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType												= VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount									= 1;
-	submitInfo.pCommandBuffers										= &commandBuffer;
+	submitInfo.pCommandBuffers										= &pBuffer;
 	
 	vkQueueSubmit(GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(GraphicsQueue);
 
 	// Free Buffer
-	vkFreeCommandBuffers(Device, CommandPool, 1, &commandBuffer);
+	vkFreeCommandBuffers(Device, CommandPool, 1, &pBuffer);
 }
 
 //////////////////////////////////////////////////////////////////////////

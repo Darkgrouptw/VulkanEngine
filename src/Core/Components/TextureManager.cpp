@@ -5,7 +5,7 @@
 #include "stb/stb_image.h"
 
 #pragma region Public
-TextureManager::TextureManager(string path, function<void(VkDeviceSize, VkBuffer&, VkDeviceMemory&)> pCreateData, VkDevice pDevice)
+TextureManager::TextureManager(string path, function<void(VkDeviceSize, VkBuffer&, VkDeviceMemory&)> pCreateData, VkDevice& pDevice)
 {
 	path															= Common::GetResourcePath(path);
 	mPixels															= LoadImageToRAM(path);
