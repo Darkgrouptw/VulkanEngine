@@ -859,8 +859,7 @@ void VulkanEngineApplication::__CreateTextureImage()
 	{
 		return __FindMemoryType(typeFiler, properties);
 	};
-	TextM = new TextureManager("Textures/texture.jpg", lambdaCreateBufferFunction, Device);
-	TextM->CreateImage(Device, lambdaFindMemoryTypeFunction);
+	TextM = new TextureManager("Textures/texture.jpg", lambdaCreateBufferFunction, Device, lambdaFindMemoryTypeFunction);
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {

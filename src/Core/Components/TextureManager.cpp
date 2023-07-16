@@ -5,11 +5,15 @@
 #include "stb/stb_image.h"
 
 #pragma region Public
-TextureManager::TextureManager(string path, function<void(VkDeviceSize, VkBuffer&, VkDeviceMemory&)> pCreateData, VkDevice& pDevice)
+TextureManager::TextureManager(string path, function<void(VkDeviceSize, VkBuffer&, VkDeviceMemory&)> pCreateData, VkDevice& pDevice, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
 {
+	// 這裡要記得是圖片的資訊，和讀取出來的參數可能不一樣
+	// 例；圖片可能沒有 Alpha，但是 stbi_image 讀 Alpha，拿這邊會 channel 會是 3，但資料可能會是 4
+	int width, height, channels;                                                                         // 圖片資訊 
+
 	path															= Common::GetResourcePath(path);
-	stbi_uc* pixels													= stbi_load(path.c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
-	VkDeviceSize imageSize											= mWidth * mHeight * 4; // 因為適用 RGB_Alpha
+	stbi_uc* pixels													= stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+	VkDeviceSize imageSize											= width * height * 4; // 因為適用 RGB_Alpha
 
 	// 裝進 StageBuffer 中
 	VkBuffer stageBuffer;
@@ -18,27 +22,34 @@ TextureManager::TextureManager(string path, function<void(VkDeviceSize, VkBuffer
 
 	// Upload Data to Memory
 	void* data;
-	vkMapMemory(pDevice, stageBufferMemory, 0, imageSize, &data);
+	vkMapMemory(pDevice, stageBufferMemory, 0, imageSize, 0, &data);
 	memcpy(data, pixels, imageSize);
 	vkUnmapMemory(pDevice, stageBufferMemory);
 
 	// Release CPU Data
 	stbi_image_free(pixels);
 
-	// Create Image Info
+	// CreateImage
+	CreateImage(width, height, pDevice, pFindMemoryTypeFunciton);
+
+	// Release VKData
+	vkDestroyBuffer(pDevice, stageBuffer, nullptr);
+	vkFreeMemory(pDevice, stageBufferMemory, nullptr);
 }
 TextureManager::~TextureManager()
 {
 }
 
-void TextureManager::CreateImage(VkDevice& pDevice, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
+#pragma endregion
+#pragma region Private
+void TextureManager::CreateImage(int pWidth, int pHeight, VkDevice& pDevice, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
 {
 	#pragma region Image Create
 	VkImageCreateInfo createInfo{};
 	createInfo.sType												= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	createInfo.imageType											= VK_IMAGE_TYPE_2D;
-	createInfo.extent.width											= mWidth;
-	createInfo.extent.height										= mHeight;
+	createInfo.extent.width											= pWidth;
+	createInfo.extent.height										= pHeight;
 	createInfo.extent.depth											= 1;									// 這裡是 1 的原因，是因為他算是高度 (Texture 3D 的高)
 	createInfo.mipLevels											= 1;
 	createInfo.arrayLayers											= 1;
@@ -69,6 +80,4 @@ void TextureManager::CreateImage(VkDevice& pDevice, function<uint32_t(uint32_t, 
 	vkBindImageMemory(pDevice, mImage, mImageMemory, 0);
 	#pragma endregion
 }
-#pragma endregion
-#pragma region Private
 #pragma endregion
