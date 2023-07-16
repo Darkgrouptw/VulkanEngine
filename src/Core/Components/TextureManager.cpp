@@ -8,19 +8,30 @@
 TextureManager::TextureManager(string path, function<void(VkDeviceSize, VkBuffer&, VkDeviceMemory&)> pCreateData, VkDevice& pDevice)
 {
 	path															= Common::GetResourcePath(path);
-	mPixels															= LoadImageToRAM(path);
+	stbi_uc* pixels													= stbi_load(path.c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
 	VkDeviceSize imageSize											= mWidth * mHeight * 4; // 因為適用 RGB_Alpha
 
 	// 裝進 StageBuffer 中
 	VkBuffer stageBuffer;
 	VkDeviceMemory stageBufferMemory;
 	pCreateData(imageSize, stageBuffer, stageBufferMemory);
+
+	// Upload Data to Memory
+	void* data;
+	vkMapMemory(pDevice, stageBufferMemory, 0, imageSize, &data);
+	memcpy(data, pixels, imageSize);
+	vkUnmapMemory(pDevice, stageBufferMemory);
+
+	// Release CPU Data
+	stbi_image_free(pixels);
+
+	// Create Image Info
 }
 TextureManager::~TextureManager()
 {
 }
 
-void TextureManager::UploadImageToVRAM(VkDevice& pDevice, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
+void TextureManager::CreateImage(VkDevice& pDevice, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
 {
 	#pragma region Image Create
 	VkImageCreateInfo createInfo{};
@@ -58,14 +69,6 @@ void TextureManager::UploadImageToVRAM(VkDevice& pDevice, function<uint32_t(uint
 	vkBindImageMemory(pDevice, mImage, mImageMemory, 0);
 	#pragma endregion
 }
-void TextureManager::ReleaseCPUData()
-{
-	stbi_image_free(mPixels);
-}
 #pragma endregion
 #pragma region Private
-stbi_uc* TextureManager::LoadImageToRAM(string path)
-{
-	return stbi_load(path.c_str(), &mWidth, &mHeight, &mChannels, STBI_rgb_alpha);
-}
 #pragma endregion
