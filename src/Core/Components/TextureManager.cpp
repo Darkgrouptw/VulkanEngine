@@ -5,7 +5,12 @@
 #include "stb/stb_image.h"
 
 #pragma region Public
-TextureManager::TextureManager(string path, function<void(VkDeviceSize, VkBuffer&, VkDeviceMemory&)> pCreateData, VkDevice& pDevice, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
+TextureManager::TextureManager(string path,
+	function<void(VkDeviceSize, VkBuffer&, VkDeviceMemory&)> pCreateData,
+	VkDevice& pDevice,
+	function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton,
+	function<VkCommandBuffer()> pBeginBufferFunc,
+	function<void(VkCommandBuffer)> pEndBufferFunc)
 {
 	// 這裡要記得是圖片的資訊，和讀取出來的參數可能不一樣
 	// 例；圖片可能沒有 Alpha，但是 stbi_image 讀 Alpha，拿這邊會 channel 會是 3，但資料可能會是 4
@@ -14,6 +19,10 @@ TextureManager::TextureManager(string path, function<void(VkDeviceSize, VkBuffer
 	path															= Common::GetResourcePath(path);
 	stbi_uc* pixels													= stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 	VkDeviceSize imageSize											= width * height * 4; // 因為適用 RGB_Alpha
+
+	// 裝 Func
+	mBeginBufferFunc												= pBeginBufferFunc;
+	mEndBufferFunc													= pEndBufferFunc;
 
 	// 裝進 StageBuffer 中
 	VkBuffer stageBuffer;
@@ -79,5 +88,43 @@ void TextureManager::CreateImage(int pWidth, int pHeight, VkDevice& pDevice, fun
 		throw runtime_error("Failed to allocate memory in image");
 	vkBindImageMemory(pDevice, mImage, mImageMemory, 0);
 	#pragma endregion
+}
+void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkImageLayout pOldLayout, VkImageLayout pNewLayout)
+{
+	VkCommandBuffer commandBuffer 									= mBeginBufferFunc();
+
+	#pragma region Barrier 設定
+	VkImageMemoryBarrier barrier{};
+	barrier.sType													= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout												= pOldLayout;							// 如果 oldlayout 是 VK_IMAGE_LAYOUT_UNDEFINED，代表不在乎前面的 layout 設定
+	barrier.newLayout												= pNewLayout;
+
+	// 設定 QueueIndex，設定 VK_QUEUE_FAMILY_IGNORED 代表忽略 QueueFamilyIndex
+	barrier.srcQueueFamilyIndex										= VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex										= VK_QUEUE_FAMILY_IGNORED;
+
+	// 參數
+	barrier.image													= pImage;
+	barrier.subresourceRange.aspectMask								= VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel							= 0;
+	barrier.subresourceRange.levelCount								= 1;
+	barrier.subresourceRange.baseArrayLayer							= 0;
+	barrier.subresourceRange.layerCount								= 1;
+	#pragma endregion
+	#pragma region 同步
+	// synchronization
+	vkCmdPipelineBarrier(commandBuffer,
+		0, 0,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier);
+	#pragma endregion
+	mEndBufferFunc(commandBuffer);
+}
+void TextureManager::CopyBufferToImage()
+{
+	VkCommandBuffer commandBuffer 									= mBeginBufferFunc();
+	mEndBufferFunc(commandBuffer);
 }
 #pragma endregion
