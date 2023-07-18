@@ -44,6 +44,9 @@ TextureManager::TextureManager(string path,
 	// Release VKData
 	vkDestroyBuffer(pDevice, stageBuffer, nullptr);
 	vkFreeMemory(pDevice, stageBufferMemory, nullptr);
+
+	// 準備 TextureImage
+	//TransitionImageLayout(textureimage)
 }
 TextureManager::~TextureManager()
 {
@@ -105,7 +108,7 @@ void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkI
 
 	// 參數
 	barrier.image													= pImage;
-	barrier.subresourceRange.aspectMask								= VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.aspectMask								= VK_IMAGE_ASPECT_COLOR_BIT;			// color, depth or stencil
 	barrier.subresourceRange.baseMipLevel							= 0;
 	barrier.subresourceRange.levelCount								= 1;
 	barrier.subresourceRange.baseArrayLayer							= 0;
@@ -122,9 +125,37 @@ void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkI
 	#pragma endregion
 	mEndBufferFunc(commandBuffer);
 }
-void TextureManager::CopyBufferToImage()
+void TextureManager::CopyBufferToImage(VkBuffer pBuffer, VkImage pImage, uint32_t pWidth, uint32_t pHeight)
 {
 	VkCommandBuffer commandBuffer 									= mBeginBufferFunc();
+	#pragma region Buffer To Image
+	VkBufferImageCopy region{};
+
+	// 算多張圖中間 offset
+	region.bufferOffset												= 0;
+	region.bufferRowLength											= 0;
+	region.bufferImageHeight										= 0;
+
+	region.imageSubresource.aspectMask								= VK_IMAGE_ASPECT_COLOR_BIT;			// color, depth or stencil
+	region.imageSubresource.mipLevel								= 0;
+	region.imageSubresource.baseArrayLayer							= 0;
+	region.imageSubresource.layerCount								= 1;
+	region.imageOffset												= VkOffset3D{0, 0, 0};
+	region.imageExtent												= VkExtent3D{
+		pWidth,
+		pHeight,
+		1
+	};
+	#pragma endregion
+	// Copy !!
+	vkCmdCopyBufferToImage(
+		commandBuffer,
+		pBuffer,
+		pImage,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1,
+		&region
+	);
 	mEndBufferFunc(commandBuffer);
 }
 #pragma endregion

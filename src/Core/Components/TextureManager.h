@@ -24,7 +24,7 @@ public:
 private:
     void CreateImage(int, int, VkDevice&, function<uint32_t(uint32_t, VkMemoryPropertyFlags)>);             // 建立 Vulkan 的 Image & buffer
     void TransitionImageLayout(VkImage, VkFormat, VkImageLayout, VkImageLayout);                            // 建立 VkCommandBuffer
-    void CopyBufferToImage();
+    void CopyBufferToImage(VkBuffer, VkImage, uint32_t, uint32_t);
 
     VkImage mImage;                                                                                         // 貼圖
     VkDeviceMemory mImageMemory;                                                                            // 貼圖的 Memory
