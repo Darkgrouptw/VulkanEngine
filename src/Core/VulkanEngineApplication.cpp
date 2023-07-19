@@ -859,7 +859,20 @@ void VulkanEngineApplication::__CreateTextureImage()
 	{
 		return __FindMemoryType(typeFiler, properties);
 	};
-	TextM = new TextureManager("Textures/texture.jpg", lambdaCreateBufferFunction, Device, lambdaFindMemoryTypeFunction);
+	auto lambdaBeginSingleTimeCommandFunction = [&]() -> VkCommandBuffer
+	{
+		return __BeginSingleTimeCommand();
+	};
+	auto lambdaEndSingleTimeCommandFunction = [&](VkCommandBuffer buffer)
+	{
+		__EndSingleTimeCommand(buffer);
+	};
+	TextM = new TextureManager(
+		"Textures/texture.jpg",
+		lambdaCreateBufferFunction, Device,
+		lambdaFindMemoryTypeFunction,
+		lambdaBeginSingleTimeCommandFunction,
+		lambdaEndSingleTimeCommandFunction);
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {

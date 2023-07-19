@@ -12,6 +12,7 @@ TextureManager::TextureManager(string path,
 	function<VkCommandBuffer()> pBeginBufferFunc,
 	function<void(VkCommandBuffer)> pEndBufferFunc)
 {
+	#pragma region 使用 library 來讀圖
 	// 這裡要記得是圖片的資訊，和讀取出來的參數可能不一樣
 	// 例；圖片可能沒有 Alpha，但是 stbi_image 讀 Alpha，拿這邊會 channel 會是 3，但資料可能會是 4
 	int width, height, channels;                                                                         // 圖片資訊 
@@ -23,7 +24,8 @@ TextureManager::TextureManager(string path,
 	// 裝 Func
 	mBeginBufferFunc												= pBeginBufferFunc;
 	mEndBufferFunc													= pEndBufferFunc;
-
+	#pragma endregion
+	#pragma region GPU 設定
 	// 裝進 StageBuffer 中
 	VkBuffer stageBuffer;
 	VkDeviceMemory stageBufferMemory;
@@ -45,8 +47,14 @@ TextureManager::TextureManager(string path,
 	vkDestroyBuffer(pDevice, stageBuffer, nullptr);
 	vkFreeMemory(pDevice, stageBufferMemory, nullptr);
 
-	// 準備 TextureImage
-	//TransitionImageLayout(textureimage)
+	// 這裡主要做幾件事
+	// 1. Transition image 到 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+	// 2. Copy Buffer 到 Image
+	// 3. Transition image 給 Shader_Read_Only
+	TransitionImageLayout(mImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	CopyBufferToImage(stageBuffer, mImage, width, height);
+	TransitionImageLayout(mImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	#pragma endregion
 }
 TextureManager::~TextureManager()
 {
@@ -115,9 +123,33 @@ void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkI
 	barrier.subresourceRange.layerCount								= 1;
 	#pragma endregion
 	#pragma region 同步
+	// 這裡需要根據 type 來決定怎麼處理
+	// 有兩種狀況
+	// 1. new layout 是 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL 		=> 不需要等什麼
+	// 2. 
+	VkPipelineStageFlags sourceStage, destinationStage;
+	if (pOldLayout == VK_IMAGE_LAYOUT_UNDEFINED 					&& pNewLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		barrier.srcAccessMask										= 0;
+		barrier.dstAccessMask										= VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage													= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage											= VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (pOldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL		&& pNewLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		barrier.srcAccessMask										= VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask										= VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage													= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage											= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else
+		throw runtime_error("Unsupported layout transition");
+
 	// synchronization
 	vkCmdPipelineBarrier(commandBuffer,
-		0, 0,
+		sourceStage, destinationStage,
 		0,
 		0, nullptr,
 		0, nullptr,

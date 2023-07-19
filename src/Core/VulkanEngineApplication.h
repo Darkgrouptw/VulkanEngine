@@ -165,6 +165,8 @@ private:
 	uint32_t __FindMemoryType(uint32_t, VkMemoryPropertyFlags);												// 找到合適的 Memory Type
 	void __CreateBuffer(VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags, VkBuffer&, VkDeviceMemory &); // Create Buffer
 	void __CopyBuffer(VkBuffer, VkBuffer, VkDeviceSize);													// Copy Buffer
+
+	// 產生 Single Time Command
 	VkCommandBuffer __BeginSingleTimeCommand();
 	void __EndSingleTimeCommand(VkCommandBuffer);
 	

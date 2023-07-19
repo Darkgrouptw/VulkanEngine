@@ -31,5 +31,5 @@ private:
 
     // Command Single Time Buffer Function
     function<VkCommandBuffer()> mBeginBufferFunc                    = nullptr;
-    function<void(VkCommandBuffer)> mEndBufferFunc                  = nullptr
+    function<void(VkCommandBuffer)> mEndBufferFunc                  = nullptr;
 };
