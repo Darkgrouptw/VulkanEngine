@@ -142,6 +142,9 @@ void VulkanEngineApplication::Destroy()
 	vkDestroyBuffer(Device, VertexBuffer, nullptr);
 	vkFreeMemory(Device, VertexBufferMemory, nullptr);
 	#pragma endregion
+	#pragma region TextureImage
+	delete TextM;
+	#pragma endregion
 	#pragma region Command Burffer
 	// 不用 Destroy
 	#pragma endregion

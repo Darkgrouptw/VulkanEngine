@@ -43,10 +43,6 @@ TextureManager::TextureManager(string path,
 	// CreateImage
 	CreateImage(width, height, pDevice, pFindMemoryTypeFunciton);
 
-	// Release VKData
-	vkDestroyBuffer(pDevice, stageBuffer, nullptr);
-	vkFreeMemory(pDevice, stageBufferMemory, nullptr);
-
 	// 這裡主要做幾件事
 	// 1. Transition image 到 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 	// 2. Copy Buffer 到 Image
@@ -54,10 +50,18 @@ TextureManager::TextureManager(string path,
 	TransitionImageLayout(mImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	CopyBufferToImage(stageBuffer, mImage, width, height);
 	TransitionImageLayout(mImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	// Destroy Buffer
+	vkDestroyBuffer(pDevice, stageBuffer, nullptr);
+	vkFreeMemory(pDevice, stageBufferMemory, nullptr);
+	mDevice = pDevice;
 	#pragma endregion
 }
 TextureManager::~TextureManager()
 {
+	// Destroy Texture
+	vkDestroyImage(mDevice, mImage, nullptr);
+	vkFreeMemory(mDevice, mImageMemory, nullptr);
 }
 
 #pragma endregion
@@ -145,7 +149,7 @@ void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkI
 		destinationStage											= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	else
-		throw runtime_error("Unsupported layout transition");
+		throw invalid_argument("Unsupported layout transition");
 
 	// synchronization
 	vkCmdPipelineBarrier(commandBuffer,
