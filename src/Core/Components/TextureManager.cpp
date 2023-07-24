@@ -12,7 +12,7 @@ TextureManager::TextureManager(string path,
 	function<VkCommandBuffer()> pBeginBufferFunc,
 	function<void(VkCommandBuffer)> pEndBufferFunc)
 {
-	#pragma region 使用 library 來讀圖
+	#pragma region Use library to load image
 	// 這裡要記得是圖片的資訊，和讀取出來的參數可能不一樣
 	// 例；圖片可能沒有 Alpha，但是 stbi_image 讀 Alpha，拿這邊會 channel 會是 3，但資料可能會是 4
 	int width, height, channels;                                                                         // 圖片資訊 
@@ -40,6 +40,7 @@ TextureManager::TextureManager(string path,
 	// Release CPU Data
 	stbi_image_free(pixels);
 
+	#pragma region Texture Images
 	// CreateImage
 	CreateImage(width, height, pDevice, pFindMemoryTypeFunciton);
 
@@ -56,6 +57,10 @@ TextureManager::TextureManager(string path,
 	vkFreeMemory(pDevice, stageBufferMemory, nullptr);
 	mDevice = pDevice;
 	#pragma endregion
+	#pragma region Texture Image View
+	CreateImageView();
+	#pragma endregion
+	#pragma endregion
 }
 TextureManager::~TextureManager()
 {
@@ -63,7 +68,6 @@ TextureManager::~TextureManager()
 	vkDestroyImage(mDevice, mImage, nullptr);
 	vkFreeMemory(mDevice, mImageMemory, nullptr);
 }
-
 #pragma endregion
 #pragma region Private
 void TextureManager::CreateImage(int pWidth, int pHeight, VkDevice& pDevice, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
@@ -120,13 +124,9 @@ void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkI
 
 	// 參數
 	barrier.image													= pImage;
-	barrier.subresourceRange.aspectMask								= VK_IMAGE_ASPECT_COLOR_BIT;			// color, depth or stencil
-	barrier.subresourceRange.baseMipLevel							= 0;
-	barrier.subresourceRange.levelCount								= 1;
-	barrier.subresourceRange.baseArrayLayer							= 0;
-	barrier.subresourceRange.layerCount								= 1;
+	__GenerateImageSubResourceRange(barrier.subresourceRange);
 	#pragma endregion
-	#pragma region 同步
+	#pragma region Sync
 	// 這裡需要根據 type 來決定怎麼處理
 	// 有兩種狀況
 	// 1. new layout 是 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL 		=> 不需要等什麼
@@ -193,5 +193,24 @@ void TextureManager::CopyBufferToImage(VkBuffer pBuffer, VkImage pImage, uint32_
 		&region
 	);
 	mEndBufferFunc(commandBuffer);
+}
+
+void TextureManager::CreateImageView()
+{
+	VkImageViewCreateInfo viewInfo{};
+	viewInfo.sType													= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image													= mImage;
+	viewInfo.viewType												= VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format													= VK_FORMAT_R8G8B8A8_SRGB;
+	__GenerateImageSubResourceRange(viewInfo.subresourceRange);
+}
+
+void TextureManager::__GenerateImageSubResourceRange(VkImageSubresourceRange& range)
+{
+	range.aspectMask												= VK_IMAGE_ASPECT_COLOR_BIT;
+	range.baseMipLevel												= 0;
+	range.levelCount												= 1;
+	range.baseArrayLayer											= 0;
+	range.layerCount												= 1;
 }
 #pragma endregion
