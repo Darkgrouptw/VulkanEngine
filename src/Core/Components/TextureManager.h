@@ -32,6 +32,7 @@ private:
 
     VkImage mImage;                                                                                         // 貼圖
     VkDeviceMemory mImageMemory;                                                                            // 貼圖的 Memory
+    VkImageView mImageView;                                                                                 // Image View
     VkDevice mDevice;                                                                                       // 暫存裝置，刪除用
 
 

@@ -203,6 +203,9 @@ void TextureManager::CreateImageView()
 	viewInfo.viewType												= VK_IMAGE_VIEW_TYPE_2D;
 	viewInfo.format													= VK_FORMAT_R8G8B8A8_SRGB;
 	__GenerateImageSubResourceRange(viewInfo.subresourceRange);
+
+	if (vkCreateImageView(mDevice, &viewInfo, nullptr, &mImageView) != VK_SUCCESS)
+		throw runtime_error("Failed to create texture image view");
 }
 
 void TextureManager::__GenerateImageSubResourceRange(VkImageSubresourceRange& range)
