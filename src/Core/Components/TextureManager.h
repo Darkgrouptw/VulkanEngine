@@ -18,15 +18,16 @@ public:
         VkDevice&,
         function<uint32_t(uint32_t, VkMemoryPropertyFlags)>,
         function<VkCommandBuffer()>,
-        function<void(VkCommandBuffer)>);
+        function<void(VkCommandBuffer)>,
+        VkFormat);
     ~TextureManager();
-                                                                           // 建立 Texture Image View
-private:
-    void CreateImage(int, int, VkDevice&, function<uint32_t(uint32_t, VkMemoryPropertyFlags)>);             // 建立 Vulkan 的 Image & buffer
-    void TransitionImageLayout(VkImage, VkFormat, VkImageLayout, VkImageLayout);                            // 建立 VkCommandBuffer
-    void CopyBufferToImage(VkBuffer, VkImage, uint32_t, uint32_t);                                          // 建立 Buffer 到 Image 中
 
-    void CreateImageView();                                                                                 // 建立 TextureImage View
+    void CreateImageView();                                                                                 // 建立將對應的 Texture 建立 TextureImage View
+    void CreateSampler();                                                                                   // 建立對應的 Sampler
+private:
+    void CreateImage(int, int, function<uint32_t(uint32_t, VkMemoryPropertyFlags)>);                        // 建立 Vulkan 的 Image & buffer
+    void TransitionImageLayout(VkImageLayout, VkImageLayout);                                               // 建立 VkCommandBuffer
+    void CopyBufferToImage(VkBuffer, uint32_t, uint32_t);                                                   // 建立 Buffer 到 Image 中
 
     void __GenerateImageSubResourceRange(VkImageSubresourceRange&);                                         // 填寫 ImageSubResource
 
@@ -34,6 +35,7 @@ private:
     VkDeviceMemory mImageMemory;                                                                            // 貼圖的 Memory
     VkImageView mImageView;                                                                                 // Image View
     VkDevice mDevice;                                                                                       // 暫存裝置，刪除用
+    VkFormat mFormat;                                                                                       // 圖片格式
 
 
     // Command Single Time Buffer Function

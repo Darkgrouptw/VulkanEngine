@@ -541,6 +541,7 @@ void VulkanEngineApplication::__CreateImageViews()
 	SwapChainImageViews.resize(SwapChainImages.size());
 	for (size_t i = 0; i < SwapChainImages.size(); i++)
 	{
+		// 相同於 TextureManager::CreateImageView
 		VkImageViewCreateInfo createInfo{};
 		createInfo.sType 											= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		createInfo.image											= SwapChainImages[i];
@@ -875,7 +876,9 @@ void VulkanEngineApplication::__CreateTextureImage()
 		lambdaCreateBufferFunction, Device,
 		lambdaFindMemoryTypeFunction,
 		lambdaBeginSingleTimeCommandFunction,
-		lambdaEndSingleTimeCommandFunction);
+		lambdaEndSingleTimeCommandFunction,
+		VK_FORMAT_R8G8B8A8_SRGB);
+	TextM->CreateImageView();
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {

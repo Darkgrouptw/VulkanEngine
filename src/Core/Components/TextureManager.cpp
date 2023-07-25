@@ -10,7 +10,7 @@ TextureManager::TextureManager(string path,
 	VkDevice& pDevice,
 	function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton,
 	function<VkCommandBuffer()> pBeginBufferFunc,
-	function<void(VkCommandBuffer)> pEndBufferFunc)
+	function<void(VkCommandBuffer)> pEndBufferFunc, VkFormat pFormat)
 {
 	#pragma region Use library to load image
 	// 這裡要記得是圖片的資訊，和讀取出來的參數可能不一樣
@@ -24,6 +24,9 @@ TextureManager::TextureManager(string path,
 	// 裝 Func
 	mBeginBufferFunc												= pBeginBufferFunc;
 	mEndBufferFunc													= pEndBufferFunc;
+
+	mDevice 														= pDevice;
+	mFormat															= pFormat;
 	#pragma endregion
 	#pragma region GPU 設定
 	// 裝進 StageBuffer 中
@@ -42,35 +45,46 @@ TextureManager::TextureManager(string path,
 
 	#pragma region Texture Images
 	// CreateImage
-	CreateImage(width, height, pDevice, pFindMemoryTypeFunciton);
+	CreateImage(width, height, pFindMemoryTypeFunciton);
 
 	// 這裡主要做幾件事
 	// 1. Transition image 到 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 	// 2. Copy Buffer 到 Image
 	// 3. Transition image 給 Shader_Read_Only
-	TransitionImageLayout(mImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	CopyBufferToImage(stageBuffer, mImage, width, height);
-	TransitionImageLayout(mImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	TransitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	CopyBufferToImage(stageBuffer, width, height);
+	TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	// Destroy Buffer
 	vkDestroyBuffer(pDevice, stageBuffer, nullptr);
 	vkFreeMemory(pDevice, stageBufferMemory, nullptr);
-	mDevice = pDevice;
-	#pragma endregion
-	#pragma region Texture Image View
-	CreateImageView();
 	#pragma endregion
 	#pragma endregion
 }
 TextureManager::~TextureManager()
 {
 	// Destroy Texture
+	vkDestroyImageView(mDevice, mImageView, nullptr);
 	vkDestroyImage(mDevice, mImage, nullptr);
 	vkFreeMemory(mDevice, mImageMemory, nullptr);
 }
+
+void TextureManager::CreateImageView()
+{
+	VkImageViewCreateInfo viewInfo{};
+	viewInfo.sType													= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image													= mImage;
+	viewInfo.viewType												= VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format													= mFormat;
+	__GenerateImageSubResourceRange(viewInfo.subresourceRange);
+
+	if (vkCreateImageView(mDevice, &viewInfo, nullptr, &mImageView) != VK_SUCCESS)
+		throw runtime_error("Failed to create texture image view");
+}
+
 #pragma endregion
 #pragma region Private
-void TextureManager::CreateImage(int pWidth, int pHeight, VkDevice& pDevice, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
+void TextureManager::CreateImage(int pWidth, int pHeight, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
 {
 	#pragma region Image Create
 	VkImageCreateInfo createInfo{};
@@ -82,7 +96,7 @@ void TextureManager::CreateImage(int pWidth, int pHeight, VkDevice& pDevice, fun
 	createInfo.mipLevels											= 1;
 	createInfo.arrayLayers											= 1;
 
-	createInfo.format												= VK_FORMAT_R8G8B8A8_SRGB;
+	createInfo.format												= mFormat;
 	createInfo.tiling												= VK_IMAGE_TILING_OPTIMAL;				// ToDo: Check vs Linear(row-major)
 	createInfo.initialLayout										= VK_IMAGE_LAYOUT_UNDEFINED;			// VK_IMAGE_LAYOUT_UNDEFINED (在初始化的時候會砍調沒有在 GPU 用掉像素資料)，VK_IMAGE_LAYOUT_PREINITIALIZED (相反，會保留) (https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImageLayout.html)
 	
@@ -91,24 +105,24 @@ void TextureManager::CreateImage(int pWidth, int pHeight, VkDevice& pDevice, fun
 	createInfo.samples												= VK_SAMPLE_COUNT_1_BIT;
 	createInfo.flags												= 0;
 
-	if (vkCreateImage(pDevice, &createInfo, nullptr, &mImage) 		!= VK_SUCCESS)
+	if (vkCreateImage(mDevice, &createInfo, nullptr, &mImage) 		!= VK_SUCCESS)
 		throw runtime_error("Failed to create vkimage");
 	#pragma endregion
 	#pragma region Allocate Memory
 	VkMemoryRequirements requirement{};
-	vkGetImageMemoryRequirements(pDevice, mImage, &requirement);
+	vkGetImageMemoryRequirements(mDevice, mImage, &requirement);
 	
 	VkMemoryAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocateInfo.allocationSize										= requirement.size;
 	allocateInfo.memoryTypeIndex									= pFindMemoryTypeFunciton(requirement.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	if (vkAllocateMemory(pDevice, &allocateInfo, nullptr, &mImageMemory) != VK_SUCCESS)
+	if (vkAllocateMemory(mDevice, &allocateInfo, nullptr, &mImageMemory) != VK_SUCCESS)
 		throw runtime_error("Failed to allocate memory in image");
-	vkBindImageMemory(pDevice, mImage, mImageMemory, 0);
+	vkBindImageMemory(mDevice, mImage, mImageMemory, 0);
 	#pragma endregion
 }
-void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkImageLayout pOldLayout, VkImageLayout pNewLayout)
+void TextureManager::TransitionImageLayout(VkImageLayout pOldLayout, VkImageLayout pNewLayout)
 {
 	VkCommandBuffer commandBuffer 									= mBeginBufferFunc();
 
@@ -123,7 +137,7 @@ void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkI
 	barrier.dstQueueFamilyIndex										= VK_QUEUE_FAMILY_IGNORED;
 
 	// 參數
-	barrier.image													= pImage;
+	barrier.image													= mImage;
 	__GenerateImageSubResourceRange(barrier.subresourceRange);
 	#pragma endregion
 	#pragma region Sync
@@ -161,7 +175,7 @@ void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkI
 	#pragma endregion
 	mEndBufferFunc(commandBuffer);
 }
-void TextureManager::CopyBufferToImage(VkBuffer pBuffer, VkImage pImage, uint32_t pWidth, uint32_t pHeight)
+void TextureManager::CopyBufferToImage(VkBuffer pBuffer, uint32_t pWidth, uint32_t pHeight)
 {
 	VkCommandBuffer commandBuffer 									= mBeginBufferFunc();
 	#pragma region Buffer To Image
@@ -187,25 +201,12 @@ void TextureManager::CopyBufferToImage(VkBuffer pBuffer, VkImage pImage, uint32_
 	vkCmdCopyBufferToImage(
 		commandBuffer,
 		pBuffer,
-		pImage,
+		mImage,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1,
 		&region
 	);
 	mEndBufferFunc(commandBuffer);
-}
-
-void TextureManager::CreateImageView()
-{
-	VkImageViewCreateInfo viewInfo{};
-	viewInfo.sType													= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	viewInfo.image													= mImage;
-	viewInfo.viewType												= VK_IMAGE_VIEW_TYPE_2D;
-	viewInfo.format													= VK_FORMAT_R8G8B8A8_SRGB;
-	__GenerateImageSubResourceRange(viewInfo.subresourceRange);
-
-	if (vkCreateImageView(mDevice, &viewInfo, nullptr, &mImageView) != VK_SUCCESS)
-		throw runtime_error("Failed to create texture image view");
 }
 
 void TextureManager::__GenerateImageSubResourceRange(VkImageSubresourceRange& range)
