@@ -81,6 +81,36 @@ void TextureManager::CreateImageView()
 	if (vkCreateImageView(mDevice, &viewInfo, nullptr, &mImageView) != VK_SUCCESS)
 		throw runtime_error("Failed to create texture image view");
 }
+void TextureManager::CreateSampler(VkPhysicalDevice pPhysicalDevice)
+{
+	// 抓取裝置的參數
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(pPhysicalDevice, &properties);
+	float maxSamplerAnisotropy										= properties.limits.maxSamplerAnisotropy;
+	cout << "Max Sampler Anisotropy: " << maxSamplerAnisotropy << endl;
+
+	#pragma region Sampler Create Info
+	VkSamplerCreateInfo samplerInfo{};
+	samplerInfo.sType												= VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	
+	// 貼圖的兩種內插方式
+	// 1. Oversampling (magnification filter): 當貼圖太小，被放大的時候 (有很多個 pixel 要取同一個 texel) 內插方式 (https://vulkan-tutorial.com/images/texture_filtering.png)
+	// 2. Undersampling (minification filter): 當貼圖太大，但縮小的時候 (一個 pixel 要取很多個 texel) 內插方式 (https://vulkan-tutorial.com/images/anisotropic_filtering.png)
+	samplerInfo.magFilter											= VK_FILTER_LINEAR;						// 1.
+	samplerInfo.minFilter											= VK_FILTER_LINEAR;						// 2.
+
+	// 超過時要怎麼拿 (https://vulkan-tutorial.com/images/texture_addressing.png)
+	samplerInfo.addressModeU										= VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV										= VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW										= VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+	// Anisotropic
+	samplerInfo.anisotropyEnable									= VK_TRUE;
+	samplerInfo.maxAnisotropy										= maxSamplerAnisotropy;					// 這個數值越大，代表越花效能，但品質會越好
+	samplerInfo.borderColor											= VK_BORDER_COLOR_INT_OPAQUE_BLACK;		// 超越的時候 Black
+	#pragma endregion
+
+}
 
 #pragma endregion
 #pragma region Private

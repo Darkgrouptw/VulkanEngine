@@ -23,7 +23,7 @@ public:
     ~TextureManager();
 
     void CreateImageView();                                                                                 // 建立將對應的 Texture 建立 TextureImage View
-    void CreateSampler();                                                                                   // 建立對應的 Sampler
+    void CreateSampler(VkPhysicalDevice);                                                                   // 建立對應的 Sampler
 private:
     void CreateImage(int, int, function<uint32_t(uint32_t, VkMemoryPropertyFlags)>);                        // 建立 Vulkan 的 Image & buffer
     void TransitionImageLayout(VkImageLayout, VkImageLayout);                                               // 建立 VkCommandBuffer

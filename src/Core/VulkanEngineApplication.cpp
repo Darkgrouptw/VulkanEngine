@@ -879,6 +879,7 @@ void VulkanEngineApplication::__CreateTextureImage()
 		lambdaEndSingleTimeCommandFunction,
 		VK_FORMAT_R8G8B8A8_SRGB);
 	TextM->CreateImageView();
+	TextM->CreateSampler(PhysiclaDevice);
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {
