@@ -34,6 +34,7 @@ private:
     VkImage mImage;                                                                                         // 貼圖
     VkDeviceMemory mImageMemory;                                                                            // 貼圖的 Memory
     VkImageView mImageView;                                                                                 // Image View
+    VkSampler mImageSampler;                                                                                // Texture Image Sampler
     VkDevice mDevice;                                                                                       // 暫存裝置，刪除用
     VkFormat mFormat;                                                                                       // 圖片格式
 

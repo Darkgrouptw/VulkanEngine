@@ -107,7 +107,23 @@ void TextureManager::CreateSampler(VkPhysicalDevice pPhysicalDevice)
 	// Anisotropic
 	samplerInfo.anisotropyEnable									= VK_TRUE;
 	samplerInfo.maxAnisotropy										= maxSamplerAnisotropy;					// 這個數值越大，代表越花效能，但品質會越好
+
 	samplerInfo.borderColor											= VK_BORDER_COLOR_INT_OPAQUE_BLACK;		// 超越的時候 Black
+	samplerInfo.unnormalizedCoordinates								= VK_FALSE;								// True 的話，座標會以 [0, TextureWidth) & [0, TextureHeight)， False 會以 [0, 1)
+
+	// 主要設定 compareEnable 會導致 texel 的資料會拿來做比較
+	// 通常用於 Percentage-closer filtering on shadow maps (https://developer.nvidia.com/gpugems/gpugems/part-ii-lighting-and-shadows/chapter-11-shadow-map-antialiasing)
+	samplerInfo.compareEnable										= VK_FALSE;
+	samplerInfo.compareOp											= VK_COMPARE_OP_ALWAYS;
+
+	// Mipmap
+	samplerInfo.mipmapMode											= VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias											= 0.0f;
+	samplerInfo.minLod												= 0.0f;
+	samplerInfo.maxLod												= 0.0f;
+	#pragma endregion
+	#pragma region  Create
+
 	#pragma endregion
 
 }
