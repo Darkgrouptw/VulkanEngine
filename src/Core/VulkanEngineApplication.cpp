@@ -443,6 +443,7 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 
 	// 對此裝置需要啟用哪些 Features
 	VkPhysicalDeviceFeatures deviceFeatures{};
+	deviceFeatures.samplerAnisotropy								= VK_TRUE;								// 開啟 Anisotropy
 
 	// 真正建立 Logical Device
 	VkDeviceCreateInfo createInfo{};
@@ -1194,13 +1195,17 @@ bool VulkanEngineApplication::__IsDeviceSuitable(VkPhysicalDevice device)
 	if (details.Formats.empty() || details.PresentModes.empty())
 		return false;
 
+	// 抓取顯卡的 Feature
+	// 並抓取是否可以成功開啟 samplerAnisotropy
+	VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+	if (!deviceFeatures.samplerAnisotropy)
+		return false;
+
 	// 測試顯卡的一些細節
 #if defined(VKENGINE_DEBUG_DETAILS)
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
-
-	VkPhysicalDeviceFeatures deviceFeatures;
-	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
 	cout << "Max Dimension of Texture Size: " << deviceProperties.limits.maxImageDimension2D << endl;
 	cout << "Is Geometry Shader available: " << (deviceFeatures.geometryShader ? "True" : "False") << endl;	// Mac M1 不支援 (https://forum.unity.com/threads/geometry-shader-on-mac.1056659/)

@@ -64,6 +64,7 @@ TextureManager::TextureManager(string path,
 TextureManager::~TextureManager()
 {
 	// Destroy Texture
+	vkDestroySampler(mDevice, mImageSampler, nullptr);
 	vkDestroyImageView(mDevice, mImageView, nullptr);
 	vkDestroyImage(mDevice, mImage, nullptr);
 	vkFreeMemory(mDevice, mImageMemory, nullptr);
@@ -122,10 +123,10 @@ void TextureManager::CreateSampler(VkPhysicalDevice pPhysicalDevice)
 	samplerInfo.minLod												= 0.0f;
 	samplerInfo.maxLod												= 0.0f;
 	#pragma endregion
-	#pragma region  Create
-
+	#pragma region Create Sampler
+	if (vkCreateSampler(mDevice, &samplerInfo, nullptr, &mImageSampler) != VK_SUCCESS)
+		throw runtime_error("Failed to create texture sampler");
 	#pragma endregion
-
 }
 
 #pragma endregion
