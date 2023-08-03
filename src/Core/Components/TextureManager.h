@@ -4,6 +4,7 @@
 // 只單 include 一個檔案，加速使用
 #include "stb/stb_image.h"
 
+#include <tuple>
 #include <functional>
 #include <vulkan/vulkan.h>
 #include <filesystem>
@@ -24,6 +25,9 @@ public:
 
     void CreateImageView();                                                                                 // 建立將對應的 Texture 建立 TextureImage View
     void CreateSampler(VkPhysicalDevice);                                                                   // 建立對應的 Sampler
+    VkDescriptorSetLayoutBinding CreateDescriptorSetLayout();                                               // 建立 Descriptor SetLayout
+    //tuple<VkDescriptorPoolSize, VkDescriptorImageInfo, VkWriteDescriptorSet> CreateDescriptorDataSet(uint32_t); // 建立 VkDescriptorPoolSize, VkDescriptorImageInfo, VkWriteDescriptorSet
+
 private:
     void CreateImage(int, int, function<uint32_t(uint32_t, VkMemoryPropertyFlags)>);                        // 建立 Vulkan 的 Image & buffer
     void TransitionImageLayout(VkImageLayout, VkImageLayout);                                               // 建立 VkCommandBuffer

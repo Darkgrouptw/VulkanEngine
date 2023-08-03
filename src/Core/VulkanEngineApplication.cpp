@@ -625,10 +625,13 @@ void VulkanEngineApplication::__CreateDescriptorSetLayout()
 	uboLayout.descriptorCount										= 1;
 	uboLayout.stageFlags											= VK_SHADER_STAGE_VERTEX_BIT;			// 使用於 Vertex Buffer 的 Uniform Buffer
 
+	auto textureLayout												= TextM->CreateDescriptorSetLayout();
+
+	vector<VkDescriptorSetLayoutBinding> bindings					= { uboLayout, textureLayout };
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount											= 1;
-	layoutInfo.pBindings											= &uboLayout;
+	layoutInfo.bindingCount											= bindings.size();
+	layoutInfo.pBindings											= bindings.data();
 
 	if (vkCreateDescriptorSetLayout(Device, &layoutInfo, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
 		throw runtime_error("Failed to create descriptor set layout");
@@ -975,14 +978,20 @@ void VulkanEngineApplication::__CreateUniformBuffer()
 void VulkanEngineApplication::__CreateDescriptor()
 {
 	#pragma region Descriptor Pool
+	vector<VkDescriptorPoolSize> poolSizes{};
 	VkDescriptorPoolSize poolSize{};
 	poolSize.type													= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSize.descriptorCount										= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
 
+	//auto textureDescriptorDataSet									= TextM->CreateDescriptorDataSet(static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS));
+
+	poolSizes.push_back(poolSize);
+	//poolSizes.push_back(get<0>(textureDescriptorDataSet));
+
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType													= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount											= 1;
-	poolInfo.pPoolSizes												= &poolSize;
+	poolInfo.poolSizeCount											= poolSizes.size();
+	poolInfo.pPoolSizes												= poolSizes.data();
 	poolInfo.maxSets												= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
 
 	if (vkCreateDescriptorPool(Device, &poolInfo, nullptr, &DescriptorPool) != VK_SUCCESS)
