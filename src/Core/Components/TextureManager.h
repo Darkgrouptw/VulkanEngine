@@ -25,8 +25,11 @@ public:
 
     void CreateImageView();                                                                                 // 建立將對應的 Texture 建立 TextureImage View
     void CreateSampler(VkPhysicalDevice);                                                                   // 建立對應的 Sampler
+
+    // 建立 Descriptor 相關 Function
     VkDescriptorSetLayoutBinding CreateDescriptorSetLayout();                                               // 建立 Descriptor SetLayout
-    //tuple<VkDescriptorPoolSize, VkDescriptorImageInfo, VkWriteDescriptorSet> CreateDescriptorDataSet(uint32_t); // 建立 VkDescriptorPoolSize, VkDescriptorImageInfo, VkWriteDescriptorSet
+    VkDescriptorPoolSize CreateDescriptorPoolSize(uint32_t);                                                // 建立 VkDescriptorPoolSize
+    VkDescriptorImageInfo CreateDescriptorImageInfo();                                                      // 建立 VkDescriptorImageInfo
 
 private:
     void CreateImage(int, int, function<uint32_t(uint32_t, VkMemoryPropertyFlags)>);                        // 建立 Vulkan 的 Image & buffer
@@ -41,7 +44,6 @@ private:
     VkSampler mImageSampler;                                                                                // Texture Image Sampler
     VkDevice mDevice;                                                                                       // 暫存裝置，刪除用
     VkFormat mFormat;                                                                                       // 圖片格式
-
 
     // Command Single Time Buffer Function
     function<VkCommandBuffer()> mBeginBufferFunc                    = nullptr;

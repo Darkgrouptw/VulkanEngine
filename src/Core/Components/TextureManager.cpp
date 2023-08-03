@@ -128,6 +128,7 @@ void TextureManager::CreateSampler(VkPhysicalDevice pPhysicalDevice)
 		throw runtime_error("Failed to create texture sampler");
 	#pragma endregion
 }
+
 VkDescriptorSetLayoutBinding TextureManager::CreateDescriptorSetLayout()
 {
 	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
@@ -138,21 +139,21 @@ VkDescriptorSetLayoutBinding TextureManager::CreateDescriptorSetLayout()
 	samplerLayoutBinding.stageFlags									= VK_SHADER_STAGE_FRAGMENT_BIT;		// 送到 Fragment Shader
 	return samplerLayoutBinding;
 }
-//tuple<VkDescriptorPoolSize, VkDescriptorImageInfo> TextureManager::CreateDescriptorPoolSizeAndImageInfo(uint32_t count)
-//{
-//	VkDescriptorPoolSize poolSize{};
-//	poolSize.type													= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-//	poolSize.descriptorCount										= count;
-//	return { poolSize, imageInfo };
-//}
-//VkDescriptorImageInfo 
-//{
-//	VkDescriptorImageInfo imageInfo{};
-//	imageInfo.imageLayout											= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-//	imageInfo.imageView												= mImageView;
-//	imageInfo.sampler												= mImageSampler;
-//	return imageInfo
-//}
+VkDescriptorPoolSize TextureManager::CreateDescriptorPoolSize(uint32_t count)
+{
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type													= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSize.descriptorCount										= count;
+	return poolSize;
+}
+VkDescriptorImageInfo TextureManager::CreateDescriptorImageInfo()
+{
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout											= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView												= mImageView;
+	imageInfo.sampler												= mImageSampler;
+	return imageInfo;
+}
 
 #pragma endregion
 #pragma region Private

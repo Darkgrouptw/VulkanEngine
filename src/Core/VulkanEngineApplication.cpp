@@ -981,18 +981,16 @@ void VulkanEngineApplication::__CreateDescriptor()
 	vector<VkDescriptorPoolSize> poolSizes{};
 	VkDescriptorPoolSize poolSize{};
 	poolSize.type													= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize.descriptorCount										= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
-
-	//auto textureDescriptorDataSet									= TextM->CreateDescriptorDataSet(static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS));
+	poolSize.descriptorCount										= MAX_FRAME_IN_FLIGHTS;
 
 	poolSizes.push_back(poolSize);
-	//poolSizes.push_back(get<0>(textureDescriptorDataSet));
+	poolSizes.push_back(TextM->CreateDescriptorPoolSize(MAX_FRAME_IN_FLIGHTS));
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType													= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount											= poolSizes.size();
 	poolInfo.pPoolSizes												= poolSizes.data();
-	poolInfo.maxSets												= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
+	poolInfo.maxSets												= MAX_FRAME_IN_FLIGHTS;
 
 	if (vkCreateDescriptorPool(Device, &poolInfo, nullptr, &DescriptorPool) != VK_SUCCESS)
 		throw runtime_error("Failed to create descriptor pool");
@@ -1003,7 +1001,7 @@ void VulkanEngineApplication::__CreateDescriptor()
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocateInfo.descriptorPool										= DescriptorPool;
-	allocateInfo.descriptorSetCount									= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
+	allocateInfo.descriptorSetCount									= MAX_FRAME_IN_FLIGHTS;
 	allocateInfo.pSetLayouts										= layouts.data();
 
 	DescriptorSets.resize(MAX_FRAME_IN_FLIGHTS);
@@ -1017,17 +1015,32 @@ void VulkanEngineApplication::__CreateDescriptor()
 		bufferinfo.offset											= 0;
 		bufferinfo.range											= sizeof(UniformBufferInfo);
 
-		VkWriteDescriptorSet descriptorWrite{};
-		descriptorWrite.sType										= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet										= DescriptorSets[i];
-		descriptorWrite.dstBinding									= 0;
-		descriptorWrite.dstArrayElement								= 0;
+		VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
 
-		descriptorWrite.descriptorType								= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrite.descriptorCount								= 1;
-		descriptorWrite.pBufferInfo									= &bufferinfo;
+		vector<VkWriteDescriptorSet> descriptorWrites;
+		descriptorWrites.resize(2);
+		#pragma region Uniform Buffer
+		descriptorWrites[0].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet									= DescriptorSets[i];
+		descriptorWrites[0].dstBinding								= 0;
+		descriptorWrites[0].dstArrayElement							= 0;
 
-		vkUpdateDescriptorSets(Device, 1, &descriptorWrite, 0, nullptr);
+		descriptorWrites[0].descriptorType							= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrites[0].descriptorCount							= 1;
+		descriptorWrites[0].pBufferInfo								= &bufferinfo;
+		#pragma endregion
+		#pragma region Image Info
+		descriptorWrites[1].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[1].dstSet									= DescriptorSets[i];
+		descriptorWrites[1].dstBinding								= 1;
+		descriptorWrites[1].dstArrayElement							= 0;
+
+		descriptorWrites[1].descriptorType							= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[1].descriptorCount							= 1;
+		descriptorWrites[1].pImageInfo								= &imageInfo;
+		#pragma endregion
+
+		vkUpdateDescriptorSets(Device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 	}
 	#pragma endregion
     #pragma region Description Pool For ImGui

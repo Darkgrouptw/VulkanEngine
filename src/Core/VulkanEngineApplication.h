@@ -109,7 +109,7 @@ private:
 
 	// Vulkan Command Buffer
 	// 這裡是卡住上限，避免畫太多資料
-	const int MAX_FRAME_IN_FLIGHTS 									= 2;
+	const uint32_t MAX_FRAME_IN_FLIGHTS 							= 2;
 	uint32_t CurrentFrameIndex 										= 0;
 	vector<VkCommandBuffer> CommandBuffers;
 
