@@ -9,12 +9,13 @@ struct VertexBufferInfo
 {
     glm::vec2 Position;
     glm::vec3 Color;
+    glm::vec2 Texcoord;
 
     // 設定 Vulkan 的 Vertex Input
     static vector<VkVertexInputAttributeDescription> GetAttributeDescription()
     {
         vector<VkVertexInputAttributeDescription> desc{};
-        desc.resize(2);
+        desc.resize(3);
 
         // Position
         desc[0].binding                                             = 0;
@@ -27,6 +28,12 @@ struct VertexBufferInfo
         desc[1].location                                            = 1;
         desc[1].format                                              = VK_FORMAT_R32G32B32_SFLOAT;
         desc[1].offset                                              = offsetof(VertexBufferInfo, Color);
+
+        // Texture Coordinate
+        desc[2].binding                                             = 0;
+        desc[2].location                                            = 2;
+        desc[2].format                                              = VK_FORMAT_R32G32_SFLOAT;
+        desc[2].offset                                              = offsetof(VertexBufferInfo, Texcoord);
         return desc;
     }
 
@@ -44,11 +51,14 @@ struct VertexBufferInfo
     }
 };
 
+// 0 - 1
+// |   |
+// 3 - 2
 const vector<VertexBufferInfo> vertices = {
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+    {{-0.5f, -0.5f},    {1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f }},
+    {{+0.5f, -0.5f},    {0.0f, 1.0f, 0.0f}, { 1.0f, 1.0f }},
+    {{+0.5f, +0.5f},    {0.0f, 0.0f, 1.0f}, { 1.0f, 0.0f }},
+    {{-0.5f, +0.5f},    {1.0f, 1.0f, 1.0f}, { 0.0f, 0.0f }}
 };
 const vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0

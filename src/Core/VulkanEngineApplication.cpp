@@ -276,7 +276,7 @@ void VulkanEngineApplication::UpdateUniformBuffer(uint32_t frameIndex)
 	// 只有第一幀的時候設定
 	static auto startTime											= chrono::high_resolution_clock::now();
 	auto currentTime												= chrono::high_resolution_clock::now();
-	float duration													= chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
+	float duration													= 0;//chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
 
 	// MVP
 	UniformBufferInfo bufferData{};
