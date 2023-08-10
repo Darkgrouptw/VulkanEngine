@@ -726,7 +726,7 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	rasterizationInfo.depthClampEnable								= VK_FALSE;								// 對於 Shadow Map 可能會有需要 Near 到 Far 之間的資訊，其他都不需要設為 True
 	rasterizationInfo.rasterizerDiscardEnable						= VK_FALSE;								// 如果設定成 True，會造成 geometry 不會傳入 rasterization
 	rasterizationInfo.cullMode										= VK_CULL_MODE_BACK_BIT;				// 去除 Back face
-	rasterizationInfo.frontFace										= VK_FRONT_FACE_COUNTER_CLOCKWISE;		// 逆時針的 Vertex，算 Front Face
+	rasterizationInfo.frontFace										= VK_FRONT_FACE_CLOCKWISE;				// 逆時針的 Vertex，算 Front Face
 	rasterizationInfo.depthBiasEnable								= VK_FALSE;
 	rasterizationInfo.lineWidth										= 1.0;
 	// 當設定為 False，底下設定就不需要設定

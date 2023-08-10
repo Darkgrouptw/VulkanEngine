@@ -12,11 +12,14 @@ layout (binding = 0) uniform UniformBufferInfo {
 } UBObject;
 
 layout (location = 0) out vec3 FragColor;
-//layout (location = 2) out vec2 FragTexcoord;
+layout (location = 1) out vec2 FragTexcoord;
 
 void main()
 {
     //gl_Position                                                     = UBObject.ProjectionMatrix * UBObject.ViewMatrix * UBObject.ModelMatrix * vec4(InPosition, 0, 1);
     gl_Position                                                     = vec4(InPosition, 0, 1);
-    FragColor                                                       = InColor; 
+
+    // Send to Fragment
+    FragColor                                                       = InColor;
+    FragTexcoord                                                    = InTexcoord;
 }
