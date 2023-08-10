@@ -276,7 +276,7 @@ void VulkanEngineApplication::UpdateUniformBuffer(uint32_t frameIndex)
 	// 只有第一幀的時候設定
 	static auto startTime											= chrono::high_resolution_clock::now();
 	auto currentTime												= chrono::high_resolution_clock::now();
-	float duration													= chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
+	float duration													= 0;//chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
 
 	// MVP
 	UniformBufferInfo bufferData{};
@@ -443,6 +443,7 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 
 	// 對此裝置需要啟用哪些 Features
 	VkPhysicalDeviceFeatures deviceFeatures{};
+	deviceFeatures.samplerAnisotropy								= VK_TRUE;								// 開啟 Anisotropy
 
 	// 真正建立 Logical Device
 	VkDeviceCreateInfo createInfo{};
@@ -541,6 +542,7 @@ void VulkanEngineApplication::__CreateImageViews()
 	SwapChainImageViews.resize(SwapChainImages.size());
 	for (size_t i = 0; i < SwapChainImages.size(); i++)
 	{
+		// 相同於 TextureManager::CreateImageView
 		VkImageViewCreateInfo createInfo{};
 		createInfo.sType 											= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		createInfo.image											= SwapChainImages[i];
@@ -623,10 +625,13 @@ void VulkanEngineApplication::__CreateDescriptorSetLayout()
 	uboLayout.descriptorCount										= 1;
 	uboLayout.stageFlags											= VK_SHADER_STAGE_VERTEX_BIT;			// 使用於 Vertex Buffer 的 Uniform Buffer
 
+	auto textureLayout												= TextM->CreateDescriptorSetLayout();
+
+	vector<VkDescriptorSetLayoutBinding> bindings					= { uboLayout, textureLayout };
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount											= 1;
-	layoutInfo.pBindings											= &uboLayout;
+	layoutInfo.bindingCount											= bindings.size();
+	layoutInfo.pBindings											= bindings.data();
 
 	if (vkCreateDescriptorSetLayout(Device, &layoutInfo, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
 		throw runtime_error("Failed to create descriptor set layout");
@@ -721,7 +726,7 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	rasterizationInfo.depthClampEnable								= VK_FALSE;								// 對於 Shadow Map 可能會有需要 Near 到 Far 之間的資訊，其他都不需要設為 True
 	rasterizationInfo.rasterizerDiscardEnable						= VK_FALSE;								// 如果設定成 True，會造成 geometry 不會傳入 rasterization
 	rasterizationInfo.cullMode										= VK_CULL_MODE_BACK_BIT;				// 去除 Back face
-	rasterizationInfo.frontFace										= VK_FRONT_FACE_COUNTER_CLOCKWISE;		// 逆時針的 Vertex，算 Front Face
+	rasterizationInfo.frontFace										= VK_FRONT_FACE_CLOCKWISE;				// 逆時針的 Vertex，算 Front Face
 	rasterizationInfo.depthBiasEnable								= VK_FALSE;
 	rasterizationInfo.lineWidth										= 1.0;
 	// 當設定為 False，底下設定就不需要設定
@@ -875,7 +880,10 @@ void VulkanEngineApplication::__CreateTextureImage()
 		lambdaCreateBufferFunction, Device,
 		lambdaFindMemoryTypeFunction,
 		lambdaBeginSingleTimeCommandFunction,
-		lambdaEndSingleTimeCommandFunction);
+		lambdaEndSingleTimeCommandFunction,
+		VK_FORMAT_R8G8B8A8_SRGB);
+	TextM->CreateImageView();
+	TextM->CreateSampler(PhysiclaDevice);
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {
@@ -970,15 +978,19 @@ void VulkanEngineApplication::__CreateUniformBuffer()
 void VulkanEngineApplication::__CreateDescriptor()
 {
 	#pragma region Descriptor Pool
+	vector<VkDescriptorPoolSize> poolSizes{};
 	VkDescriptorPoolSize poolSize{};
 	poolSize.type													= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize.descriptorCount										= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
+	poolSize.descriptorCount										= MAX_FRAME_IN_FLIGHTS;
+
+	poolSizes.push_back(poolSize);
+	poolSizes.push_back(TextM->CreateDescriptorPoolSize(MAX_FRAME_IN_FLIGHTS));
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType													= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount											= 1;
-	poolInfo.pPoolSizes												= &poolSize;
-	poolInfo.maxSets												= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
+	poolInfo.poolSizeCount											= poolSizes.size();
+	poolInfo.pPoolSizes												= poolSizes.data();
+	poolInfo.maxSets												= MAX_FRAME_IN_FLIGHTS;
 
 	if (vkCreateDescriptorPool(Device, &poolInfo, nullptr, &DescriptorPool) != VK_SUCCESS)
 		throw runtime_error("Failed to create descriptor pool");
@@ -989,7 +1001,7 @@ void VulkanEngineApplication::__CreateDescriptor()
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocateInfo.descriptorPool										= DescriptorPool;
-	allocateInfo.descriptorSetCount									= static_cast<uint32_t>(MAX_FRAME_IN_FLIGHTS);
+	allocateInfo.descriptorSetCount									= MAX_FRAME_IN_FLIGHTS;
 	allocateInfo.pSetLayouts										= layouts.data();
 
 	DescriptorSets.resize(MAX_FRAME_IN_FLIGHTS);
@@ -1003,17 +1015,32 @@ void VulkanEngineApplication::__CreateDescriptor()
 		bufferinfo.offset											= 0;
 		bufferinfo.range											= sizeof(UniformBufferInfo);
 
-		VkWriteDescriptorSet descriptorWrite{};
-		descriptorWrite.sType										= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet										= DescriptorSets[i];
-		descriptorWrite.dstBinding									= 0;
-		descriptorWrite.dstArrayElement								= 0;
+		VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
 
-		descriptorWrite.descriptorType								= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrite.descriptorCount								= 1;
-		descriptorWrite.pBufferInfo									= &bufferinfo;
+		vector<VkWriteDescriptorSet> descriptorWrites;
+		descriptorWrites.resize(2);
+		#pragma region Uniform Buffer
+		descriptorWrites[0].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet									= DescriptorSets[i];
+		descriptorWrites[0].dstBinding								= 0;
+		descriptorWrites[0].dstArrayElement							= 0;
 
-		vkUpdateDescriptorSets(Device, 1, &descriptorWrite, 0, nullptr);
+		descriptorWrites[0].descriptorType							= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrites[0].descriptorCount							= 1;
+		descriptorWrites[0].pBufferInfo								= &bufferinfo;
+		#pragma endregion
+		#pragma region Image Info
+		descriptorWrites[1].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[1].dstSet									= DescriptorSets[i];
+		descriptorWrites[1].dstBinding								= 1;
+		descriptorWrites[1].dstArrayElement							= 0;
+
+		descriptorWrites[1].descriptorType							= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[1].descriptorCount							= 1;
+		descriptorWrites[1].pImageInfo								= &imageInfo;
+		#pragma endregion
+
+		vkUpdateDescriptorSets(Device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 	}
 	#pragma endregion
     #pragma region Description Pool For ImGui
@@ -1190,13 +1217,17 @@ bool VulkanEngineApplication::__IsDeviceSuitable(VkPhysicalDevice device)
 	if (details.Formats.empty() || details.PresentModes.empty())
 		return false;
 
+	// 抓取顯卡的 Feature
+	// 並抓取是否可以成功開啟 samplerAnisotropy
+	VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+	if (!deviceFeatures.samplerAnisotropy)
+		return false;
+
 	// 測試顯卡的一些細節
 #if defined(VKENGINE_DEBUG_DETAILS)
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
-
-	VkPhysicalDeviceFeatures deviceFeatures;
-	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
 	cout << "Max Dimension of Texture Size: " << deviceProperties.limits.maxImageDimension2D << endl;
 	cout << "Is Geometry Shader available: " << (deviceFeatures.geometryShader ? "True" : "False") << endl;	// Mac M1 不支援 (https://forum.unity.com/threads/geometry-shader-on-mac.1056659/)

@@ -10,9 +10,9 @@ TextureManager::TextureManager(string path,
 	VkDevice& pDevice,
 	function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton,
 	function<VkCommandBuffer()> pBeginBufferFunc,
-	function<void(VkCommandBuffer)> pEndBufferFunc)
+	function<void(VkCommandBuffer)> pEndBufferFunc, VkFormat pFormat)
 {
-	#pragma region 使用 library 來讀圖
+	#pragma region Use library to load image
 	// 這裡要記得是圖片的資訊，和讀取出來的參數可能不一樣
 	// 例；圖片可能沒有 Alpha，但是 stbi_image 讀 Alpha，拿這邊會 channel 會是 3，但資料可能會是 4
 	int width, height, channels;                                                                         // 圖片資訊 
@@ -24,6 +24,9 @@ TextureManager::TextureManager(string path,
 	// 裝 Func
 	mBeginBufferFunc												= pBeginBufferFunc;
 	mEndBufferFunc													= pEndBufferFunc;
+
+	mDevice 														= pDevice;
+	mFormat															= pFormat;
 	#pragma endregion
 	#pragma region GPU 設定
 	// 裝進 StageBuffer 中
@@ -40,33 +43,121 @@ TextureManager::TextureManager(string path,
 	// Release CPU Data
 	stbi_image_free(pixels);
 
+	#pragma region Texture Images
 	// CreateImage
-	CreateImage(width, height, pDevice, pFindMemoryTypeFunciton);
+	CreateImage(width, height, pFindMemoryTypeFunciton);
 
 	// 這裡主要做幾件事
 	// 1. Transition image 到 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 	// 2. Copy Buffer 到 Image
 	// 3. Transition image 給 Shader_Read_Only
-	TransitionImageLayout(mImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	CopyBufferToImage(stageBuffer, mImage, width, height);
-	TransitionImageLayout(mImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	TransitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	CopyBufferToImage(stageBuffer, width, height);
+	TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	// Destroy Buffer
 	vkDestroyBuffer(pDevice, stageBuffer, nullptr);
 	vkFreeMemory(pDevice, stageBufferMemory, nullptr);
-	mDevice = pDevice;
+	#pragma endregion
 	#pragma endregion
 }
 TextureManager::~TextureManager()
 {
 	// Destroy Texture
+	vkDestroySampler(mDevice, mImageSampler, nullptr);
+	vkDestroyImageView(mDevice, mImageView, nullptr);
 	vkDestroyImage(mDevice, mImage, nullptr);
 	vkFreeMemory(mDevice, mImageMemory, nullptr);
 }
 
+void TextureManager::CreateImageView()
+{
+	VkImageViewCreateInfo viewInfo{};
+	viewInfo.sType													= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image													= mImage;
+	viewInfo.viewType												= VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format													= mFormat;
+	__GenerateImageSubResourceRange(viewInfo.subresourceRange);
+
+	if (vkCreateImageView(mDevice, &viewInfo, nullptr, &mImageView) != VK_SUCCESS)
+		throw runtime_error("Failed to create texture image view");
+}
+void TextureManager::CreateSampler(VkPhysicalDevice pPhysicalDevice)
+{
+	// 抓取裝置的參數
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(pPhysicalDevice, &properties);
+	float maxSamplerAnisotropy										= properties.limits.maxSamplerAnisotropy;
+	cout << "Max Sampler Anisotropy: " << maxSamplerAnisotropy << endl;
+
+	#pragma region Sampler Create Info
+	VkSamplerCreateInfo samplerInfo{};
+	samplerInfo.sType												= VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	
+	// 貼圖的兩種內插方式
+	// 1. Oversampling (magnification filter): 當貼圖太小，被放大的時候 (有很多個 pixel 要取同一個 texel) 內插方式 (https://vulkan-tutorial.com/images/texture_filtering.png)
+	// 2. Undersampling (minification filter): 當貼圖太大，但縮小的時候 (一個 pixel 要取很多個 texel) 內插方式 (https://vulkan-tutorial.com/images/anisotropic_filtering.png)
+	samplerInfo.magFilter											= VK_FILTER_LINEAR;						// 1.
+	samplerInfo.minFilter											= VK_FILTER_LINEAR;						// 2.
+
+	// 超過時要怎麼拿 (https://vulkan-tutorial.com/images/texture_addressing.png)
+	samplerInfo.addressModeU										= VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV										= VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW										= VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+	// Anisotropic
+	samplerInfo.anisotropyEnable									= VK_TRUE;
+	samplerInfo.maxAnisotropy										= maxSamplerAnisotropy;					// 這個數值越大，代表越花效能，但品質會越好
+
+	samplerInfo.borderColor											= VK_BORDER_COLOR_INT_OPAQUE_BLACK;		// 超越的時候 Black
+	samplerInfo.unnormalizedCoordinates								= VK_FALSE;								// True 的話，座標會以 [0, TextureWidth) & [0, TextureHeight)， False 會以 [0, 1)
+
+	// 主要設定 compareEnable 會導致 texel 的資料會拿來做比較
+	// 通常用於 Percentage-closer filtering on shadow maps (https://developer.nvidia.com/gpugems/gpugems/part-ii-lighting-and-shadows/chapter-11-shadow-map-antialiasing)
+	samplerInfo.compareEnable										= VK_FALSE;
+	samplerInfo.compareOp											= VK_COMPARE_OP_ALWAYS;
+
+	// Mipmap
+	samplerInfo.mipmapMode											= VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias											= 0.0f;
+	samplerInfo.minLod												= 0.0f;
+	samplerInfo.maxLod												= 0.0f;
+	#pragma endregion
+	#pragma region Create Sampler
+	if (vkCreateSampler(mDevice, &samplerInfo, nullptr, &mImageSampler) != VK_SUCCESS)
+		throw runtime_error("Failed to create texture sampler");
+	#pragma endregion
+}
+
+VkDescriptorSetLayoutBinding TextureManager::CreateDescriptorSetLayout()
+{
+	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+	samplerLayoutBinding.binding									= 1;
+	samplerLayoutBinding.descriptorCount							= 1;
+	samplerLayoutBinding.descriptorType								= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerLayoutBinding.pImmutableSamplers							= nullptr;
+	samplerLayoutBinding.stageFlags									= VK_SHADER_STAGE_FRAGMENT_BIT;		// 送到 Fragment Shader
+	return samplerLayoutBinding;
+}
+VkDescriptorPoolSize TextureManager::CreateDescriptorPoolSize(uint32_t count)
+{
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type													= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSize.descriptorCount										= count;
+	return poolSize;
+}
+VkDescriptorImageInfo TextureManager::CreateDescriptorImageInfo()
+{
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout											= VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView												= mImageView;
+	imageInfo.sampler												= mImageSampler;
+	return imageInfo;
+}
+
 #pragma endregion
 #pragma region Private
-void TextureManager::CreateImage(int pWidth, int pHeight, VkDevice& pDevice, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
+void TextureManager::CreateImage(int pWidth, int pHeight, function<uint32_t(uint32_t, VkMemoryPropertyFlags)> pFindMemoryTypeFunciton)
 {
 	#pragma region Image Create
 	VkImageCreateInfo createInfo{};
@@ -78,7 +169,7 @@ void TextureManager::CreateImage(int pWidth, int pHeight, VkDevice& pDevice, fun
 	createInfo.mipLevels											= 1;
 	createInfo.arrayLayers											= 1;
 
-	createInfo.format												= VK_FORMAT_R8G8B8A8_SRGB;
+	createInfo.format												= mFormat;
 	createInfo.tiling												= VK_IMAGE_TILING_OPTIMAL;				// ToDo: Check vs Linear(row-major)
 	createInfo.initialLayout										= VK_IMAGE_LAYOUT_UNDEFINED;			// VK_IMAGE_LAYOUT_UNDEFINED (在初始化的時候會砍調沒有在 GPU 用掉像素資料)，VK_IMAGE_LAYOUT_PREINITIALIZED (相反，會保留) (https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImageLayout.html)
 	
@@ -87,24 +178,24 @@ void TextureManager::CreateImage(int pWidth, int pHeight, VkDevice& pDevice, fun
 	createInfo.samples												= VK_SAMPLE_COUNT_1_BIT;
 	createInfo.flags												= 0;
 
-	if (vkCreateImage(pDevice, &createInfo, nullptr, &mImage) 		!= VK_SUCCESS)
+	if (vkCreateImage(mDevice, &createInfo, nullptr, &mImage) 		!= VK_SUCCESS)
 		throw runtime_error("Failed to create vkimage");
 	#pragma endregion
 	#pragma region Allocate Memory
 	VkMemoryRequirements requirement{};
-	vkGetImageMemoryRequirements(pDevice, mImage, &requirement);
+	vkGetImageMemoryRequirements(mDevice, mImage, &requirement);
 	
 	VkMemoryAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocateInfo.allocationSize										= requirement.size;
 	allocateInfo.memoryTypeIndex									= pFindMemoryTypeFunciton(requirement.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	if (vkAllocateMemory(pDevice, &allocateInfo, nullptr, &mImageMemory) != VK_SUCCESS)
+	if (vkAllocateMemory(mDevice, &allocateInfo, nullptr, &mImageMemory) != VK_SUCCESS)
 		throw runtime_error("Failed to allocate memory in image");
-	vkBindImageMemory(pDevice, mImage, mImageMemory, 0);
+	vkBindImageMemory(mDevice, mImage, mImageMemory, 0);
 	#pragma endregion
 }
-void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkImageLayout pOldLayout, VkImageLayout pNewLayout)
+void TextureManager::TransitionImageLayout(VkImageLayout pOldLayout, VkImageLayout pNewLayout)
 {
 	VkCommandBuffer commandBuffer 									= mBeginBufferFunc();
 
@@ -119,14 +210,10 @@ void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkI
 	barrier.dstQueueFamilyIndex										= VK_QUEUE_FAMILY_IGNORED;
 
 	// 參數
-	barrier.image													= pImage;
-	barrier.subresourceRange.aspectMask								= VK_IMAGE_ASPECT_COLOR_BIT;			// color, depth or stencil
-	barrier.subresourceRange.baseMipLevel							= 0;
-	barrier.subresourceRange.levelCount								= 1;
-	barrier.subresourceRange.baseArrayLayer							= 0;
-	barrier.subresourceRange.layerCount								= 1;
+	barrier.image													= mImage;
+	__GenerateImageSubResourceRange(barrier.subresourceRange);
 	#pragma endregion
-	#pragma region 同步
+	#pragma region Sync
 	// 這裡需要根據 type 來決定怎麼處理
 	// 有兩種狀況
 	// 1. new layout 是 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL 		=> 不需要等什麼
@@ -161,7 +248,7 @@ void TextureManager::TransitionImageLayout(VkImage pImage, VkFormat pFormat, VkI
 	#pragma endregion
 	mEndBufferFunc(commandBuffer);
 }
-void TextureManager::CopyBufferToImage(VkBuffer pBuffer, VkImage pImage, uint32_t pWidth, uint32_t pHeight)
+void TextureManager::CopyBufferToImage(VkBuffer pBuffer, uint32_t pWidth, uint32_t pHeight)
 {
 	VkCommandBuffer commandBuffer 									= mBeginBufferFunc();
 	#pragma region Buffer To Image
@@ -187,11 +274,20 @@ void TextureManager::CopyBufferToImage(VkBuffer pBuffer, VkImage pImage, uint32_
 	vkCmdCopyBufferToImage(
 		commandBuffer,
 		pBuffer,
-		pImage,
+		mImage,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1,
 		&region
 	);
 	mEndBufferFunc(commandBuffer);
+}
+
+void TextureManager::__GenerateImageSubResourceRange(VkImageSubresourceRange& range)
+{
+	range.aspectMask												= VK_IMAGE_ASPECT_COLOR_BIT;
+	range.baseMipLevel												= 0;
+	range.levelCount												= 1;
+	range.baseArrayLayer											= 0;
+	range.layerCount												= 1;
 }
 #pragma endregion
