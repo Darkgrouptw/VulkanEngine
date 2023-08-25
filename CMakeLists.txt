@@ -24,7 +24,7 @@ else()
     message(STATUS "Find Vulkan Package")
 endif()
 if (NOT Vulkan_FOUND)
-    message(FATAL ERROR "Not Found Vulkan")
+    message(FATAL_ERROR "Not Found Vulkan")
 else()
     message(STATUS "Using Vulkan Library: ${Vulkan_LIBRARIES}")
 endif()
@@ -49,7 +49,7 @@ endif()
 
 # 3c. GLM
 if (NOT DEFINED GLM_PATH)
-    message(FATAL ERROR "Not Found GLM PATH")
+    message(FATAL_ERROR "Not Found GLM PATH")
 endif()
 
 # 3d. IMGUI
@@ -60,6 +60,18 @@ list(APPEND IMGUI_CPP_FILE "Plugins/imgui/backends/imgui_impl_vulkan.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_draw.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_widgets.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_tables.cpp")
+
+# 3f. Assimp
+if (DEFINED Assimp_SDK_PATH)
+    set(Assimp_INCLUDE_DIRS "${Assimp_SDK_PATH}/include")
+    if (WIN32)
+        set(Assimp_LIBRARIES "${Assimp_SDK_PATH}/lib/x64")
+    else()
+        message(FATAL_ERROR "Not implement at other platform")
+    endif()
+else()
+    message(FATAL_ERROR "Not found Assimp_SDK_PATH")
+endif()
 
 # 4. Final
 file(GLOB_RECURSE SOURCE_FILES
@@ -87,10 +99,12 @@ if (WIN32)
     target_link_directories(${PROJECT_NAME} PRIVATE
         ${Vulkan_LIBRARIES}
         ${GLFW_LIBRARIES}
+        ${Assimp_LIBRARIES}
     )
     target_link_libraries(${PROJECT_NAME} 
         glfw3
         vulkan-1
+        assimp-vc143-mt
     )
 else()
     message(STATUS "Building For Unix")
