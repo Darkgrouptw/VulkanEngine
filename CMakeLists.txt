@@ -90,6 +90,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${GLFW_INCLUDE_DIRS}
     ${GLM_PATH}
     ${IMGUI_INCLUDE_DIR}
+    ${Assimp_INCLUDE_DIRS}
     "./Plugins"
     "./src"
 )
@@ -155,4 +156,9 @@ endforeach(FILE)
 add_custom_target(
     Shaders
     DEPENDS ${SPIRV_BINARY_FILES}
+)
+
+# add define
+add_compile_definitions(
+    USE_ASSIMP
 )

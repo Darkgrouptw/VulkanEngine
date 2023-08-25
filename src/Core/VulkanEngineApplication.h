@@ -8,6 +8,8 @@
 #include "Components/ImGuiWindowManager.h"
 #include "Components/TextureManager.h"
 
+#include "Components/Scene/SceneManager.h"
+
 #include <vector>
 #include <set>
 #include <cstdint>

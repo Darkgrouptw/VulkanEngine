@@ -44,5 +44,5 @@ No | Practice Content                                                           
 Thank for the authors of the libraries that help me for this project:
 * All of the precondition libraries
 * IMGUI
-* KTX-Software
+* Assimp
 * [Vulkan Tutorial](https://vulkan-tutorial.com/)
