@@ -67,7 +67,7 @@ if (DEFINED Assimp_SDK_PATH)
     if (WIN32)
         set(Assimp_LIBRARIES "${Assimp_SDK_PATH}/lib/x64")
     else()
-        message(FATAL_ERROR "Not implement at other platform")
+        set(Assimp_LIBRARIES "${Assimp_SDK_PATH}/lib")
     endif()
 else()
     message(FATAL_ERROR "Not found Assimp_SDK_PATH")
@@ -112,6 +112,7 @@ else()
     target_link_libraries(${PROJECT_NAME} 
         ${Vulkan_LIBRARIES}
         ${GLFW_LIBRARIES}/libglfw.dylib
+        ${Assimp_LIBRARIES}/libassimp.dylib
     )
 endif()
 
