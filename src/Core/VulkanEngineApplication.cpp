@@ -39,6 +39,7 @@ void VulkanEngineApplication::Run()
 {
 	InitWindow();
 	InitVulkan();
+	InitScene();
 	MainLoop();
 	Destroy();
 }
@@ -99,6 +100,11 @@ void VulkanEngineApplication::InitVulkan()
 	ImGuiWindowM													= new ImGuiWindowManager(Window, &initInfo, RenderPass);
 	ImGuiWindowM->FetchDeviceName(PhysiclaDevice);
 	ImGuiWindowM->UploadFont(CommandPool, GraphicsQueue, Device);
+}
+void VulkanEngineApplication::InitScene()
+{
+	SceneM = new SceneManager();
+	SceneM->LoadScene("Scenes/CornellBox/CornellBox-Original.gltf");
 }
 void VulkanEngineApplication::MainLoop()
 {

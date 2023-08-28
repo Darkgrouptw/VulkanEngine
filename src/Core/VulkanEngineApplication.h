@@ -54,6 +54,7 @@ public:
 private:
 	void InitWindow();																						// 初始化視窗
 	void InitVulkan();																						// 初始化 Vulkan
+	void InitScene();																						// 初始化場景
 	void MainLoop();																						// Main
 	void Destroy();																							// 清空其他的資料
 	
@@ -125,6 +126,7 @@ private:
 
 	// 貼圖相關
 	TextureManager* TextM;
+	SceneManager* SceneM;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Init Function

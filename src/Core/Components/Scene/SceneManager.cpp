@@ -3,11 +3,9 @@
 #pragma region Public
 SceneManager::SceneManager()
 {
-
 }
 SceneManager::~SceneManager()
 {
-
 }
 
 void SceneManager::LoadScene(string pSceneName)

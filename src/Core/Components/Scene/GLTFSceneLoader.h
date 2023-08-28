@@ -12,9 +12,9 @@ class GLTFSceneLoader : ISceneLoader
 public:
 	virtual bool LoadScene(string) override;
 	virtual void Destroy() override;
-	aiScene* GetScene();
 private:
 	Assimp::Importer mImporter;
-	aiScene* mScene;
+
+	void ConvertNode(const aiScene*);
 };
 #endif

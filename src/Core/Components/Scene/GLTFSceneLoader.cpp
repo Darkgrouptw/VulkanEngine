@@ -12,10 +12,18 @@ bool GLTFSceneLoader::LoadScene(string pPath)
         throw runtime_error("Failed to loadscene at path(" + pPath + ")");
         return false;
     }
+    ConvertNode(scene);
     return true;
 }
 void GLTFSceneLoader::Destroy()
 {
 
+}
+#pragma endregion
+#pragma region Private
+void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
+{
+    cout << "========== Convert Scene Part ==========" << endl;
+    cout << "Mesh Count: " << pScene->mNumMeshes << endl;
 }
 #pragma endregion
