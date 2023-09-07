@@ -24,6 +24,13 @@ void GLTFSceneLoader::Destroy()
 void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
 {
     cout << "========== Convert Scene Part ==========" << endl;
-    cout << "Mesh Count: " << pScene->mNumMeshes << endl;
+    cout << "Animation Count: "                                     << pScene->mNumAnimations << endl;
+    cout << "Camera Count: "                                        << pScene->mNumCameras << endl;
+    cout << "Mesh Count: "                                          << pScene->mNumMeshes << endl;
+    cout << "Materials Count: "                                     << pScene->mNumMaterials << endl;
+    cout << "Light Count: "                                         << pScene->mNumLights << endl;
+    cout << "Skeleton Count: "                                      << pScene->mNumSkeletons << endl;
+    cout << "Textures Count: "                                      << pScene->mNumTextures << endl;
+    cout << "========== Convert Scene End ==========" << endl;
 }
 #pragma endregion

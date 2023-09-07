@@ -16,8 +16,8 @@ set(CMAKE_CXX_STANDARD 20)
 # 3. Setup Library Stuff
 # 3a. Vulkan
 if (DEFINED VULKAN_SDK_PATH)
-    set(Vulkan_INCLUDE_DIRS "${VULKAN_SDK_PATH}/Include")
-    set(Vulkan_LIBRARIES "${VULKAN_SDK_PATH}/Lib")
+    set(Vulkan_INCLUDE_DIR "${VULKAN_SDK_PATH}/Include")
+    set(Vulkan_LIBRARY "${VULKAN_SDK_PATH}/Lib")
     set(Vulkan_FOUND "True")
 else()
     find_package(Vulkan REQUIRED)
@@ -26,25 +26,25 @@ endif()
 if (NOT Vulkan_FOUND)
     message(FATAL_ERROR "Not Found Vulkan")
 else()
-    message(STATUS "Using Vulkan Library: ${Vulkan_LIBRARIES}")
+    message(STATUS "Using Vulkan Library: ${Vulkan_LIBRARY}")
 endif()
 
 # 3b. GLFW
 if (DEFINED GLFW_PATH)
-    set(GLFW_INCLUDE_DIRS "${GLFW_PATH}/Include")
+    set(GLFW_INCLUDE_DIR "${GLFW_PATH}/Include")
     if (WIN32)
-        set(GLFW_LIBRARIES "${GLFW_PATH}/lib-vc2022") # 根據下載的版本 Visual Studio 2022
+        set(GLFW_LIBRARY "${GLFW_PATH}/lib-vc2022") # 根據下載的版本 Visual Studio 2022
     else()
-        set(GLFW_LIBRARIES "${GLFW_PATH}/lib") # 其他平台應該都是在這個下面
+        set(GLFW_LIBRARY "${GLFW_PATH}/lib") # 其他平台應該都是在這個下面
     endif()
 else()
     find_package(glfw3 3.3 REQUIRED)
-    message(STATUS "Found GLFW Lib: ${GLFW_LIBRARIES}")
+    message(STATUS "Found GLFW Lib: ${GLFW_LIBRARY}")
 endif()
-if (NOT DEFINED GLFW_LIBRARIES)
+if (NOT DEFINED GLFW_LIBRARY)
     message(FATAL_ERROR "Not Found GLFW")
 else()
-    message(STATUS "Using GLFW Lib: ${GLFW_LIBRARIES}")
+    message(STATUS "Using GLFW Lib: ${GLFW_LIBRARY}")
 endif()
 
 # 3c. GLM
@@ -53,8 +53,8 @@ if (NOT DEFINED GLM_PATH)
 endif()
 
 # 3d. IMGUI
-SET (IMGUI_INCLUDE_DIR "Plugins/imgui")
-SET (IMGUI_CPP_FILE "Plugins/imgui/imgui.cpp")
+set (IMGUI_INCLUDE_DIR "Plugins/imgui")
+set (IMGUI_CPP_FILE "Plugins/imgui/imgui.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/backends/imgui_impl_glfw.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/backends/imgui_impl_vulkan.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_draw.cpp")
@@ -63,11 +63,11 @@ list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_tables.cpp")
 
 # 3f. Assimp
 if (DEFINED Assimp_SDK_PATH)
-    set(Assimp_INCLUDE_DIRS "${Assimp_SDK_PATH}/include")
+    set(Assimp_INCLUDE_DIR "${Assimp_SDK_PATH}/include")
     if (WIN32)
-        set(Assimp_LIBRARIES "${Assimp_SDK_PATH}/lib/x64")
+        set(Assimp_LIBRARY "${Assimp_SDK_PATH}/lib/x64")
     else()
-        set(Assimp_LIBRARIES "${Assimp_SDK_PATH}/lib")
+        set(Assimp_LIBRARY "${Assimp_SDK_PATH}/lib")
     endif()
 else()
     message(FATAL_ERROR "Not found Assimp_SDK_PATH")
@@ -86,11 +86,11 @@ add_executable(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${Vulkan_INCLUDE_DIRS}
-    ${GLFW_INCLUDE_DIRS}
+    ${Vulkan_INCLUDE_DIR}
+    ${GLFW_INCLUDE_DIR}
     ${GLM_PATH}
     ${IMGUI_INCLUDE_DIR}
-    ${Assimp_INCLUDE_DIRS}
+    ${Assimp_INCLUDE_DIR}
     "./Plugins"
     "./src"
 )
@@ -98,9 +98,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 if (WIN32)
     message(STATUS "Building For Windows")
     target_link_directories(${PROJECT_NAME} PRIVATE
-        ${Vulkan_LIBRARIES}
-        ${GLFW_LIBRARIES}
-        ${Assimp_LIBRARIES}
+        ${Vulkan_LIBRARY}
+        ${GLFW_LIBRARY}
+        ${Assimp_LIBRARY}
     )
     target_link_libraries(${PROJECT_NAME} 
         glfw3
@@ -110,9 +110,9 @@ if (WIN32)
 else()
     message(STATUS "Building For Unix")
     target_link_libraries(${PROJECT_NAME} 
-        ${Vulkan_LIBRARIES}
-        ${GLFW_LIBRARIES}/libglfw.dylib
-        ${Assimp_LIBRARIES}/libassimp.dylib
+        ${Vulkan_LIBRARY}
+        ${GLFW_LIBRARY}/libglfw.dylib
+        ${Assimp_LIBRARY}/libassimp.dylib
     )
 endif()
 
