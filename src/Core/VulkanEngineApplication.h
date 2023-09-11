@@ -51,6 +51,10 @@ class VulkanEngineApplication
 public:
 	void Run();
 
+	bool mFrameBufferResized = false;
+
+	static void ResizeCallback(GLFWwindow*, int, int);
+
 private:
 	void InitWindow();																						// 初始化視窗
 	void InitVulkan();																						// 初始化 Vulkan

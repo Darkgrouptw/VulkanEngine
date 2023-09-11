@@ -20,6 +20,13 @@ void GLTFSceneLoader::Destroy()
 
 }
 #pragma endregion
+#pragma region Protect
+void GLTFSceneLoader::ParseMeshs(void** const pData, int pNumData)
+{
+    aiMesh** meshs = (aiMesh**)pData;
+    
+}
+#pragma endregion
 #pragma region Private
 void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
 {
@@ -33,12 +40,25 @@ void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
     cout << "Textures Count: "                                      << pScene->mNumTextures << endl;
     cout << "========== Convert Scene End ==========" << endl;
 
-    #pragma region Mesh
+
+    ParseMeshs((void **)pScene->mMeshes, pScene->mNumMeshes);
+    //if ()
+    //ParseMe
+    /*pragma region Mesh
     auto meshs                                                      = pScene->mMeshes;
     for(int i = 0; i < pScene->mNumMeshes; i++)
     {
-        //meshs[i].has
+        if (meshs[i]->mPrimitiveTypes                               != aiPrimitiveType_TRIANGLE)
+            throw runtime_error("Not implement in other type");
+
+
+        for (int j = 0; j < meshs[i]->mNumVertices; j++)
+        {
+            glm::vec3 pos = glm::vec3(meshs[i]->mVertices[j].x, meshs[i]->mVertices[j].y, meshs[i]->mVertices[j].z);
+        }
+			 
+        //cout << meshs[i]->HasPositions() << " " << meshs[i]->HasNormals() << endl;
     }
-    #pragma endregion
+    #pragma endregion*/
 }
 #pragma endregion

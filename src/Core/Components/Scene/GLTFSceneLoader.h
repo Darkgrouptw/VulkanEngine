@@ -12,6 +12,10 @@ class GLTFSceneLoader : ISceneLoader
 public:
 	virtual bool LoadScene(string) override;
 	virtual void Destroy() override;
+
+protected:
+	virtual void ParseMeshs(void** const, int) override;
+
 private:
 	Assimp::Importer mImporter;
 

@@ -43,6 +43,13 @@ void VulkanEngineApplication::Run()
 	MainLoop();
 	Destroy();
 }
+
+// Static callback
+void VulkanEngineApplication::ResizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
+{
+	auto* app = reinterpret_cast<VulkanEngineApplication*>(glfwGetWindowUserPointer(pWindow));
+	app->mFrameBufferResized = true;
+}
 #pragma endregion
 #pragma region Private
 void VulkanEngineApplication::InitWindow()
@@ -54,6 +61,8 @@ void VulkanEngineApplication::InitWindow()
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);																// 設定不做 Resize
 
 	Window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+	glfwSetWindowUserPointer(Window, this);
+	glfwSetFramebufferSizeCallback(Window, VulkanEngineApplication::ResizeCallback);
 #if defined(VKENGINE_DEBUG_DETAILS)
 	cout << "glfwVulkanSupported: " << (glfwVulkanSupported() ? "True" : "False") << endl;
 #endif
@@ -261,7 +270,14 @@ void VulkanEngineApplication::DrawFrame()
 	presentInfo.pSwapchains											= swapChains;
 	presentInfo.pImageIndices										= &imageIndex;
 	
-	vkQueuePresentKHR(GraphicsQueue, &presentInfo);
+	result															= vkQueuePresentKHR(GraphicsQueue, &presentInfo);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mFrameBufferResized)
+	{
+		mFrameBufferResized = false;
+		ReCreateSwapChain();
+	}
+	else if (result != VK_SUCCESS)
+		throw runtime_error("Failed to present swap chan image");
 
 	// 切換下一張
 	CurrentFrameIndex = (CurrentFrameIndex + 1) % MAX_FRAME_IN_FLIGHTS;
@@ -269,6 +285,16 @@ void VulkanEngineApplication::DrawFrame()
 }
 void VulkanEngineApplication::ReCreateSwapChain()
 {
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(Window, &width, &height);
+
+	// 畫面最小化的時不畫
+	while (width == 0 || height == 0)
+	{
+		glfwGetFramebufferSize(Window, &width, &height);
+		glfwWaitEvents();
+	}
+
 	// 等待動作都 Idle 完之後，再繼續做清除的動作
 	vkDeviceWaitIdle(Device);
 
