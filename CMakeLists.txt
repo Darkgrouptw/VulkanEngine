@@ -47,12 +47,7 @@ else()
     message(STATUS "Using GLFW Lib: ${GLFW_LIBRARY}")
 endif()
 
-# 3c. GLM
-if (NOT DEFINED GLM_PATH)
-    message(FATAL_ERROR "Not Found GLM PATH")
-endif()
-
-# 3d. IMGUI
+# 3c. IMGUI
 set (IMGUI_INCLUDE_DIR "Plugins/imgui")
 set (IMGUI_CPP_FILE "Plugins/imgui/imgui.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/backends/imgui_impl_glfw.cpp")
@@ -61,7 +56,7 @@ list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_draw.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_widgets.cpp")
 list(APPEND IMGUI_CPP_FILE "Plugins/imgui/imgui_tables.cpp")
 
-# 3f. Assimp
+# 3d. Assimp
 if (DEFINED Assimp_SDK_PATH)
     set(Assimp_INCLUDE_DIR "${Assimp_SDK_PATH}/include")
     if (WIN32)
@@ -88,7 +83,6 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${Vulkan_INCLUDE_DIR}
     ${GLFW_INCLUDE_DIR}
-    ${GLM_PATH}
     ${IMGUI_INCLUDE_DIR}
     ${Assimp_INCLUDE_DIR}
     "./Plugins"

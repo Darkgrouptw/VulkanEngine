@@ -3,9 +3,13 @@
 #include "Core/Common/Common.h"
 #include "Core/Components/Scene/ISceneLoader.h"
 
-#include "assimp/Importer.hpp"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+#include <string>
+
+using namespace std;
 
 class GLTFSceneLoader : ISceneLoader
 {
@@ -14,6 +18,8 @@ public:
 	virtual void Destroy() override;
 
 protected:
+	virtual void ClearAllData() override;
+
 	virtual void ParseMeshs(void** const, int) override;
 
 private:

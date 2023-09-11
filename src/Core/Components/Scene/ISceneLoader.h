@@ -17,9 +17,11 @@ public:
 	virtual void Destroy() = 0;
 
 protected:
+	virtual void ClearAllData() = 0;
+
 	// Parsing Data from loader
 	virtual void ParseMeshs(void** const, int) = 0;
 	//virtual void ParseTextures(void** const, int) = 0;
 
-	vector<MeshObject> mMeshs;
+	vector<MeshObject* > mMeshs;
 };

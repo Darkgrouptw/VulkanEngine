@@ -21,10 +21,46 @@ void GLTFSceneLoader::Destroy()
 }
 #pragma endregion
 #pragma region Protect
+void GLTFSceneLoader::ClearAllData()
+{
+    #pragma region Mesh
+    for (int i = 0; i < mMeshs.size(); i++)
+        delete mMeshs[i];
+    mMeshs.clear();
+    #pragma endregion
+}
+
 void GLTFSceneLoader::ParseMeshs(void** const pData, int pNumData)
 {
     aiMesh** meshs = (aiMesh**)pData;
-    
+    for (int i = 0; i < pNumData; i++)
+	{
+        if (meshs[i]->mPrimitiveTypes                               != aiPrimitiveType_TRIANGLE)
+            throw runtime_error("Failed to load mesh with " + to_string(meshs[i]->mPrimitiveTypes));
+
+        // 可能有些 Mesh 沒有 Position
+		// Ex: AI_SCENE_FLAGS_ANIM_SKELETON_ONLY
+        if (meshs[i]->HasPositions())
+		{
+			MeshObject* mesh = new MeshObject();
+			auto vertcies = meshs[i]->mVertices;
+            auto normals = meshs[i]->mNormals;
+
+            bool hasNormal = meshs[i]->HasNormals();
+			for (int j = 0; j < meshs[i]->mNumVertices; j++)
+			{
+                glm::vec3 pos(vertcies[j].x, vertcies[j].y, vertcies[j].z);
+				if (hasNormal)
+				{
+	                glm::vec2 nomral(normals[j].x, normals[j].y);
+					mesh->InsertPositionAndNormal(pos, nomral);
+			    }
+				else
+                    mesh->InsertPosition(pos);
+			}
+			mMeshs.push_back(mesh);
+        }
+    }
 }
 #pragma endregion
 #pragma region Private
@@ -40,7 +76,7 @@ void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
     cout << "Textures Count: "                                      << pScene->mNumTextures << endl;
     cout << "========== Convert Scene End ==========" << endl;
 
-
+    ClearAllData();
     ParseMeshs((void **)pScene->mMeshes, pScene->mNumMeshes);
     //if ()
     //ParseMe
