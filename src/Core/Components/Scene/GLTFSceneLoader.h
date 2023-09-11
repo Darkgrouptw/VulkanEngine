@@ -16,5 +16,6 @@ private:
 	Assimp::Importer mImporter;
 
 	void ConvertNode(const aiScene*);
+	
 };
 #endif

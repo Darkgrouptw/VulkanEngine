@@ -32,5 +32,13 @@ void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
     cout << "Skeleton Count: "                                      << pScene->mNumSkeletons << endl;
     cout << "Textures Count: "                                      << pScene->mNumTextures << endl;
     cout << "========== Convert Scene End ==========" << endl;
+
+    #pragma region Mesh
+    auto meshs                                                      = pScene->mMeshes;
+    for(int i = 0; i < pScene->mNumMeshes; i++)
+    {
+        //meshs[i].has
+    }
+    #pragma endregion
 }
 #pragma endregion

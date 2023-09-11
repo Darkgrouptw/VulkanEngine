@@ -1,6 +1,9 @@
 #pragma once
+#include "Core/Components/Scene/Data/ObjectBase.h"
+#include "Core/Components/Scene/Data/MeshObject.h"
 
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -12,5 +15,7 @@ class ISceneLoader
 public:
 	virtual bool LoadScene(string) = 0;
 	virtual void Destroy() = 0;
-private:
+
+protected:
+	vector<MeshObject> mMeshs;
 };
