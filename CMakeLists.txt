@@ -26,6 +26,7 @@ endif()
 if (NOT Vulkan_FOUND)
     message(FATAL_ERROR "Not Found Vulkan")
 else()
+    message(STATUS "Using Vulkan Include: ${Vulkan_INCLUDE_DIR}")
     message(STATUS "Using Vulkan Library: ${Vulkan_LIBRARY}")
 endif()
 
