@@ -52,12 +52,24 @@ void GLTFSceneLoader::ParseMeshs(void** const pData, int pNumData)
                 glm::vec3 pos(vertcies[j].x, vertcies[j].y, vertcies[j].z);
 				if (hasNormal)
 				{
-	                glm::vec2 nomral(normals[j].x, normals[j].y);
+	                glm::vec3 nomral(normals[j].x, normals[j].y, normals[j].z);
 					mesh->InsertPositionAndNormal(pos, nomral);
 			    }
 				else
                     mesh->InsertPosition(pos);
 			}
+            bool hasFaces = meshs[i]->HasFaces();
+            if (hasFaces)
+            {
+                for (int j = 0; j < meshs[i]->mNumFaces; j++)
+                {
+                    //int p1, p2, p3;
+                    //for (int k = 0; k < meshs[i]->mFaces[j].mNumIndices; k++)
+                    //cout << meshs[i]->mFaces[j].mNumIndices << endl;
+                }
+            }
+            else
+                cout << "[Error] Current doesn't support mesh without faces" << endl;
 			mMeshs.push_back(mesh);
         }
     }
