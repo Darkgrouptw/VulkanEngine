@@ -21,6 +21,7 @@ protected:
 	virtual void ClearAllData() override;
 
 	virtual void ParseMeshs(void** const, int) override;
+	virtual void ParseMaterials(void** const, int) override;
 
 private:
 	Assimp::Importer mImporter;

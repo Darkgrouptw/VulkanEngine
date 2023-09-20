@@ -1,8 +1,10 @@
 #include "Core/Components/Scene/Data/MeshObject.h"
 
 #pragma region Public
-MeshObject::MeshObject()
+MeshObject::MeshObject(string name, int pIndex)
 {
+	mName															= name;
+	mMaterialIndex													= pIndex;
 }
 MeshObject::~MeshObject()
 {
@@ -21,7 +23,7 @@ void MeshObject::InsertPosition(glm::vec3 pPos)
 {
 	mPositions.push_back(pPos);
 }
-void MeshObject::InsertFaceIndex(uint32_t indices)
+void MeshObject::InsertFaceIndex(int indices)
 {
 	mFaceIndices.push_back(indices);
 }

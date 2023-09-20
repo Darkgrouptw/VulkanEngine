@@ -35,19 +35,23 @@ void GLTFSceneLoader::ParseMeshs(void** const pData, int pNumData)
     aiMesh** meshs = (aiMesh**)pData;
     for (int i = 0; i < pNumData; i++)
 	{
-        if (meshs[i]->mPrimitiveTypes                               != aiPrimitiveType_TRIANGLE)
-            throw runtime_error("Failed to load mesh with " + to_string(meshs[i]->mPrimitiveTypes));
+		auto meshData                                               = meshs[i];
+        if (meshData->mPrimitiveTypes                               != aiPrimitiveType_TRIANGLE)
+            throw runtime_error("Failed to load mesh with " + to_string(meshData->mPrimitiveTypes));
 
         // 可能有些 Mesh 沒有 Position
 		// Ex: AI_SCENE_FLAGS_ANIM_SKELETON_ONLY
-        if (meshs[i]->HasPositions())
+        if (meshData->HasPositions())
 		{
-			MeshObject* mesh = new MeshObject();
-			auto vertcies = meshs[i]->mVertices;
-            auto normals = meshs[i]->mNormals;
+            string name;
+            name.assign(meshData->mName.data, meshData->mName.data + meshData->mName.length);
 
-            bool hasNormal = meshs[i]->HasNormals();
-			for (int j = 0; j < meshs[i]->mNumVertices; j++)
+			MeshObject* mesh = new MeshObject(name, meshData->mMaterialIndex);
+			auto vertcies = meshData->mVertices;
+            auto normals = meshData->mNormals;
+
+            bool hasNormal = meshData->HasNormals();
+			for (int j = 0; j < meshData->mNumVertices; j++)
 			{
                 glm::vec3 pos(vertcies[j].x, vertcies[j].y, vertcies[j].z);
 				if (hasNormal)
@@ -58,12 +62,12 @@ void GLTFSceneLoader::ParseMeshs(void** const pData, int pNumData)
 				else
                     mesh->InsertPosition(pos);
 			}
-            bool hasFaces = meshs[i]->HasFaces();
+            bool hasFaces = meshData->HasFaces();
             if (hasFaces)
             {
-                for (int j = 0; j < meshs[i]->mNumFaces; j++)
-                    for (int k = 0; k < meshs[i]->mFaces[j].mNumIndices; k++)
-                        mesh->InsertFaceIndex(meshs[i]->mFaces[j].mIndices[k]);
+                for (int j = 0; j < meshData->mNumFaces; j++)
+                    for (int k = 0; k < meshData->mFaces[j].mNumIndices; k++)
+                        mesh->InsertFaceIndex(meshData->mFaces[j].mIndices[k]);
                 
                 if (mesh->GetFaceIndicesSize() % 3 != 0)
                     cout << "[Error] Current Mesh size is not divde by 3 :" << mesh->GetFaceIndicesSize();
@@ -73,6 +77,10 @@ void GLTFSceneLoader::ParseMeshs(void** const pData, int pNumData)
 			mMeshs.push_back(mesh);
         }
     }
+}
+void GLTFSceneLoader::ParseMaterials(void** const pData, int pNumData)
+{
+	aiMesh** materials = (aiMesh**)pData;
 }
 #pragma endregion
 #pragma region Private
@@ -90,23 +98,6 @@ void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
 
     ClearAllData();
     ParseMeshs((void **)pScene->mMeshes, pScene->mNumMeshes);
-    //if ()
-    //ParseMe
-    /*pragma region Mesh
-    auto meshs                                                      = pScene->mMeshes;
-    for(int i = 0; i < pScene->mNumMeshes; i++)
-    {
-        if (meshs[i]->mPrimitiveTypes                               != aiPrimitiveType_TRIANGLE)
-            throw runtime_error("Not implement in other type");
-
-
-        for (int j = 0; j < meshs[i]->mNumVertices; j++)
-        {
-            glm::vec3 pos = glm::vec3(meshs[i]->mVertices[j].x, meshs[i]->mVertices[j].y, meshs[i]->mVertices[j].z);
-        }
-			 
-        //cout << meshs[i]->HasPositions() << " " << meshs[i]->HasNormals() << endl;
-    }
-    #pragma endregion*/
+    ParseMaterials((void**)pScene->mMaterials, pScene->mNumMaterials);
 }
 #pragma endregion

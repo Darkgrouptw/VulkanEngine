@@ -21,7 +21,7 @@ protected:
 
 	// Parsing Data from loader
 	virtual void ParseMeshs(void** const, int) = 0;
-	//virtual void ParseTextures(void** const, int) = 0;
+	virtual void ParseMaterials(void** const, int) = 0;
 
 	vector<MeshObject* > mMeshs;
 };
