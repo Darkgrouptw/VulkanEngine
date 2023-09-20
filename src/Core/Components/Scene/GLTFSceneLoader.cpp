@@ -62,11 +62,11 @@ void GLTFSceneLoader::ParseMeshs(void** const pData, int pNumData)
             if (hasFaces)
             {
                 for (int j = 0; j < meshs[i]->mNumFaces; j++)
-                {
-                    //int p1, p2, p3;
-                    //for (int k = 0; k < meshs[i]->mFaces[j].mNumIndices; k++)
-                    //cout << meshs[i]->mFaces[j].mNumIndices << endl;
-                }
+                    for (int k = 0; k < meshs[i]->mFaces[j].mNumIndices; k++)
+                        mesh->InsertFaceIndex(meshs[i]->mFaces[j].mIndices[k]);
+                
+                if (mesh->GetFaceIndicesSize() % 3 != 0)
+                    cout << "[Error] Current Mesh size is not divde by 3 :" << mesh->GetFaceIndicesSize();
             }
             else
                 cout << "[Error] Current doesn't support mesh without faces" << endl;

@@ -11,6 +11,7 @@ MeshObject::~MeshObject()
 	mFaceIndices.clear();
 }
 
+// Insert Method
 void MeshObject::InsertPositionAndNormal(glm::vec3 pPos, glm::vec3 pNormal)
 {
 	InsertPosition(pPos);
@@ -20,8 +21,14 @@ void MeshObject::InsertPosition(glm::vec3 pPos)
 {
 	mPositions.push_back(pPos);
 }
-void MeshObject::InsertFaceIndex(uint32_t p1, uint32_t p2, uint32_t p3)
+void MeshObject::InsertFaceIndex(uint32_t indices)
 {
+	mFaceIndices.push_back(indices);
+}
 
+// Get
+uint32_t MeshObject::GetFaceIndicesSize()
+{
+	return mFaceIndices.size();
 }
 #pragma endregion
