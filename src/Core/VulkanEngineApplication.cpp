@@ -113,7 +113,7 @@ void VulkanEngineApplication::InitVulkan()
 void VulkanEngineApplication::InitScene()
 {
 	SceneM = new SceneManager();
-	SceneM->LoadScene("Scenes/CornellBox/CornellBox-Original.gltf");
+	SceneM->LoadScene("Scenes/Teapot/teapot.gltf");
 }
 void VulkanEngineApplication::MainLoop()
 {

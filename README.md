@@ -46,4 +46,5 @@ Thank for the authors of the libraries that help me for this project:
 * All of the precondition libraries
 * IMGUI
 * Assimp
+* [SaschaWillems Asset](https://github.com/SaschaWillems/Vulkan-Assets)
 * [Vulkan Tutorial](https://vulkan-tutorial.com/)
