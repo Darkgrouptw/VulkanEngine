@@ -1,9 +1,8 @@
 #include "Core/Components/Scene/Data/MeshObject.h"
 
 #pragma region Public
-MeshObject::MeshObject(string name, int pIndex)
+MeshObject::MeshObject(string pName, int pIndex) : ObjectBase(pName)
 {
-	mName															= name;
 	mMaterialIndex													= pIndex;
 }
 MeshObject::~MeshObject()
@@ -26,6 +25,10 @@ void MeshObject::InsertPosition(glm::vec3 pPos)
 void MeshObject::InsertFaceIndex(int indices)
 {
 	mFaceIndices.push_back(indices);
+}
+void MeshObject::SetMaterialIndex(int pIndex)
+{
+	mMaterialIndex = pIndex;
 }
 
 // Get

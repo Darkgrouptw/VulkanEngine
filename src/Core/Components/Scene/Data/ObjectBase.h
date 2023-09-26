@@ -1,9 +1,18 @@
 #pragma once
-#include "Core/Components/Scene/Data/Transform.h"
+#include "Core/Common/Common.h"
 
-class ObjectBase : public Transform
+#include <string>
+
+using namespace std;
+
+class ObjectBase
 {
 public:
-    ObjectBase();
+    ObjectBase(string);
     ~ObjectBase();
+
+    string GetName() { return mName; };
+
+protected:
+    string mName;
 };
