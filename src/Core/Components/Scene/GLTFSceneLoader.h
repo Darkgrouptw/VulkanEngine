@@ -24,6 +24,8 @@ protected:
 	virtual void ParseMaterialsData(void** const, int) override;
 	virtual void ParseLightsData(void** const, int) override;
 
+
+	void GetAllMaterialData(MaterialBase*, aiMaterial* mat);
 private:
 	Assimp::Importer mImporter;
 

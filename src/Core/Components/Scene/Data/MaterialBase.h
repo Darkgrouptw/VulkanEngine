@@ -13,7 +13,21 @@ public:
     MaterialBase(string);
     ~MaterialBase();
 
-    //void InsertProp(string, )
+    glm::vec3 GetAmbientColor();
+    glm::vec3 GetDiffuseColor();
+    glm::vec3 GetSpecularColor();
+
+    void SetAmbientColor(glm::vec3);
+    void SetDiffuseColor(glm::vec3);
+    void SetSpecularColor(glm::vec3);
+
 protected:
-    unordered_map<string, string> mProperties;
+    glm::vec3 mAmbientColor;
+    glm::vec3 mDiffuseColor;
+    glm::vec3 mSpecularColor;
+
+    //bool mIsTwoSide                                                 = false;
+
+    //float mShininess                                                = 0.f;
+    //float mReflectivitiy                                            = 0.f;
 };

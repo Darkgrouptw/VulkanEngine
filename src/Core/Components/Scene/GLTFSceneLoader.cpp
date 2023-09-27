@@ -29,8 +29,8 @@ void GLTFSceneLoader::ClearAllData()
     mMeshs.clear();
     #pragma endregion
     #pragma region Materials
-    for (auto it = mMaterials.begin(); it != mMaterials.end(); it++)
-        delete it->second;
+	for (int i = 0; i < mMaterials.size(); i++)
+		delete mMaterials[i];
     mMaterials.clear();
     #pragma endregion
 }
@@ -92,11 +92,8 @@ void GLTFSceneLoader::ParseMaterialsData(void** const pData, int pNumData)
     {
         auto matData                                                = materials[i];
         MaterialBase* mat                                           = new MaterialBase(string(matData->GetName().C_Str()));
-        for (int j = 0; j < matData->mNumProperties; j++)
-        {
-            auto prop                                               = matData->mProperties[j];
-            cout << "Material Property: " << string(prop->mKey.C_Str()) << " " << prop->mType << " " << value << endl;
-        }
+        GetAllMaterialData(mat, matData);
+        mMaterials.push_back(mat);
     }
 }
 void GLTFSceneLoader::ParseLightsData(void** const pData, int pNumData)
@@ -107,6 +104,19 @@ void GLTFSceneLoader::ParseLightsData(void** const pData, int pNumData)
         auto light                                                  = lights[i];
         cout << light->mColorAmbient.r << endl;
     }*/
+}
+
+void GLTFSceneLoader::GetAllMaterialData(MaterialBase* mat, aiMaterial* matData)
+{
+    // There are a lot of property
+    // https://assimp-docs.readthedocs.io/en/latest/usage/use_the_lib.html#c-api
+    aiColor3D tempColor(0.f, 0.f, 0.f);
+    if (matData->Get(AI_MATKEY_COLOR_AMBIENT, tempColor) == AI_SUCCESS)
+        mat->SetAmbientColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
+    if (matData->Get(AI_MATKEY_COLOR_DIFFUSE, tempColor) == AI_SUCCESS)
+        mat->SetDiffuseColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
+    if (matData->Get(AI_MATKEY_COLOR_SPECULAR, tempColor) == AI_SUCCESS)
+        mat->SetSpecularColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
 }
 #pragma endregion
 #pragma region Private

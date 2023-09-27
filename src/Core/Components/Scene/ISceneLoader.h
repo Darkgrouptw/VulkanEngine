@@ -6,7 +6,6 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
 
 using namespace std;
 
@@ -28,5 +27,5 @@ protected:
 	virtual void ParseLightsData(void** const, int) = 0;
 
 	vector<MeshObject* > mMeshs;
-	unordered_map<int, MaterialBase*> mMaterials;														// It's unique ID => like FileID, LocalID, GUID in Unity 
+	vector<MaterialBase*> mMaterials;																		// It's unique ID => like FileID, LocalID, GUID in Unity 
 };
