@@ -79,6 +79,7 @@ void GLTFSceneLoader::ParseMeshsData(void** const pData, int pNumData)
             else
                 cout << "[Error] Current doesn't support mesh without faces" << endl;
 
+            // 在這裡只有一個 Mesh 用一個 Material
             mesh->SetMaterialIndex(meshData->mMaterialIndex);
 			mMeshs.push_back(mesh);
         }
@@ -94,8 +95,7 @@ void GLTFSceneLoader::ParseMaterialsData(void** const pData, int pNumData)
         for (int j = 0; j < matData->mNumProperties; j++)
         {
             auto prop                                               = matData->mProperties[j];
-            //pro
-            cout << prop->mDataLength << endl;
+            cout << "Material Property: " << string(prop->mKey.C_Str()) << " " << prop->mType << " " << value << endl;
         }
     }
 }
