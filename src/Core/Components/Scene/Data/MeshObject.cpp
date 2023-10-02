@@ -7,20 +7,27 @@ MeshObject::MeshObject(string pName, int pIndex) : ObjectBase(pName)
 }
 MeshObject::~MeshObject()
 {
-	mPositions.clear();
-	mNormals.clear();
+	mVertices.clear();
 	mFaceIndices.clear();
 }
 
 // Insert Method
-void MeshObject::InsertPositionAndNormal(glm::vec3 pPos, glm::vec3 pNormal)
+void MeshObject::InsertVertexData(glm::vec3 pPos, glm::vec3 pNormal, glm::vec2 pTexcoord, glm::vec3 pVertexColor)
 {
-	InsertPosition(pPos);
-	mNormals.push_back(pNormal);
+	// ToDo:: Add Transform Matrix
+	mVertices.push_back({ pPos, pNormal, pTexcoord, pVertexColor });
 }
-void MeshObject::InsertPosition(glm::vec3 pPos)
+void MeshObject::InsertVertexData(glm::vec3 pPos, glm::vec3 pNormal, glm::vec2 pTexcoord)
 {
-	mPositions.push_back(pPos);
+	InsertVertexData(pPos, pNormal, glm::vec2(), glm::vec3());
+}
+void MeshObject::InsertVertexData(glm::vec3 pPos, glm::vec3 pNormal)
+{
+	InsertVertexData(pPos, pNormal, glm::vec2(), glm::vec3());
+}
+void MeshObject::InsertVertexData(glm::vec3 pPos)
+{
+	InsertVertexData(pPos, glm::vec3(), glm::vec2(), glm::vec3());
 }
 void MeshObject::InsertFaceIndex(int indices)
 {

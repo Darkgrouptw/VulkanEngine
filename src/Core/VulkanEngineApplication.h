@@ -57,8 +57,8 @@ public:
 
 private:
 	void InitWindow();																						// 初始化視窗
-	void InitVulkan();																						// 初始化 Vulkan
 	void InitScene();																						// 初始化場景
+	void InitVulkan();																						// 初始化 Vulkan
 	void MainLoop();																						// Main
 	void Destroy();																							// 清空其他的資料
 	
@@ -102,8 +102,8 @@ private:
 	VkExtent2D SwapChainExtent;
 
 	// Vulkan Buffer
-	VkBuffer VertexBuffer, IndexBuffer;
-	VkDeviceMemory VertexBufferMemory, IndexBufferMemory;
+	//VkBuffer VertexBuffer, IndexBuffer;
+	//VkDeviceMemory VertexBufferMemory, IndexBufferMemory;
 
 	// Vulkan Uniform Buffer
 	vector<VkBuffer> UniformBufferList;
@@ -129,7 +129,7 @@ private:
 	vector<VkFence> InFlightFences;
 
 	// 貼圖相關
-	TextureManager* TextM;
+	//TextureManager* TextM;
 	SceneManager* SceneM;
 
 	//////////////////////////////////////////////////////////////////////////

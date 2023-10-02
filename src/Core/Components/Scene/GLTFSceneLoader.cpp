@@ -61,10 +61,10 @@ void GLTFSceneLoader::ParseMeshsData(void** const pData, int pNumData)
 				if (hasNormal)
 				{
 	                glm::vec3 nomral(normals[j].x, normals[j].y, normals[j].z);
-					mesh->InsertPositionAndNormal(pos, nomral);
+					mesh->InsertVertexData(pos, nomral);
 			    }
 				else
-                    mesh->InsertPosition(pos);
+                    mesh->InsertVertexData(pos);
 			}
             bool hasFaces = meshData->HasFaces();
             if (hasFaces)

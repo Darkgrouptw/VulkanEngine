@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/Common/Common.h"
+#include "Core/Components/VertexBufferInfo.h"
 #include "Core/Components/Scene/Data/ObjectBase.h"
 #include "Core/Components/Scene/Data/Transform.h"
 
@@ -15,16 +16,24 @@ public:
     MeshObject(string, int);
     ~MeshObject();
 
-    void InsertPositionAndNormal(glm::vec3, glm::vec3);
-    void InsertPosition(glm::vec3);
+    void InsertVertexData(glm::vec3, glm::vec3, glm::vec2, glm::vec3);
+    void InsertVertexData(glm::vec3, glm::vec3, glm::vec2);
+    void InsertVertexData(glm::vec3, glm::vec3);
+    void InsertVertexData(glm::vec3);
     void InsertFaceIndex(int);
     void SetMaterialIndex(int);
 
     uint32_t GetFaceIndicesSize();
 
+    // Vulkan Command
+    void CreateVertexBuffer();
+
 protected:
-    vector<glm::vec3> mPositions;
-    vector<glm::vec3> mNormals;
+    vector<VertexBufferInfo> mVertices;
     vector<int> mFaceIndices;
     int mMaterialIndex;
+
+
+    VkBuffer mVertexBuffer, mIndexBuffer;
+    VkDeviceMemory mVertexBufferMemory, mIndexBufferMemory;
 };

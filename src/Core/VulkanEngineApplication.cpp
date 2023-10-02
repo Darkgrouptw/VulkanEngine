@@ -38,8 +38,8 @@ static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMesse
 void VulkanEngineApplication::Run()
 {
 	InitWindow();
-	InitVulkan();
 	InitScene();
+	InitVulkan();
 	MainLoop();
 	Destroy();
 }
@@ -66,6 +66,11 @@ void VulkanEngineApplication::InitWindow()
 #if defined(VKENGINE_DEBUG_DETAILS)
 	cout << "glfwVulkanSupported: " << (glfwVulkanSupported() ? "True" : "False") << endl;
 #endif
+}
+void VulkanEngineApplication::InitScene()
+{
+	SceneM = new SceneManager();
+	SceneM->LoadScene("Scenes/Teapot/teapot.gltf");
 }
 void VulkanEngineApplication::InitVulkan()
 {
@@ -110,11 +115,6 @@ void VulkanEngineApplication::InitVulkan()
 	ImGuiWindowM->FetchDeviceName(PhysiclaDevice);
 	ImGuiWindowM->UploadFont(CommandPool, GraphicsQueue, Device);
 }
-void VulkanEngineApplication::InitScene()
-{
-	SceneM = new SceneManager();
-	SceneM->LoadScene("Scenes/Teapot/teapot.gltf");
-}
 void VulkanEngineApplication::MainLoop()
 {
 	while (!glfwWindowShouldClose(Window))																	// 接到是否關閉此視窗的 Flag
@@ -156,9 +156,6 @@ void VulkanEngineApplication::Destroy()
 
 	vkDestroyBuffer(Device, VertexBuffer, nullptr);
 	vkFreeMemory(Device, VertexBufferMemory, nullptr);
-	#pragma endregion
-	#pragma region TextureImage
-	delete TextM;
 	#pragma endregion
 	#pragma region Command Burffer
 	// 不用 Destroy
@@ -657,9 +654,10 @@ void VulkanEngineApplication::__CreateDescriptorSetLayout()
 	uboLayout.descriptorCount										= 1;
 	uboLayout.stageFlags											= VK_SHADER_STAGE_VERTEX_BIT;			// 使用於 Vertex Buffer 的 Uniform Buffer
 
-	auto textureLayout												= TextM->CreateDescriptorSetLayout();
+	//auto textureLayout												= TextM->CreateDescriptorSetLayout();
 
-	vector<VkDescriptorSetLayoutBinding> bindings					= { uboLayout, textureLayout };
+	//vector<VkDescriptorSetLayoutBinding> bindings					= { uboLayout, textureLayout };
+	vector<VkDescriptorSetLayoutBinding> bindings					= { uboLayout };
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutInfo.bindingCount											= bindings.size();
@@ -885,7 +883,7 @@ void VulkanEngineApplication::__CreateCommandPool()
 }
 void VulkanEngineApplication::__CreateTextureImage()
 {
-	auto lambdaCreateBufferFunction = [&](VkDeviceSize dataSize, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+	/*auto lambdaCreateBufferFunction = [&](VkDeviceSize dataSize, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 	{
 		__CreateBuffer(
 			dataSize,
@@ -915,14 +913,14 @@ void VulkanEngineApplication::__CreateTextureImage()
 		lambdaEndSingleTimeCommandFunction,
 		VK_FORMAT_R8G8B8A8_SRGB);
 	TextM->CreateImageView();
-	TextM->CreateSampler(PhysiclaDevice);
+	TextM->CreateSampler(PhysiclaDevice);*/
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {
 	// 這裡會分成兩個 Buffer 的原因
 	// 主要是因為資料上傳後就不會遭受到修改
 	// 所以理想上會使用 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT (也就是無法從 CPU 去讀取)
-	VkDeviceSize bufferSize											= sizeof(VertexBufferInfo) * vertices.size();
+	/*VkDeviceSize bufferSize = sizeof(VertexBufferInfo) * vertices.size();
 
 	VkBuffer stageBuffer;
 	VkDeviceMemory stageBufferMemory;
@@ -951,7 +949,7 @@ void VulkanEngineApplication::__CreateVertexBuffer()
 
 	// 清除 Buffer & Buffer Memory
 	vkDestroyBuffer(Device, stageBuffer, nullptr);
-	vkFreeMemory(Device, stageBufferMemory, nullptr);
+	vkFreeMemory(Device, stageBufferMemory, nullptr);*/
 }
 void VulkanEngineApplication::__CreateIndexBuffer()
 {
@@ -1016,7 +1014,7 @@ void VulkanEngineApplication::__CreateDescriptor()
 	poolSize.descriptorCount										= MAX_FRAME_IN_FLIGHTS;
 
 	poolSizes.push_back(poolSize);
-	poolSizes.push_back(TextM->CreateDescriptorPoolSize(MAX_FRAME_IN_FLIGHTS));
+	//poolSizes.push_back(TextM->CreateDescriptorPoolSize(MAX_FRAME_IN_FLIGHTS));
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType													= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1047,10 +1045,11 @@ void VulkanEngineApplication::__CreateDescriptor()
 		bufferinfo.offset											= 0;
 		bufferinfo.range											= sizeof(UniformBufferInfo);
 
-		VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
+		//VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
 
 		vector<VkWriteDescriptorSet> descriptorWrites;
-		descriptorWrites.resize(2);
+		//descriptorWrites.resize(2);
+		descriptorWrites.resize(1);
 		#pragma region Uniform Buffer
 		descriptorWrites[0].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[0].dstSet									= DescriptorSets[i];
@@ -1061,7 +1060,7 @@ void VulkanEngineApplication::__CreateDescriptor()
 		descriptorWrites[0].descriptorCount							= 1;
 		descriptorWrites[0].pBufferInfo								= &bufferinfo;
 		#pragma endregion
-		#pragma region Image Info
+		/*#pragma region Image Info
 		descriptorWrites[1].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[1].dstSet									= DescriptorSets[i];
 		descriptorWrites[1].dstBinding								= 1;
@@ -1070,7 +1069,7 @@ void VulkanEngineApplication::__CreateDescriptor()
 		descriptorWrites[1].descriptorType							= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		descriptorWrites[1].descriptorCount							= 1;
 		descriptorWrites[1].pImageInfo								= &imageInfo;
-		#pragma endregion
+		#pragma endregion*/
 
 		vkUpdateDescriptorSets(Device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 	}
