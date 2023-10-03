@@ -151,6 +151,8 @@ void VulkanEngineApplication::Destroy()
 	}
 	#pragma endregion
 	#pragma region VertexBuffer
+	SceneM->Destroy();
+
 	vkDestroyBuffer(Device, IndexBuffer, nullptr);
 	vkFreeMemory(Device, IndexBufferMemory, nullptr);
 

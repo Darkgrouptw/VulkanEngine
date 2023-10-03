@@ -17,26 +17,14 @@ bool GLTFSceneLoader::LoadScene(string pPath)
 }
 void GLTFSceneLoader::Destroy()
 {
-    ClearAllData();
+    mMeshDataCallback.clear();
+    mMaterialDataCallback.clear();
 }
 #pragma endregion
 #pragma region Protect
-void GLTFSceneLoader::ClearAllData()
-{
-    #pragma region Mesh
-    for (int i = 0; i < mMeshs.size(); i++)
-        delete mMeshs[i];
-    mMeshs.clear();
-    #pragma endregion
-    #pragma region Materials
-	for (int i = 0; i < mMaterials.size(); i++)
-		delete mMaterials[i];
-    mMaterials.clear();
-    #pragma endregion
-}
-
 void GLTFSceneLoader::ParseMeshsData(void** const pData, int pNumData)
 {
+    vector<MeshObject*> meshList;
     aiMesh** meshs                                                  = (aiMesh**)pData;
     for (int i = 0; i < pNumData; i++)
 	{
@@ -81,32 +69,35 @@ void GLTFSceneLoader::ParseMeshsData(void** const pData, int pNumData)
 
             // 在這裡只有一個 Mesh 用一個 Material
             mesh->SetMaterialIndex(meshData->mMaterialIndex);
-			mMeshs.push_back(mesh);
+			meshList.push_back(mesh);
         }
     }
+    for
+    return meshList;
 }
 void GLTFSceneLoader::ParseMaterialsData(void** const pData, int pNumData)
 {
+    vector<MaterialBase*> materialList;
 	aiMaterial** materials = (aiMaterial**)pData;
     for (int i = 0; i < pNumData; i++)
     {
         auto matData                                                = materials[i];
         MaterialBase* mat                                           = new MaterialBase(string(matData->GetName().C_Str()));
         GetAllMaterialData(mat, matData);
-        mMaterials.push_back(mat);
+        materialList.push_back(mat);
     }
 }
-void GLTFSceneLoader::ParseLightsData(void** const pData, int pNumData)
+/*void GLTFSceneLoader::ParseLightsData(void** const pData, int pNumData)
 {
-    /*aiLight** lights = (aiLight**)pData;
+    aiLight** lights = (aiLight**)pData;
     for (int i = 0; i < pNumData; i++)
     {
         auto light                                                  = lights[i];
         cout << light->mColorAmbient.r << endl;
-    }*/
-}
+    }
+}*/
 
-void GLTFSceneLoader::GetAllMaterialData(MaterialBase* mat, aiMaterial* matData)
+/*void GLTFSceneLoader::GetAllMaterialData(MaterialBase* mat, aiMaterial* matData)
 {
     // There are a lot of property
     // https://assimp-docs.readthedocs.io/en/latest/usage/use_the_lib.html#c-api
@@ -117,7 +108,7 @@ void GLTFSceneLoader::GetAllMaterialData(MaterialBase* mat, aiMaterial* matData)
         mat->SetDiffuseColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
     if (matData->Get(AI_MATKEY_COLOR_SPECULAR, tempColor) == AI_SUCCESS)
         mat->SetSpecularColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
-}
+}*/
 #pragma endregion
 #pragma region Private
 void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
@@ -134,9 +125,8 @@ void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
     cout << "Node Children Count: "                                 << pScene->mRootNode->mNumChildren << endl;
     cout << "========== Convert Scene End ==========" << endl;
 
-    ClearAllData();
-    ParseMeshsData((void **)pScene->mMeshes,                        pScene->mNumMeshes);
+    /*ParseMeshsData((void **)pScene->mMeshes,                        pScene->mNumMeshes);
     ParseMaterialsData((void**)pScene->mMaterials,                  pScene->mNumMaterials);
-    ParseLightsData((void**)pScene->mLights,                        pScene->mNumLights);
+    ParseLightsData((void**)pScene->mLights,                        pScene->mNumLights);*/
 }
 #pragma endregion

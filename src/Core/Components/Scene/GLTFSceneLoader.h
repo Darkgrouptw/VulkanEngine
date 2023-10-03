@@ -18,18 +18,14 @@ public:
 	virtual void Destroy() override;
 
 protected:
-	virtual void ClearAllData() override;
-
 	virtual void ParseMeshsData(void** const, int) override;
 	virtual void ParseMaterialsData(void** const, int) override;
-	virtual void ParseLightsData(void** const, int) override;
+	//virtual void ParseLightsData(void** const, int) override;
 
-
-	void GetAllMaterialData(MaterialBase*, aiMaterial* mat);
+	//void GetAllMaterialData(MaterialBase*, aiMaterial* mat);
 private:
 	Assimp::Importer mImporter;
 
 	void ConvertNode(const aiScene*);
-	
 };
 #endif

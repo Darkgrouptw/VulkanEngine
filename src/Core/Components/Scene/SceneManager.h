@@ -10,6 +10,7 @@
 
 using namespace std;
 
+
 class SceneManager
 {
 public:
@@ -17,7 +18,11 @@ public:
 	~SceneManager();
 
 	void LoadScene(string);
-private:
+protected:
+	// SceneData
+	vector<MeshObject* > mMeshs;
+	vector<MaterialBase*> mMaterials;																		// It's unique ID => like FileID, LocalID, GUID in Unity 
+
 
 #if USE_ASSIMP
 	GLTFSceneLoader loader;

@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <functional>
 
 using namespace std;
 
@@ -18,14 +19,18 @@ public:
 	virtual bool LoadScene(string) = 0;
 	virtual void Destroy() = 0;
 
+	// 設定 Loading Finished 的 Callback
+	virtual void SetMeshDataCallback(function<vector<MeshObject*>>) = 0;
+	virtual void SetMaterialDataCallback(function<vector<MaterialBase*>>) = 0;
+	//virtual void SetLoadingFinishedCallbak_InLightData() = 0;
 protected:
-	virtual void ClearAllData() = 0;
 
-	// Parsing Data from loader
+	// Parsing Data from loader and trigger callback
 	virtual void ParseMeshsData(void** const, int) = 0;
 	virtual void ParseMaterialsData(void** const, int) = 0;
-	virtual void ParseLightsData(void** const, int) = 0;
+	//virtual void ParseLightsData(void** const, int) = 0;
 
-	vector<MeshObject* > mMeshs;
-	vector<MaterialBase*> mMaterials;																		// It's unique ID => like FileID, LocalID, GUID in Unity 
+	// Callback
+	function<vector<MeshObject*>> mMeshDataCallback;
+	function<vector<MaterialBase*>> mMaterialDataCallback;
 };

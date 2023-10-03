@@ -27,6 +27,7 @@ public:
 
     // Vulkan Command
     void CreateVertexBuffer();
+    void DestroyVertexBuffer();
 
 protected:
     vector<VertexBufferInfo> mVertices;
