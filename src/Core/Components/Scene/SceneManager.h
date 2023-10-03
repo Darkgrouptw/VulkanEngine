@@ -19,12 +19,10 @@ public:
 	~SceneManager();
 
 	void LoadScene(string);
-	void DestroyVertexBuffer();
 protected:
 	// SceneData
 	vector<MeshObject*> mMeshs;
 	vector<MaterialBase*> mMaterials;																		// It's unique ID => like FileID, LocalID, GUID in Unity 
-	VkDevice mDevice;
 
 	// Callback
 	void LoadedMeshDataCallback(vector<MeshObject*>);														// 載完 Mesh 之後的 Callback
@@ -33,6 +31,11 @@ protected:
 	// Delete
 	void DeleteMeshData();
 	void DeleteMaterialData();
+
+	// GPU Part
+	void UploadDataToGPU();
+	void DestroyGPUData();
+	VkDevice mDevice;
 
 #if USE_ASSIMP
 	GLTFSceneLoader loader;

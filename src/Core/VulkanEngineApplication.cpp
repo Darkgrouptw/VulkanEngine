@@ -38,8 +38,8 @@ static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMesse
 void VulkanEngineApplication::Run()
 {
 	InitWindow();
-	InitScene();
 	InitVulkan();
+	InitScene();
 	MainLoop();
 	Destroy();
 }
@@ -66,11 +66,6 @@ void VulkanEngineApplication::InitWindow()
 #if defined(VKENGINE_DEBUG_DETAILS)
 	cout << "glfwVulkanSupported: " << (glfwVulkanSupported() ? "True" : "False") << endl;
 #endif
-}
-void VulkanEngineApplication::InitScene()
-{
-	SceneM = new SceneManager(Device);
-	SceneM->LoadScene("Scenes/Teapot/teapot.gltf");
 }
 void VulkanEngineApplication::InitVulkan()
 {
@@ -115,6 +110,12 @@ void VulkanEngineApplication::InitVulkan()
 	ImGuiWindowM->FetchDeviceName(PhysiclaDevice);
 	ImGuiWindowM->UploadFont(CommandPool, GraphicsQueue, Device);
 }
+void VulkanEngineApplication::InitScene()
+{
+	SceneM = new SceneManager(Device);
+	SceneM->LoadScene("Scenes/Teapot/teapot.gltf");
+	SceneM->UploadDataToGPU();
+}
 void VulkanEngineApplication::MainLoop()
 {
 	while (!glfwWindowShouldClose(Window))																	// 接到是否關閉此視窗的 Flag
@@ -128,6 +129,7 @@ void VulkanEngineApplication::Destroy()
 {
 	// Delete ImGui
 	delete ImGuiWindowM;
+	delete SceneM;
 
 	#pragma region SwapChain
 	__CleanupSwapChain();
@@ -149,9 +151,6 @@ void VulkanEngineApplication::Destroy()
 		vkDestroyBuffer(Device, UniformBufferList[i], nullptr);
 		vkFreeMemory(Device, UniformBufferMemoryList[i], nullptr);
 	}
-	#pragma endregion
-	#pragma region VertexBuffer
-	SceneM->DestroyVertexBuffer();
 	#pragma endregion
 	#pragma region Command Burffer
 	// 不用 Destroy
@@ -913,9 +912,6 @@ void VulkanEngineApplication::__CreateTextureImage()
 }
 void VulkanEngineApplication::__CreateVertexBuffer()
 {
-	// 這裡會分成兩個 Buffer 的原因
-	// 主要是因為資料上傳後就不會遭受到修改
-	// 所以理想上會使用 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT (也就是無法從 CPU 去讀取)
 	/*VkDeviceSize bufferSize = sizeof(VertexBufferInfo) * vertices.size();
 
 	VkBuffer stageBuffer;

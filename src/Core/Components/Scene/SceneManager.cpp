@@ -24,16 +24,7 @@ void SceneManager::LoadScene(string pSceneName)
 #else
 	throw runtime_error("NotImplemented other way to load scene");
 #endif
-}
 
-void SceneManager::DestroyVertexBuffer()
-{
-	// ToDo: Add When init buffer
-	/*vkDestroyBuffer(Device, IndexBuffer, nullptr);
-	vkFreeMemory(Device, IndexBufferMemory, nullptr);
-
-	vkDestroyBuffer(Device, VertexBuffer, nullptr);
-	vkFreeMemory(Device, VertexBufferMemory, nullptr);*/
 }
 #pragma endregion
 #pragma region Protected
@@ -61,6 +52,21 @@ void SceneManager::DeleteMaterialData()
 	for (int i = 0; i < mMaterials.size(); i++)
 		delete mMaterials[i];
 	mMaterials.clear();
+}
+
+// GPU Data
+void SceneManager::UploadDataToGPU()
+{
+
+}
+void SceneManager::DestroyGPUData()
+{
+	// ToDo: Add When init buffer
+	/*vkDestroyBuffer(Device, IndexBuffer, nullptr);
+	vkFreeMemory(Device, IndexBufferMemory, nullptr);
+
+	vkDestroyBuffer(Device, VertexBuffer, nullptr);
+	vkFreeMemory(Device, VertexBufferMemory, nullptr);*/
 }
 #pragma endregion
 #pragma region Private
