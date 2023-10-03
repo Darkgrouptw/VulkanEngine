@@ -11,7 +11,10 @@
 
 using namespace std;
 
-class GLTFSceneLoader : ISceneLoader
+/// <summary>
+/// 用來載入 GLTF 的 Loader
+/// </summary>
+class GLTFSceneLoader : public ISceneLoader
 {
 public:
 	virtual bool LoadScene(string) override;
@@ -22,7 +25,7 @@ protected:
 	virtual void ParseMaterialsData(void** const, int) override;
 	//virtual void ParseLightsData(void** const, int) override;
 
-	//void GetAllMaterialData(MaterialBase*, aiMaterial* mat);
+	void GetAllGLTFMaterialData(MaterialBase*, aiMaterial* mat);
 private:
 	Assimp::Importer mImporter;
 

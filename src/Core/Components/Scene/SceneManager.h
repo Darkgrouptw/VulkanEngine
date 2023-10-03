@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <string>
+#include <functional>
 
 using namespace std;
 
@@ -14,15 +15,24 @@ using namespace std;
 class SceneManager
 {
 public:
-	SceneManager();
+	SceneManager(VkDevice&);
 	~SceneManager();
 
 	void LoadScene(string);
+	void DestroyVertexBuffer();
 protected:
 	// SceneData
-	vector<MeshObject* > mMeshs;
+	vector<MeshObject*> mMeshs;
 	vector<MaterialBase*> mMaterials;																		// It's unique ID => like FileID, LocalID, GUID in Unity 
+	VkDevice mDevice;
 
+	// Callback
+	void LoadedMeshDataCallback(vector<MeshObject*>);														// 載完 Mesh 之後的 Callback
+	void LoadedMaterialDataCallback(vector<MaterialBase*>);													// 載完 Material 之後的 Callback
+
+	// Delete
+	void DeleteMeshData();
+	void DeleteMaterialData();
 
 #if USE_ASSIMP
 	GLTFSceneLoader loader;

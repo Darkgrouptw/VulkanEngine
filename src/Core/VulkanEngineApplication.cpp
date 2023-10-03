@@ -69,7 +69,7 @@ void VulkanEngineApplication::InitWindow()
 }
 void VulkanEngineApplication::InitScene()
 {
-	SceneM = new SceneManager();
+	SceneM = new SceneManager(Device);
 	SceneM->LoadScene("Scenes/Teapot/teapot.gltf");
 }
 void VulkanEngineApplication::InitVulkan()
@@ -151,13 +151,7 @@ void VulkanEngineApplication::Destroy()
 	}
 	#pragma endregion
 	#pragma region VertexBuffer
-	SceneM->Destroy();
-
-	vkDestroyBuffer(Device, IndexBuffer, nullptr);
-	vkFreeMemory(Device, IndexBufferMemory, nullptr);
-
-	vkDestroyBuffer(Device, VertexBuffer, nullptr);
-	vkFreeMemory(Device, VertexBufferMemory, nullptr);
+	SceneM->DestroyVertexBuffer();
 	#pragma endregion
 	#pragma region Command Burffer
 	// 不用 Destroy
@@ -305,31 +299,31 @@ void VulkanEngineApplication::ReCreateSwapChain()
 void VulkanEngineApplication::UpdateUniformBuffer(uint32_t frameIndex)
 {
 	// 只有第一幀的時候設定
-	static auto startTime											= chrono::high_resolution_clock::now();
-	auto currentTime												= chrono::high_resolution_clock::now();
-	float duration													= 0;//chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
+	//static auto startTime											= chrono::high_resolution_clock::now();
+	//auto currentTime												= chrono::high_resolution_clock::now();
+	//float duration													= 0;//chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
 
-	// MVP
-	UniformBufferInfo bufferData{};
-	bufferData.ModelMatrix											= glm::rotate(
-																		glm::mat4(1.f),
-																		duration * glm::radians(90.f),
-																		glm::vec3(0, 0, 1)
-																	);
-	bufferData.ViewMatrix											= glm::lookAt(
-																		glm::vec3(2, 2, 2),
-																		glm::vec3(0, 0, 0),
-																		glm::vec3(0, 0, 1)
-																	);
-	bufferData.ProjectionMatrix										= glm::perspective(
-																		glm::radians(45.f),
-																		(float)SwapChainExtent.width / SwapChainExtent.height,
-																		0.1f,
-																		10.f);
-	// 這裡必須要反轉
-	// 因為 GLM 是針對 OpenGL 做的 (y 的方向是相反的)
-	bufferData.ProjectionMatrix[1][1]								*= -1;
-	memcpy(UniformBufferMappedDataList[frameIndex], &bufferData, sizeof(UniformBufferInfo));
+	//// MVP
+	//UniformBufferInfo bufferData{};
+	//bufferData.ModelMatrix											= glm::rotate(
+	//																	glm::mat4(1.f),
+	//																	duration * glm::radians(90.f),
+	//																	glm::vec3(0, 0, 1)
+	//																);
+	//bufferData.ViewMatrix											= glm::lookAt(
+	//																	glm::vec3(2, 2, 2),
+	//																	glm::vec3(0, 0, 0),
+	//																	glm::vec3(0, 0, 1)
+	//																);
+	//bufferData.ProjectionMatrix										= glm::perspective(
+	//																	glm::radians(45.f),
+	//																	(float)SwapChainExtent.width / SwapChainExtent.height,
+	//																	0.1f,
+	//																	10.f);
+	//// 這裡必須要反轉
+	//// 因為 GLM 是針對 OpenGL 做的 (y 的方向是相反的)
+	//bufferData.ProjectionMatrix[1][1]								*= -1;
+	//memcpy(UniformBufferMappedDataList[frameIndex], &bufferData, sizeof(UniformBufferInfo));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -955,7 +949,7 @@ void VulkanEngineApplication::__CreateVertexBuffer()
 }
 void VulkanEngineApplication::__CreateIndexBuffer()
 {
-	VkDeviceSize bufferSize											= sizeof(uint16_t) * indices.size();
+	/*VkDeviceSize bufferSize											= sizeof(uint16_t) * indices.size();
 
 	VkBuffer stageBuffer;
 	VkDeviceMemory stageBufferMemory;
@@ -984,11 +978,11 @@ void VulkanEngineApplication::__CreateIndexBuffer()
 
 	// 清除 Buffer & Buffer Memory
 	vkDestroyBuffer(Device, stageBuffer, nullptr);
-	vkFreeMemory(Device, stageBufferMemory, nullptr);
+	vkFreeMemory(Device, stageBufferMemory, nullptr);*/
 }
 void VulkanEngineApplication::__CreateUniformBuffer()
 {
-	VkDeviceSize bufferSize 										= sizeof(UniformBufferInfo);
+	/*VkDeviceSize bufferSize 										= sizeof(UniformBufferInfo);
 
 	UniformBufferList.resize(MAX_FRAME_IN_FLIGHTS);
 	UniformBufferMemoryList.resize(MAX_FRAME_IN_FLIGHTS);
@@ -1004,78 +998,77 @@ void VulkanEngineApplication::__CreateUniformBuffer()
 			UniformBufferMemoryList[i]);
 
 		vkMapMemory(Device, UniformBufferMemoryList[i], 0, bufferSize, 0, &UniformBufferMappedDataList[i]);
-	}
-	
+	}*/
 }
 void VulkanEngineApplication::__CreateDescriptor()
 {
-	#pragma region Descriptor Pool
-	vector<VkDescriptorPoolSize> poolSizes{};
-	VkDescriptorPoolSize poolSize{};
-	poolSize.type													= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize.descriptorCount										= MAX_FRAME_IN_FLIGHTS;
+	//#pragma region Descriptor Pool
+	//vector<VkDescriptorPoolSize> poolSizes{};
+	//VkDescriptorPoolSize poolSize{};
+	//poolSize.type													= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	//poolSize.descriptorCount										= MAX_FRAME_IN_FLIGHTS;
 
-	poolSizes.push_back(poolSize);
-	//poolSizes.push_back(TextM->CreateDescriptorPoolSize(MAX_FRAME_IN_FLIGHTS));
+	//poolSizes.push_back(poolSize);
+	////poolSizes.push_back(TextM->CreateDescriptorPoolSize(MAX_FRAME_IN_FLIGHTS));
 
-	VkDescriptorPoolCreateInfo poolInfo{};
-	poolInfo.sType													= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount											= poolSizes.size();
-	poolInfo.pPoolSizes												= poolSizes.data();
-	poolInfo.maxSets												= MAX_FRAME_IN_FLIGHTS;
+	//VkDescriptorPoolCreateInfo poolInfo{};
+	//poolInfo.sType													= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	//poolInfo.poolSizeCount											= poolSizes.size();
+	//poolInfo.pPoolSizes												= poolSizes.data();
+	//poolInfo.maxSets												= MAX_FRAME_IN_FLIGHTS;
 
-	if (vkCreateDescriptorPool(Device, &poolInfo, nullptr, &DescriptorPool) != VK_SUCCESS)
-		throw runtime_error("Failed to create descriptor pool");
-	#pragma endregion
-	#pragma region Descriptor Set
-	vector<VkDescriptorSetLayout> layouts(MAX_FRAME_IN_FLIGHTS, DescriptorSetLayout);
+	//if (vkCreateDescriptorPool(Device, &poolInfo, nullptr, &DescriptorPool) != VK_SUCCESS)
+	//	throw runtime_error("Failed to create descriptor pool");
+	//#pragma endregion
+	//#pragma region Descriptor Set
+	//vector<VkDescriptorSetLayout> layouts(MAX_FRAME_IN_FLIGHTS, DescriptorSetLayout);
 
-	VkDescriptorSetAllocateInfo allocateInfo{};
-	allocateInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorPool										= DescriptorPool;
-	allocateInfo.descriptorSetCount									= MAX_FRAME_IN_FLIGHTS;
-	allocateInfo.pSetLayouts										= layouts.data();
+	//VkDescriptorSetAllocateInfo allocateInfo{};
+	//allocateInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	//allocateInfo.descriptorPool										= DescriptorPool;
+	//allocateInfo.descriptorSetCount									= MAX_FRAME_IN_FLIGHTS;
+	//allocateInfo.pSetLayouts										= layouts.data();
 
-	DescriptorSets.resize(MAX_FRAME_IN_FLIGHTS);
-	if (vkAllocateDescriptorSets(Device, &allocateInfo, DescriptorSets.data()) != VK_SUCCESS)
-		throw runtime_error("Failed to create allocate descriptor set");
+	//DescriptorSets.resize(MAX_FRAME_IN_FLIGHTS);
+	//if (vkAllocateDescriptorSets(Device, &allocateInfo, DescriptorSets.data()) != VK_SUCCESS)
+	//	throw runtime_error("Failed to create allocate descriptor set");
 
-	for (size_t i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
-	{
-		VkDescriptorBufferInfo bufferinfo{};
-		bufferinfo.buffer											= UniformBufferList[i];
-		bufferinfo.offset											= 0;
-		bufferinfo.range											= sizeof(UniformBufferInfo);
+	//for (size_t i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
+	//{
+	//	VkDescriptorBufferInfo bufferinfo{};
+	//	bufferinfo.buffer											= UniformBufferList[i];
+	//	bufferinfo.offset											= 0;
+	//	bufferinfo.range											= sizeof(UniformBufferInfo);
 
-		//VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
+	//	//VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
 
-		vector<VkWriteDescriptorSet> descriptorWrites;
-		//descriptorWrites.resize(2);
-		descriptorWrites.resize(1);
-		#pragma region Uniform Buffer
-		descriptorWrites[0].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet									= DescriptorSets[i];
-		descriptorWrites[0].dstBinding								= 0;
-		descriptorWrites[0].dstArrayElement							= 0;
+	//	vector<VkWriteDescriptorSet> descriptorWrites;
+	//	//descriptorWrites.resize(2);
+	//	descriptorWrites.resize(1);
+	//	#pragma region Uniform Buffer
+	//	descriptorWrites[0].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	//	descriptorWrites[0].dstSet									= DescriptorSets[i];
+	//	descriptorWrites[0].dstBinding								= 0;
+	//	descriptorWrites[0].dstArrayElement							= 0;
 
-		descriptorWrites[0].descriptorType							= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount							= 1;
-		descriptorWrites[0].pBufferInfo								= &bufferinfo;
-		#pragma endregion
-		/*#pragma region Image Info
-		descriptorWrites[1].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet									= DescriptorSets[i];
-		descriptorWrites[1].dstBinding								= 1;
-		descriptorWrites[1].dstArrayElement							= 0;
+	//	descriptorWrites[0].descriptorType							= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	//	descriptorWrites[0].descriptorCount							= 1;
+	//	descriptorWrites[0].pBufferInfo								= &bufferinfo;
+	//	#pragma endregion
+	//	/*#pragma region Image Info
+	//	descriptorWrites[1].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	//	descriptorWrites[1].dstSet									= DescriptorSets[i];
+	//	descriptorWrites[1].dstBinding								= 1;
+	//	descriptorWrites[1].dstArrayElement							= 0;
 
-		descriptorWrites[1].descriptorType							= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[1].descriptorCount							= 1;
-		descriptorWrites[1].pImageInfo								= &imageInfo;
-		#pragma endregion*/
+	//	descriptorWrites[1].descriptorType							= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	//	descriptorWrites[1].descriptorCount							= 1;
+	//	descriptorWrites[1].pImageInfo								= &imageInfo;
+	//	#pragma endregion*/
 
-		vkUpdateDescriptorSets(Device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-	}
-	#pragma endregion
+	//	vkUpdateDescriptorSets(Device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+	//}
+	//#pragma endregion
     #pragma region Description Pool For ImGui
     VkDescriptorPoolSize imGuiPoolSizes[] = {
 		{VK_DESCRIPTOR_TYPE_SAMPLER,                                1000},
@@ -1191,12 +1184,12 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 		// 送 Buffer 上去 
-		VkBuffer buffers[]											= { VertexBuffer };
+		/*VkBuffer buffers[]											= { VertexBuffer };
 		VkDeviceSize offsets[]										= { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 		vkCmdBindIndexBuffer(commandBuffer, IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescriptorSets[CurrentFrameIndex], 0, nullptr);
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);*/
 
 		// 原先是這兩個配
 		//vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);

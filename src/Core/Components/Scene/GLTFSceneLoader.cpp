@@ -17,11 +17,11 @@ bool GLTFSceneLoader::LoadScene(string pPath)
 }
 void GLTFSceneLoader::Destroy()
 {
-    mMeshDataCallback.clear();
-    mMaterialDataCallback.clear();
+    mMeshDataCallback = NULL;
+    mMaterialDataCallback = NULL;
 }
 #pragma endregion
-#pragma region Protect
+#pragma region Protected
 void GLTFSceneLoader::ParseMeshsData(void** const pData, int pNumData)
 {
     vector<MeshObject*> meshList;
@@ -72,8 +72,8 @@ void GLTFSceneLoader::ParseMeshsData(void** const pData, int pNumData)
 			meshList.push_back(mesh);
         }
     }
-    for
-    return meshList;
+    if (mMeshDataCallback != NULL)
+        mMeshDataCallback(meshList);
 }
 void GLTFSceneLoader::ParseMaterialsData(void** const pData, int pNumData)
 {
@@ -83,9 +83,11 @@ void GLTFSceneLoader::ParseMaterialsData(void** const pData, int pNumData)
     {
         auto matData                                                = materials[i];
         MaterialBase* mat                                           = new MaterialBase(string(matData->GetName().C_Str()));
-        GetAllMaterialData(mat, matData);
+        GetAllGLTFMaterialData(mat, matData);
         materialList.push_back(mat);
-    }
+	}
+	if (mMaterialDataCallback != NULL)
+        mMaterialDataCallback(materialList);
 }
 /*void GLTFSceneLoader::ParseLightsData(void** const pData, int pNumData)
 {
@@ -97,7 +99,7 @@ void GLTFSceneLoader::ParseMaterialsData(void** const pData, int pNumData)
     }
 }*/
 
-/*void GLTFSceneLoader::GetAllMaterialData(MaterialBase* mat, aiMaterial* matData)
+void GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial* matData)
 {
     // There are a lot of property
     // https://assimp-docs.readthedocs.io/en/latest/usage/use_the_lib.html#c-api
@@ -108,7 +110,7 @@ void GLTFSceneLoader::ParseMaterialsData(void** const pData, int pNumData)
         mat->SetDiffuseColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
     if (matData->Get(AI_MATKEY_COLOR_SPECULAR, tempColor) == AI_SUCCESS)
         mat->SetSpecularColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
-}*/
+}
 #pragma endregion
 #pragma region Private
 void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
@@ -125,8 +127,8 @@ void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
     cout << "Node Children Count: "                                 << pScene->mRootNode->mNumChildren << endl;
     cout << "========== Convert Scene End ==========" << endl;
 
-    /*ParseMeshsData((void **)pScene->mMeshes,                        pScene->mNumMeshes);
+    ParseMeshsData((void **)pScene->mMeshes,                        pScene->mNumMeshes);
     ParseMaterialsData((void**)pScene->mMaterials,                  pScene->mNumMaterials);
-    ParseLightsData((void**)pScene->mLights,                        pScene->mNumLights);*/
+    //ParseLightsData((void**)pScene->mLights,                        pScene->mNumLights);
 }
 #pragma endregion

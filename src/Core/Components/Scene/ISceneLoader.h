@@ -20,17 +20,16 @@ public:
 	virtual void Destroy() = 0;
 
 	// 設定 Loading Finished 的 Callback
-	virtual void SetMeshDataCallback(function<vector<MeshObject*>>) = 0;
-	virtual void SetMaterialDataCallback(function<vector<MaterialBase*>>) = 0;
+	void SetMeshDataCallback(function<void(vector<MeshObject*>)> pCallback) { mMeshDataCallback = pCallback; };
+	void SetMaterialDataCallback(function<void(vector<MaterialBase*>)> pCallback)	{ mMaterialDataCallback = pCallback; };
 	//virtual void SetLoadingFinishedCallbak_InLightData() = 0;
 protected:
-
 	// Parsing Data from loader and trigger callback
 	virtual void ParseMeshsData(void** const, int) = 0;
 	virtual void ParseMaterialsData(void** const, int) = 0;
 	//virtual void ParseLightsData(void** const, int) = 0;
 
 	// Callback
-	function<vector<MeshObject*>> mMeshDataCallback;
-	function<vector<MaterialBase*>> mMaterialDataCallback;
+	function<void(vector<MeshObject*>)> mMeshDataCallback;
+	function<void(vector<MaterialBase*>)> mMaterialDataCallback;
 };
