@@ -15,10 +15,11 @@ using namespace std;
 class SceneManager
 {
 public:
-	SceneManager(VkDevice&);
+	SceneManager();
 	~SceneManager();
 
 	void LoadScene(string);
+	void UnloadScene();
 protected:
 	// SceneData
 	vector<MeshObject*> mMeshs;
@@ -35,7 +36,6 @@ protected:
 	// GPU Part
 	void UploadDataToGPU();
 	void DestroyGPUData();
-	VkDevice mDevice;
 
 #if USE_ASSIMP
 	GLTFSceneLoader loader;

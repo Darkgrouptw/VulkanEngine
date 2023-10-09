@@ -1,5 +1,6 @@
 #include "Core/VulkanEngineApplication.h"
 
+VulkanEngineApplication* VulkanEngineApplication::Instance = nullptr;
 #pragma region VulkanMessage
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -44,16 +45,62 @@ void VulkanEngineApplication::Run()
 	Destroy();
 }
 
+// Windows Resize
 // Static callback
 void VulkanEngineApplication::ResizeCallback(GLFWwindow* pWindow, int pWidth, int pHeight)
 {
 	auto* app = reinterpret_cast<VulkanEngineApplication*>(glfwGetWindowUserPointer(pWindow));
 	app->mFrameBufferResized = true;
 }
+
+// Vulkan Create Buffer
+VkDevice VulkanEngineApplication::GetDevice()
+{
+	return mDevice;
+}
+void VulkanEngineApplication::CreateBuffer(VkDeviceSize pSize, VkBufferUsageFlags pUsage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType												= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size													= pSize;
+	bufferInfo.usage												= pUsage;
+	bufferInfo.sharingMode											= VK_SHARING_MODE_EXCLUSIVE;			// 只有在 Graphics Queue 會用到，暫時先給 Exclusive
+
+	if (vkCreateBuffer(mDevice, &bufferInfo, nullptr, &buffer)		!= VK_SUCCESS)
+		throw std::runtime_error("Failed to create vertex buffer");
+
+	// 設定 Buffer 內的大小
+	VkMemoryRequirements memRequirements{};
+	vkGetBufferMemoryRequirements(mDevice, buffer, &memRequirements);
+
+	VkMemoryAllocateInfo allocateInfo{};
+	allocateInfo.sType												= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.allocationSize										= memRequirements.size;
+	allocateInfo.memoryTypeIndex									= __FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+	if (vkAllocateMemory(mDevice, &allocateInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create vertex buffer memory");
+
+	vkBindBufferMemory(mDevice, buffer, bufferMemory, 0);
+}
+void VulkanEngineApplication::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+	VkCommandBuffer buffer = __BeginSingleTimeCommand();
+	{
+		VkBufferCopy copyRegion{};
+		copyRegion.size = size;
+		vkCmdCopyBuffer(buffer, srcBuffer, dstBuffer, 1, &copyRegion);
+	}
+	__EndSingleTimeCommand(buffer);
+}
+
 #pragma endregion
 #pragma region Private
 void VulkanEngineApplication::InitWindow()
 {
+	// 設定 Instance
+	VulkanEngineApplication::Instance = this;
+
 	// 初始化
 	glfwInit();
 
@@ -82,7 +129,6 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateFrameBuffer();
 	__CreateCommandPool();
 	__CreateTextureImage();
-	__CreateVertexBuffer();
 	__CreateIndexBuffer();
 	__CreateUniformBuffer();
 	__CreateDescriptor();
@@ -93,7 +139,7 @@ void VulkanEngineApplication::InitVulkan()
 	ImGui_ImplVulkan_InitInfo initInfo{};
 	initInfo.Instance 												= mInstance;
 	initInfo.PhysicalDevice											= PhysiclaDevice;
-	initInfo.Device													= Device;
+	initInfo.Device													= mDevice;
 	initInfo.QueueFamily											= Indices.GraphicsFamily.value();
 	initInfo.Queue													= GraphicsQueue;
 	initInfo.PipelineCache											= VK_NULL_HANDLE;
@@ -108,13 +154,12 @@ void VulkanEngineApplication::InitVulkan()
 	initInfo.CheckVkResultFn										= nullptr;
 	ImGuiWindowM													= new ImGuiWindowManager(Window, &initInfo, RenderPass);
 	ImGuiWindowM->FetchDeviceName(PhysiclaDevice);
-	ImGuiWindowM->UploadFont(CommandPool, GraphicsQueue, Device);
+	ImGuiWindowM->UploadFont(CommandPool, GraphicsQueue, mDevice);
 }
 void VulkanEngineApplication::InitScene()
 {
-	SceneM = new SceneManager(Device);
+	SceneM = new SceneManager();
 	SceneM->LoadScene("Scenes/Teapot/teapot.gltf");
-	SceneM->UploadDataToGPU();
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -123,13 +168,15 @@ void VulkanEngineApplication::MainLoop()
 		glfwPollEvents();																					// 抓出 GFLW 的事件 Queue
 		DrawFrame();
 	}
-	vkDeviceWaitIdle(Device);
+	vkDeviceWaitIdle(mDevice);
 }
 void VulkanEngineApplication::Destroy()
 {
+	SceneM->UnloadScene();
+	delete SceneM;
+
 	// Delete ImGui
 	delete ImGuiWindowM;
-	delete SceneM;
 
 	#pragma region SwapChain
 	__CleanupSwapChain();
@@ -137,41 +184,38 @@ void VulkanEngineApplication::Destroy()
 	#pragma region SyncObjects
 	for (int i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
 	{
-		vkDestroySemaphore(Device, ImageAvailbleSemaphore[i], nullptr);
-		vkDestroySemaphore(Device, RenderFinishedSemaphore[i], nullptr);
-		vkDestroyFence(Device, InFlightFences[i], nullptr);
+		vkDestroySemaphore(mDevice, ImageAvailbleSemaphore[i], nullptr);
+		vkDestroySemaphore(mDevice, RenderFinishedSemaphore[i], nullptr);
+		vkDestroyFence(mDevice, InFlightFences[i], nullptr);
 	}
 	#pragma endregion
 	#pragma region Uniform Descriptor
-	vkDestroyDescriptorPool(Device, DescriptorPool, nullptr);
+	vkDestroyDescriptorPool(mDevice, DescriptorPool, nullptr);
 	#pragma endregion
 	#pragma region UniformBuffer
 	for (size_t i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
 	{
-		vkDestroyBuffer(Device, UniformBufferList[i], nullptr);
-		vkFreeMemory(Device, UniformBufferMemoryList[i], nullptr);
+		vkDestroyBuffer(mDevice, UniformBufferList[i], nullptr);
+		vkFreeMemory(mDevice, UniformBufferMemoryList[i], nullptr);
 	}
 	#pragma endregion
-	#pragma region Command Burffer
-	// 不用 Destroy
-	#pragma endregion
 	#pragma region Command Pool
-	vkDestroyCommandPool(Device, CommandPool, nullptr);
+	vkDestroyCommandPool(mDevice, CommandPool, nullptr);
 	#pragma endregion
 	#pragma region Graphics Pipeline
-	vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
+	vkDestroyPipeline(mDevice, GraphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(mDevice, PipelineLayout, nullptr);
 	#pragma endregion
 	#pragma region Descriptor Set Layout
-	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
+	vkDestroyDescriptorSetLayout(mDevice, DescriptorSetLayout, nullptr);
 	
-	vkDestroyDescriptorPool(Device, ImGuiDescriptorPool, nullptr);
+	vkDestroyDescriptorPool(mDevice, ImGuiDescriptorPool, nullptr);
 	#pragma endregion
 	#pragma region Render Pass
-	vkDestroyRenderPass(Device, RenderPass, nullptr);
+	vkDestroyRenderPass(mDevice, RenderPass, nullptr);
 	#pragma endregion
 	#pragma region Device
-	vkDestroyDevice(Device, nullptr);
+	vkDestroyDevice(mDevice, nullptr);
 	#pragma endregion
 	#pragma region Surface
 	vkDestroySurfaceKHR(mInstance, Surface, nullptr);
@@ -190,6 +234,8 @@ void VulkanEngineApplication::Destroy()
 	// 關閉 GLFW
 	glfwDestroyWindow(Window);
 	glfwTerminate();
+
+	VulkanEngineApplication::Instance = nullptr;
 }
 
 void VulkanEngineApplication::DrawFrame()
@@ -201,7 +247,7 @@ void VulkanEngineApplication::DrawFrame()
 	// 4. Submit Command Buffer
 	// 5. 顯示 Swap Chain Image
 	#pragma region 1.
-	vkWaitForFences(Device, 1, &InFlightFences[CurrentFrameIndex], VK_TRUE, UINT64_MAX);
+	vkWaitForFences(mDevice, 1, &InFlightFences[CurrentFrameIndex], VK_TRUE, UINT64_MAX);
 	#pragma endregion
 	#pragma region 2.
 	// 這裡要判斷是否已經過期
@@ -209,7 +255,7 @@ void VulkanEngineApplication::DrawFrame()
 	// 1. swap chain 的資料過期了 （通常發生在視窗大小改變，要重新建立新的 swap chain） 
 	// 2. 可以繼續表現到 surface 上
 	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(Device, SwapChain, UINT64_MAX, ImageAvailbleSemaphore[CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(mDevice, SwapChain, UINT64_MAX, ImageAvailbleSemaphore[CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		ReCreateSwapChain();
@@ -221,7 +267,7 @@ void VulkanEngineApplication::DrawFrame()
 	// 更新 UniformBuffer
 	UpdateUniformBuffer(CurrentFrameIndex);
 
-	vkResetFences(Device, 1, &InFlightFences[CurrentFrameIndex]);											// Reset Fences
+	vkResetFences(mDevice, 1, &InFlightFences[CurrentFrameIndex]);											// Reset Fences
 	#pragma endregion
 	#pragma region 3.
 	// Reset & Write
@@ -288,7 +334,7 @@ void VulkanEngineApplication::ReCreateSwapChain()
 	}
 
 	// 等待動作都 Idle 完之後，再繼續做清除的動作
-	vkDeviceWaitIdle(Device);
+	vkDeviceWaitIdle(mDevice);
 
 	__CleanupSwapChain();
 	__CreateSwapChain();
@@ -492,10 +538,10 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 #endif
 
 	// 產生裝置完後，設定 Graphics Queue
-	if (vkCreateDevice(PhysiclaDevice, &createInfo, nullptr, &Device) != VK_SUCCESS)
+	if (vkCreateDevice(PhysiclaDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS)
 		throw runtime_error("Failed to create logical device");
-    vkGetDeviceQueue(Device, Indices.GraphicsFamily.value(), 0, &GraphicsQueue);
-    vkGetDeviceQueue(Device, Indices.PresentFamily.value(), 0, &PresentQueue);
+    vkGetDeviceQueue(mDevice, Indices.GraphicsFamily.value(), 0, &GraphicsQueue);
+    vkGetDeviceQueue(mDevice, Indices.PresentFamily.value(), 0, &PresentQueue);
 }
 void VulkanEngineApplication::__CreateSwapChain()
 {
@@ -551,12 +597,12 @@ void VulkanEngineApplication::__CreateSwapChain()
 	createInfo.oldSwapchain											= VK_NULL_HANDLE;						// 當如果不支援的話，所做的動作是什麼
 
 	// 建立 SwapChain
-	if (vkCreateSwapchainKHR(Device, &createInfo, nullptr, &SwapChain) != VK_SUCCESS)
+	if (vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &SwapChain) != VK_SUCCESS)
 		throw new runtime_error("Failed to create SwapChain");
 	
-	vkGetSwapchainImagesKHR(Device, SwapChain, &imageCount, nullptr);
+	vkGetSwapchainImagesKHR(mDevice, SwapChain, &imageCount, nullptr);
 	SwapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(Device, SwapChain, &imageCount, SwapChainImages.data());
+	vkGetSwapchainImagesKHR(mDevice, SwapChain, &imageCount, SwapChainImages.data());
 
 	SwapChainImageFormat 											= surfaceFormat.format;
 	SwapChainExtent													= extent;
@@ -587,7 +633,7 @@ void VulkanEngineApplication::__CreateImageViews()
 		createInfo.subresourceRange.layerCount = 1;
 
 		// Create Image
-		if (vkCreateImageView(Device, &createInfo, nullptr, &SwapChainImageViews[i]) != VK_SUCCESS)
+		if (vkCreateImageView(mDevice, &createInfo, nullptr, &SwapChainImageViews[i]) != VK_SUCCESS)
 			throw runtime_error("Failed to create ImageView");
 	}
 }
@@ -638,7 +684,7 @@ void VulkanEngineApplication::__CreateRenderPass()
 	renderPassInfo.dependencyCount									= 1;
 	renderPassInfo.pDependencies									= &dependency;
 
-	if (vkCreateRenderPass(Device, &renderPassInfo, nullptr, &RenderPass) != VK_SUCCESS)
+	if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &RenderPass) != VK_SUCCESS)
 		throw runtime_error("Failed to create render pass");
 }
 void VulkanEngineApplication::__CreateDescriptorSetLayout()
@@ -658,7 +704,7 @@ void VulkanEngineApplication::__CreateDescriptorSetLayout()
 	layoutInfo.bindingCount											= bindings.size();
 	layoutInfo.pBindings											= bindings.data();
 
-	if (vkCreateDescriptorSetLayout(Device, &layoutInfo, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
+	if (vkCreateDescriptorSetLayout(mDevice, &layoutInfo, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
 		throw runtime_error("Failed to create descriptor set layout");
 }
 void VulkanEngineApplication::__CreateGraphicsPipeline()
@@ -815,7 +861,7 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	pipelineLayoutInfo.pushConstantRangeCount						= 0;
 	pipelineLayoutInfo.pPushConstantRanges							= nullptr;
 
-	if (vkCreatePipelineLayout(Device, &pipelineLayoutInfo, nullptr, &PipelineLayout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &PipelineLayout) != VK_SUCCESS)
 		throw runtime_error("Failed to create pipeline");
 	#pragma endregion
 	#pragma region Graphics Pipeline
@@ -839,12 +885,12 @@ void VulkanEngineApplication::__CreateGraphicsPipeline()
 	pipelineInfo.subpass											= 0;
 	pipelineInfo.basePipelineHandle									= VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &GraphicsPipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &GraphicsPipeline) != VK_SUCCESS)
 		throw runtime_error("Failed to create Graphics Pipeline");
 	#pragma endregion
 	#pragma region Destroy Module
-	vkDestroyShaderModule(Device, vertexModule, nullptr);
-	vkDestroyShaderModule(Device, fragmentModule, nullptr);
+	vkDestroyShaderModule(mDevice, vertexModule, nullptr);
+	vkDestroyShaderModule(mDevice, fragmentModule, nullptr);
 	#pragma endregion
 }
 void VulkanEngineApplication::__CreateFrameBuffer()
@@ -862,7 +908,7 @@ void VulkanEngineApplication::__CreateFrameBuffer()
 		frameBufferInfo.height										= SwapChainExtent.height;
 		frameBufferInfo.layers										= 1;
 
-		if (vkCreateFramebuffer(Device, &frameBufferInfo, nullptr, &SwapChainFrameBuffers[i]) != VK_SUCCESS)
+		if (vkCreateFramebuffer(mDevice, &frameBufferInfo, nullptr, &SwapChainFrameBuffers[i]) != VK_SUCCESS)
 			throw runtime_error("Failed to create framebuffer");
 	}
 }
@@ -873,7 +919,7 @@ void VulkanEngineApplication::__CreateCommandPool()
 	poolInfo.flags													= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	poolInfo.queueFamilyIndex										= Indices.GraphicsFamily.value();
 
-	if (vkCreateCommandPool(Device, &poolInfo, nullptr, &CommandPool) != VK_SUCCESS)
+	if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &CommandPool) != VK_SUCCESS)
 		throw runtime_error("Failed to create command pool");
 }
 void VulkanEngineApplication::__CreateTextureImage()
@@ -909,39 +955,6 @@ void VulkanEngineApplication::__CreateTextureImage()
 		VK_FORMAT_R8G8B8A8_SRGB);
 	TextM->CreateImageView();
 	TextM->CreateSampler(PhysiclaDevice);*/
-}
-void VulkanEngineApplication::__CreateVertexBuffer()
-{
-	/*VkDeviceSize bufferSize = sizeof(VertexBufferInfo) * vertices.size();
-
-	VkBuffer stageBuffer;
-	VkDeviceMemory stageBufferMemory;
-
-	__CreateBuffer(
-		bufferSize,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 																	// 此 Buffer 可以當作 Memory transfor operation 的 source
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,							// 需要開啟這兩個 tag 才可以從 CPU 送上資料到 GPU
-		stageBuffer,
-		stageBufferMemory
-	);
-
-	void* data;
-	vkMapMemory(Device, stageBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
-	vkUnmapMemory(Device, stageBufferMemory);
-
-	__CreateBuffer(
-		bufferSize,
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 								// Memory Buffer Dst & VertexBuffer Usage
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,																// Local 的 Memory （不需上傳）
-		VertexBuffer,
-		VertexBufferMemory
-		);
-	__CopyBuffer(stageBuffer, VertexBuffer, bufferSize);
-
-	// 清除 Buffer & Buffer Memory
-	vkDestroyBuffer(Device, stageBuffer, nullptr);
-	vkFreeMemory(Device, stageBufferMemory, nullptr);*/
 }
 void VulkanEngineApplication::__CreateIndexBuffer()
 {
@@ -1086,7 +1099,7 @@ void VulkanEngineApplication::__CreateDescriptor()
     imGuiPoolInfo.poolSizeCount                                   	= static_cast<uint32_t>(IM_ARRAYSIZE(imGuiPoolSizes));
     imGuiPoolInfo.pPoolSizes                                      	= imGuiPoolSizes;
 
-    if (vkCreateDescriptorPool(Device, &imGuiPoolInfo, nullptr, &ImGuiDescriptorPool) != VK_SUCCESS)
+    if (vkCreateDescriptorPool(mDevice, &imGuiPoolInfo, nullptr, &ImGuiDescriptorPool) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create DescriptorPool for ImGuiDescriptorPool");
     #pragma endregion
 }
@@ -1100,7 +1113,7 @@ void VulkanEngineApplication::__CreateCommandBuffer()
 	allocateInfo.level												= VK_COMMAND_BUFFER_LEVEL_PRIMARY;		// 如果是 Primary，代表直接送 Command Buffer，無法被其他 Command Buffer 讀取
 	allocateInfo.commandBufferCount									= static_cast<uint32_t>(CommandBuffers.size());
 
-	if (vkAllocateCommandBuffers(Device, &allocateInfo, CommandBuffers.data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(mDevice, &allocateInfo, CommandBuffers.data()) != VK_SUCCESS)
 		throw runtime_error("Failed to create command buffer");
 }
 void VulkanEngineApplication::__CreateSyncObjects()
@@ -1118,9 +1131,9 @@ void VulkanEngineApplication::__CreateSyncObjects()
 
 	for (int i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
 	{
-		if (vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &ImageAvailbleSemaphore[i]) 					!= VK_SUCCESS ||
-			vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &RenderFinishedSemaphore[i]) 				!= VK_SUCCESS ||
-			vkCreateFence(Device, &fenceInfo, nullptr, &InFlightFences[i])									!= VK_SUCCESS)
+		if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &ImageAvailbleSemaphore[i]) 					!= VK_SUCCESS ||
+			vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &RenderFinishedSemaphore[i]) 				!= VK_SUCCESS ||
+			vkCreateFence(mDevice, &fenceInfo, nullptr, &InFlightFences[i])									!= VK_SUCCESS)
 			throw runtime_error("Failed to create sync objects");
 	}
 }
@@ -1308,7 +1321,7 @@ VkShaderModule VulkanEngineApplication::__CreateShaderModule(const vector<char>&
 	createInfo.pCode												= reinterpret_cast<const uint32_t*>(code.data());	// 要將原本的 char* 轉成 uint32_t*
 
 	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+	if (vkCreateShaderModule(mDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
 		throw runtime_error("Failed to create shader module");
 	return shaderModule;
 }
@@ -1322,41 +1335,7 @@ uint32_t VulkanEngineApplication::__FindMemoryType(uint32_t typeFiler, VkMemoryP
 			return i;
 	throw runtime_error("Failed to find suitable memory type");
 }
-void VulkanEngineApplication::__CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
-{
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType												= VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size													= size;
-	bufferInfo.usage												= usage;
-	bufferInfo.sharingMode											= VK_SHARING_MODE_EXCLUSIVE;			// 只有在 Graphics Queue 會用到，暫時先給 Exclusive
 
-	if (vkCreateBuffer(Device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create vertex buffer");
-
-	// 設定 Buffer 內的大小
-	VkMemoryRequirements memRequirements{};
-	vkGetBufferMemoryRequirements(Device, buffer, &memRequirements);
-
-	VkMemoryAllocateInfo allocateInfo{};
-	allocateInfo.sType												= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocateInfo.allocationSize										= memRequirements.size;
-	allocateInfo.memoryTypeIndex									= __FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-	if (vkAllocateMemory(Device, &allocateInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create vertex buffer memory");
-
-	vkBindBufferMemory(Device, buffer, bufferMemory, 0);
-}
-void VulkanEngineApplication::__CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
-{
-	VkCommandBuffer buffer 											= __BeginSingleTimeCommand();
-	{
-		VkBufferCopy copyRegion{};
-		copyRegion.size												= size;
-		vkCmdCopyBuffer(buffer, srcBuffer, dstBuffer, 1, &copyRegion);
-	}
-	__EndSingleTimeCommand(buffer);
-}
 VkCommandBuffer VulkanEngineApplication::__BeginSingleTimeCommand()
 {
 	VkCommandBufferAllocateInfo allocateInfo{};
@@ -1366,7 +1345,7 @@ VkCommandBuffer VulkanEngineApplication::__BeginSingleTimeCommand()
 	allocateInfo.commandBufferCount									= 1;
 
 	VkCommandBuffer commandBuffer;
-	if (vkAllocateCommandBuffers(Device, &allocateInfo, &commandBuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(mDevice, &allocateInfo, &commandBuffer) != VK_SUCCESS)
 		throw runtime_error("Failed to allocate buffer for allocation");
 
 	// Command Buffer
@@ -1389,7 +1368,7 @@ void VulkanEngineApplication::__EndSingleTimeCommand(VkCommandBuffer pBuffer)
 	vkQueueWaitIdle(GraphicsQueue);
 
 	// Free Buffer
-	vkFreeCommandBuffers(Device, CommandPool, 1, &pBuffer);
+	vkFreeCommandBuffers(mDevice, CommandPool, 1, &pBuffer);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1453,14 +1432,14 @@ void VulkanEngineApplication::__CleanupSwapChain()
 {
 	#pragma region Frame Buffer
 	for(auto &frameBuffer : SwapChainFrameBuffers)
-		vkDestroyFramebuffer(Device, frameBuffer, nullptr);
+		vkDestroyFramebuffer(mDevice, frameBuffer, nullptr);
 	#pragma endregion
 	#pragma region Image Views
 	for(auto& imageView : SwapChainImageViews)
-		vkDestroyImageView(Device, imageView, nullptr);
+		vkDestroyImageView(mDevice, imageView, nullptr);
 	#pragma endregion
 	#pragma region Swap Cahin
-	vkDestroySwapchainKHR(Device, SwapChain, nullptr);
+	vkDestroySwapchainKHR(mDevice, SwapChain, nullptr);
 	#pragma endregion
 }
 

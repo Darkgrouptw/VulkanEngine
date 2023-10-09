@@ -49,11 +49,19 @@ struct SwapChainSupportDetails
 class VulkanEngineApplication
 {
 public:
+	// Instance
+	static VulkanEngineApplication* Instance;
+
 	void Run();
 
+	// Window Resized
 	bool mFrameBufferResized = false;
-
 	static void ResizeCallback(GLFWwindow*, int, int);
+
+	// Vulkan Buffer Function
+	VkDevice GetDevice();																					// 抓取 Device
+	void CreateBuffer(VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags, VkBuffer&, VkDeviceMemory&); // Create Buffer
+	void CopyBuffer(VkBuffer, VkBuffer, VkDeviceSize);														// Copy Buffer
 
 private:
 	void InitWindow();																						// 初始化視窗
@@ -79,7 +87,7 @@ private:
 	VkDebugUtilsMessengerEXT DebugMessenger;
 	VkSurfaceKHR Surface;
 	VkPhysicalDevice PhysiclaDevice									= VK_NULL_HANDLE;
-	VkDevice Device;
+	VkDevice mDevice;
 	
 	// Vulkan Pipeline
 	VkDescriptorSetLayout DescriptorSetLayout;
@@ -100,10 +108,6 @@ private:
 	vector<VkFramebuffer> SwapChainFrameBuffers;
 	VkFormat SwapChainImageFormat;
 	VkExtent2D SwapChainExtent;
-
-	// Vulkan Buffer
-	//VkBuffer VertexBuffer, IndexBuffer;
-	//VkDeviceMemory VertexBufferMemory, IndexBufferMemory;
 
 	// Vulkan Uniform Buffer
 	vector<VkBuffer> UniformBufferList;
@@ -148,7 +152,6 @@ private:
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateCommandPool();																				// 建立 Command Pool
 	void __CreateTextureImage();																			// 建立 Texture
-	void __CreateVertexBuffer();																			// 建立 Vertex Buffer
 	void __CreateIndexBuffer();																				// 建立 Index Buffer
 	void __CreateUniformBuffer();																			// 建立 Uniform Buffer
 	void __CreateDescriptor();																				// 建立 Descriptor Pool & Set (給 Unifrom Buffer 用)
@@ -171,8 +174,6 @@ private:
 	vector<char> __ReadShaderFile(const string&);															// 讀取 ShaderFile
 	VkShaderModule __CreateShaderModule(const vector<char>&);												// 產生 Shader Module
 	uint32_t __FindMemoryType(uint32_t, VkMemoryPropertyFlags);												// 找到合適的 Memory Type
-	void __CreateBuffer(VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags, VkBuffer&, VkDeviceMemory &); // Create Buffer
-	void __CopyBuffer(VkBuffer, VkBuffer, VkDeviceSize);													// Copy Buffer
 
 	// 產生 Single Time Command
 	VkCommandBuffer __BeginSingleTimeCommand();
@@ -204,4 +205,3 @@ private:
 	bool __CheckValidationLayerSupport();																	// 檢查 Vulkan Validtion Layer 是否支援
 #endif
 };
-

@@ -1,9 +1,8 @@
 #include "Core/Components/Scene/SceneManager.h"
 
 #pragma region Public
-SceneManager::SceneManager(VkDevice& pDevice)
+SceneManager::SceneManager()
 {
-	mDevice = pDevice;
 }
 SceneManager::~SceneManager()
 {
@@ -24,8 +23,13 @@ void SceneManager::LoadScene(string pSceneName)
 #else
 	throw runtime_error("NotImplemented other way to load scene");
 #endif
-
+	UploadDataToGPU();
 }
+void SceneManager::UnloadScene()
+{
+	DestroyGPUData();
+}
+
 #pragma endregion
 #pragma region Protected
 // Callback
@@ -57,16 +61,20 @@ void SceneManager::DeleteMaterialData()
 // GPU Data
 void SceneManager::UploadDataToGPU()
 {
-
+	#pragma region Mesh
+	for (int i = 0; i < mMeshs.size(); i++)
+	{
+		mMeshs[i]->CreateVertexBuffer();
+		//mMeshs[i]->CreateIndicesBuffer();
+	}
+	#pragma endregion
 }
 void SceneManager::DestroyGPUData()
 {
-	// ToDo: Add When init buffer
-	/*vkDestroyBuffer(Device, IndexBuffer, nullptr);
-	vkFreeMemory(Device, IndexBufferMemory, nullptr);
-
-	vkDestroyBuffer(Device, VertexBuffer, nullptr);
-	vkFreeMemory(Device, VertexBufferMemory, nullptr);*/
+	#pragma region Mesh
+	for (int i = 0; i < mMeshs.size(); i++)
+		mMeshs[i]->DestroyVertexBuffer();
+	#pragma endregion
 }
 #pragma endregion
 #pragma region Private

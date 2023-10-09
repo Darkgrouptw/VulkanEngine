@@ -27,14 +27,16 @@ public:
 
     // Vulkan Command
     void CreateVertexBuffer();
+    //void CreateIndicesBuffer();
     void DestroyVertexBuffer();
+    //void 
 
 protected:
     vector<VertexBufferInfo> mVertices;
     vector<int> mFaceIndices;
     int mMaterialIndex;
 
-
-    VkBuffer mVertexBuffer, mIndexBuffer;
-    VkDeviceMemory mVertexBufferMemory, mIndexBufferMemory;
+    // Vulkan Buffer
+    VkBuffer mVertexBuffer = nullptr, mIndexBuffer = nullptr;
+    VkDeviceMemory mVertexBufferMemory = nullptr, mIndexBufferMemory = nullptr;
 };
