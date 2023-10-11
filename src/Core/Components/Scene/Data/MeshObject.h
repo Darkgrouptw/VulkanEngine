@@ -20,20 +20,20 @@ public:
     void InsertVertexData(glm::vec3, glm::vec3, glm::vec2);
     void InsertVertexData(glm::vec3, glm::vec3);
     void InsertVertexData(glm::vec3);
-    void InsertFaceIndex(int);
+    void InsertFaceIndex(uint32_t);
     void SetMaterialIndex(int);
 
     uint32_t GetFaceIndicesSize();
 
     // Vulkan Command
     void CreateVertexBuffer();
-    //void CreateIndicesBuffer();
+    void CreateIndexBuffer();
     void DestroyVertexBuffer();
-    //void 
+    void DestroyIndexBuffer();
 
 protected:
     vector<VertexBufferInfo> mVertices;
-    vector<int> mFaceIndices;
+    vector<uint32_t> mFaceIndices;
     int mMaterialIndex;
 
     // Vulkan Buffer

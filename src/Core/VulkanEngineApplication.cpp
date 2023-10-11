@@ -129,7 +129,6 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateFrameBuffer();
 	__CreateCommandPool();
 	__CreateTextureImage();
-	__CreateIndexBuffer();
 	__CreateUniformBuffer();
 	__CreateDescriptor();
 	__CreateCommandBuffer();
@@ -955,39 +954,6 @@ void VulkanEngineApplication::__CreateTextureImage()
 		VK_FORMAT_R8G8B8A8_SRGB);
 	TextM->CreateImageView();
 	TextM->CreateSampler(PhysiclaDevice);*/
-}
-void VulkanEngineApplication::__CreateIndexBuffer()
-{
-	/*VkDeviceSize bufferSize											= sizeof(uint16_t) * indices.size();
-
-	VkBuffer stageBuffer;
-	VkDeviceMemory stageBufferMemory;
-
-	__CreateBuffer(
-		bufferSize,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 																	// 此 Buffer 可以當作 Memory transfor operation 的 source
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,							// 需要開啟這兩個 tag 才可以從 CPU 送上資料到 GPU
-		stageBuffer,
-		stageBufferMemory
-	);
-
-	void* data;
-	vkMapMemory(Device, stageBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
-	vkUnmapMemory(Device, stageBufferMemory);
-
-	__CreateBuffer(
-		bufferSize,
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 								// Memory Buffer Dst & Index Buffer Usage
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,																// Local 的 Memory （不需上傳）
-		IndexBuffer,
-		IndexBufferMemory
-	);
-	__CopyBuffer(stageBuffer, IndexBuffer, bufferSize);
-
-	// 清除 Buffer & Buffer Memory
-	vkDestroyBuffer(Device, stageBuffer, nullptr);
-	vkFreeMemory(Device, stageBufferMemory, nullptr);*/
 }
 void VulkanEngineApplication::__CreateUniformBuffer()
 {

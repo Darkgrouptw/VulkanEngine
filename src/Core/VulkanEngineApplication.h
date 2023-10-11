@@ -152,7 +152,6 @@ private:
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateCommandPool();																				// 建立 Command Pool
 	void __CreateTextureImage();																			// 建立 Texture
-	void __CreateIndexBuffer();																				// 建立 Index Buffer
 	void __CreateUniformBuffer();																			// 建立 Uniform Buffer
 	void __CreateDescriptor();																				// 建立 Descriptor Pool & Set (給 Unifrom Buffer 用)
 	void __CreateCommandBuffer();																			// 建立 Command Buffer

@@ -31,7 +31,7 @@ void MeshObject::InsertVertexData(glm::vec3 pPos)
 {
 	InsertVertexData(pPos, glm::vec3(), glm::vec2(), glm::vec3());
 }
-void MeshObject::InsertFaceIndex(int indices)
+void MeshObject::InsertFaceIndex(uint32_t indices)
 {
 	mFaceIndices.push_back(indices);
 }
@@ -77,7 +77,7 @@ void MeshObject::CreateVertexBuffer()
 	#pragma region Copy Buffer 只給 GPU 用
 	VKHelper::Instance->CreateBuffer(
 		bufferSize,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 								// Memory Buffer Dst & VertexBuffer Usage
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 								// Memory Buffer Dst & Vertex Buffer Usage
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,																// Local 的 Memory (不需上傳)
 		mVertexBuffer,
 		mVertexBufferMemory);
@@ -88,9 +88,50 @@ void MeshObject::CreateVertexBuffer()
 	vkFreeMemory(VKHelper::Instance->GetDevice(), stageBufferMemory, nullptr);
 	#pragma endregion
 }
+void MeshObject::CreateIndexBuffer()
+{
+	#pragma region 建立 Stage Buffer
+	VkDeviceSize bufferSize											= sizeof(uint32_t) * mFaceIndices.size();
+
+	VkBuffer stageBuffer;
+	VkDeviceMemory stageBufferMemory;
+
+	VKHelper::Instance->CreateBuffer(
+		bufferSize,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 																	// 此 Buffer 可以當作 Memory transfer operation 的 source
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,							// 需要開啟這兩個 tag 才可以從 CPU 送上資料到 GPU
+		stageBuffer,
+		stageBufferMemory
+	);
+	#pragma endregion
+	#pragma region Mapping 到 GPU
+	void* data;
+	vkMapMemory(VKHelper::Instance->GetDevice(), stageBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, mVertices.data(), static_cast<size_t>(bufferSize));
+	vkUnmapMemory(VKHelper::Instance->GetDevice(), stageBufferMemory);
+	#pragma endregion
+	#pragma region Copy Buffer 只給 GPU 用
+	VKHelper::Instance->CreateBuffer(
+		bufferSize,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 								// Memory Buffer Dst & Index Buffer Usage
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,																// Local 的 Memory (不需上傳)
+		mIndexBuffer,
+		mIndexBufferMemory);
+	VKHelper::Instance->CopyBuffer(stageBuffer, mIndexBuffer, bufferSize);
+	#pragma endregion
+	#pragma region Destroy Stage Buffer
+	vkDestroyBuffer(VKHelper::Instance->GetDevice(), stageBuffer, nullptr);
+	vkFreeMemory(VKHelper::Instance->GetDevice(), stageBufferMemory, nullptr);
+	#pragma endregion
+}
 void MeshObject::DestroyVertexBuffer()
 {
-	vkDestroyBuffer(VKHelper::Instance->GetDevice(), mIndexBuffer, nullptr);
 	vkDestroyBuffer(VKHelper::Instance->GetDevice(), mVertexBuffer, nullptr);
+	vkFreeMemory(VKHelper::Instance->GetDevice(), mVertexBufferMemory, nullptr);
+}
+void MeshObject::DestroyIndexBuffer()
+{
+	vkDestroyBuffer(VKHelper::Instance->GetDevice(), mIndexBuffer, nullptr);
+	vkFreeMemory(VKHelper::Instance->GetDevice(), mIndexBufferMemory, nullptr);
 }
 #pragma endregion
