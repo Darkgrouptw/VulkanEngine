@@ -65,7 +65,7 @@ void SceneManager::UploadDataToGPU()
 	for (int i = 0; i < mMeshs.size(); i++)
 	{
 		mMeshs[i]->CreateVertexBuffer();
-		//mMeshs[i]->CreateIndicesBuffer();
+		mMeshs[i]->CreateIndexBuffer();
 	}
 	#pragma endregion
 }
@@ -73,7 +73,10 @@ void SceneManager::DestroyGPUData()
 {
 	#pragma region Mesh
 	for (int i = 0; i < mMeshs.size(); i++)
+	{
 		mMeshs[i]->DestroyVertexBuffer();
+		mMeshs[i]->DestroyIndexBuffer();
+	}
 	#pragma endregion
 }
 #pragma endregion

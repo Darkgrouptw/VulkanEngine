@@ -626,10 +626,10 @@ void VulkanEngineApplication::__CreateImageViews()
 
 		// 其他用途的設定 (Mipmap 等)
 		createInfo.subresourceRange.aspectMask						= VK_IMAGE_ASPECT_COLOR_BIT;
-		createInfo.subresourceRange.baseMipLevel = 0;
-		createInfo.subresourceRange.levelCount = 1;
-		createInfo.subresourceRange.baseArrayLayer = 0;
-		createInfo.subresourceRange.layerCount = 1;
+		createInfo.subresourceRange.baseMipLevel					= 0;
+		createInfo.subresourceRange.levelCount						= 1;
+		createInfo.subresourceRange.baseArrayLayer					= 0;
+		createInfo.subresourceRange.layerCount						= 1;
 
 		// Create Image
 		if (vkCreateImageView(mDevice, &createInfo, nullptr, &SwapChainImageViews[i]) != VK_SUCCESS)
@@ -1097,7 +1097,7 @@ void VulkanEngineApplication::__CreateSyncObjects()
 
 	for (int i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
 	{
-		if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &ImageAvailbleSemaphore[i]) 					!= VK_SUCCESS ||
+		if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &ImageAvailbleSemaphore[i]) 				!= VK_SUCCESS ||
 			vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &RenderFinishedSemaphore[i]) 				!= VK_SUCCESS ||
 			vkCreateFence(mDevice, &fenceInfo, nullptr, &InFlightFences[i])									!= VK_SUCCESS)
 			throw runtime_error("Failed to create sync objects");
