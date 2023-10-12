@@ -110,8 +110,13 @@ void GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial* matD
         mat->SetDiffuseColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
     if (matData->Get(AI_MATKEY_COLOR_SPECULAR, tempColor) == AI_SUCCESS)
         mat->SetSpecularColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
-    //aiShadingMode mode = aiShadingMode::aiShadingMode_Unlit;
-    //if (matData->Get(AI_MATKEY_SHADING_MODEL, ))
+
+    // Get Shader Model
+    aiShadingMode mode = aiShadingMode::aiShadingMode_Unlit;
+    matData->Get(AI_MATKEY_SHADING_MODEL, mode);
+    ShaderType type = ShaderTypeUtil::GetShaderTypeFrom(mode);
+
+
 
     //#if
     // Debug Material Property

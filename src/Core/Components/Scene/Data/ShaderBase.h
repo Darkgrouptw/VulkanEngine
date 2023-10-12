@@ -1,25 +1,17 @@
 #pragma once
 #include "Core/Common/Common.h"
+#include "Core/Components/Scene/Data/GLTFShaderTypeUtil.h"
 #include "Core/Components/Scene/Data/ObjectBase.h"
-#include "Core/Components/Scene/Data/Transform.h"
 
-#include <unordered_map>
+//#include <string>
 
 using namespace std;
 
-class MaterialBase : public ObjectBase
+class ShaderBase : public ObjectBase
 {
 public:
-    MaterialBase(string);
-    ~MaterialBase();
-
-    glm::vec3 GetAmbientColor();
-    glm::vec3 GetDiffuseColor();
-    glm::vec3 GetSpecularColor();
-
-    void SetAmbientColor(glm::vec3);
-    void SetDiffuseColor(glm::vec3);
-    void SetSpecularColor(glm::vec3);
+    ShaderBase(string, ShaderType);
+    ~ShaderBase();
 
     // Vulkan Command
     //svoid Create

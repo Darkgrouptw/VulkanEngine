@@ -2,6 +2,7 @@
 #if USE_ASSIMP
 #include "Core/Common/Common.h"
 #include "Core/Components/Scene/ISceneLoader.h"
+#include "Core/Components/Scene/Data/GLTFShaderTypeUtil.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>

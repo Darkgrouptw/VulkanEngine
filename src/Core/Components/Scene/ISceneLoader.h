@@ -21,7 +21,7 @@ public:
 
 	// 設定 Loading Finished 的 Callback
 	void SetMeshDataCallback(function<void(vector<MeshObject*>)> pCallback) { mMeshDataCallback = pCallback; };
-	void SetMaterialDataCallback(function<void(vector<MaterialBase*>)> pCallback)	{ mMaterialDataCallback = pCallback; };
+	void SetMaterialDataCallback(function<void(vector<MaterialBase*>)> pCallback) { mMaterialDataCallback = pCallback; };
 	//virtual void SetLoadingFinishedCallbak_InLightData() = 0;
 protected:
 	// Parsing Data from loader and trigger callback
