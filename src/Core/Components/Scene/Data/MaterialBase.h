@@ -21,6 +21,10 @@ public:
     void SetDiffuseColor(glm::vec3);
     void SetSpecularColor(glm::vec3);
 
+    // Vulkan Command
+    //svoid Create
+    void CreateGraphicsPipeline();
+
 protected:
     glm::vec3 mAmbientColor;
     glm::vec3 mDiffuseColor;

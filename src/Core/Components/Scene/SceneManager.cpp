@@ -68,6 +68,12 @@ void SceneManager::UploadDataToGPU()
 		mMeshs[i]->CreateIndexBuffer();
 	}
 	#pragma endregion
+	#pragma region Material
+	for (int i = 0; i < mMaterials.size(); i++)
+	{
+		
+	}
+	#pragma endregion
 }
 void SceneManager::DestroyGPUData()
 {
