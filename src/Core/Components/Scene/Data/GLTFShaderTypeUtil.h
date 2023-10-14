@@ -23,6 +23,6 @@ public:
 		return mType;
 	}
 private:
-	static ShaderType mType;
+	static inline ShaderType mType									= ShaderType::Unlit;
 };
 #endif
