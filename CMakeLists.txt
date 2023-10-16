@@ -69,6 +69,9 @@ else()
     message(FATAL_ERROR "Not found Assimp_SDK_PATH")
 endif()
 
+# 3e. Magic Enum
+set (MAGIC_ENUM_INCLUDE_DIR "Plugins/magic_enum/include")
+
 # 4. Final
 file(GLOB_RECURSE SOURCE_FILES
     "src/*.h"
@@ -86,6 +89,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${GLFW_INCLUDE_DIR}
     ${IMGUI_INCLUDE_DIR}
     ${Assimp_INCLUDE_DIR}
+    ${MAGIC_ENUM_INCLUDE_DIR}
     "./Plugins"
     "./src"
 )

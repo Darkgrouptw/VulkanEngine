@@ -147,8 +147,7 @@ private:
 	void __CreateSwapChain();																				// 建立 Swap Chain
 	void __CreateImageViews();																				// 建立 Image Views
 	void __CreateRenderPass();																				// 建立 RenderPass，主要是要設定 Color Buffer & Depth Buffer
-	void __CreateDescriptorSetLayout();																		// 在建立 GraphicsPipeline 前，要設定好 Uniform Buffer 的設定
-	void __CreateGraphicsPipeline();																		// 建立 Graphics Pipeline
+	void __CreateGraphicsPipeline();																		
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateCommandPool();																				// 建立 Command Pool
 	void __CreateTextureImage();																			// 建立 Texture

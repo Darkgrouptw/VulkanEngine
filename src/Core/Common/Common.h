@@ -23,6 +23,7 @@ class Common
 {
 public:
     static string GetResourcePath(string);
+    static string GetShaderPath(string);
 };
 #endif
 

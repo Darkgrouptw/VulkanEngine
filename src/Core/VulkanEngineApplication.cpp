@@ -124,7 +124,6 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateSwapChain();
 	__CreateImageViews();
 	__CreateRenderPass();
-	__CreateDescriptorSetLayout();
 	__CreateGraphicsPipeline();
 	__CreateFrameBuffer();
 	__CreateCommandPool();
@@ -686,49 +685,21 @@ void VulkanEngineApplication::__CreateRenderPass()
 	if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &RenderPass) != VK_SUCCESS)
 		throw runtime_error("Failed to create render pass");
 }
-void VulkanEngineApplication::__CreateDescriptorSetLayout()
-{
-	VkDescriptorSetLayoutBinding uboLayout{};
-	uboLayout.binding 												= 0;
-	uboLayout.descriptorType										= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;	// Uniform Buffer
-	uboLayout.descriptorCount										= 1;
-	uboLayout.stageFlags											= VK_SHADER_STAGE_VERTEX_BIT;			// 使用於 Vertex Buffer 的 Uniform Buffer
-
-	//auto textureLayout												= TextM->CreateDescriptorSetLayout();
-
-	//vector<VkDescriptorSetLayoutBinding> bindings					= { uboLayout, textureLayout };
-	vector<VkDescriptorSetLayoutBinding> bindings					= { uboLayout };
-	VkDescriptorSetLayoutCreateInfo layoutInfo{};
-	layoutInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount											= bindings.size();
-	layoutInfo.pBindings											= bindings.data();
-
-	if (vkCreateDescriptorSetLayout(mDevice, &layoutInfo, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
-		throw runtime_error("Failed to create descriptor set layout");
-}
 void VulkanEngineApplication::__CreateGraphicsPipeline()
 {
 	// 讀取檔案並建立 Shader Module
 	#pragma region VkShaderModule
-	// 檢查是否存在 build 資料夾內
-	// 1. 如果是 不須增加 "./build/"
-	// 2. 如果不是 增加 "./build/"
-	string currentPath												= filesystem::current_path().string();
-	string buildPath												= "build";
-	bool IsInBuildDir												= false;
-	if (currentPath.length() >= buildPath.length())
-		IsInBuildDir = currentPath.compare(currentPath.length() - buildPath.length(), buildPath.length(), buildPath) == 0; // 如果結尾是 build 輸出 0
 	vector<char> vertexShader, fragmentShader;
-	if (IsInBuildDir)
+	/*if (IsInBuildDir)
 	{
-		vertexShader 												= __ReadShaderFile("Shaders/Test.vert.spv");
+		vertexShader 												= __ReadShaderFile("Test.vert.spv");
 		fragmentShader												= __ReadShaderFile("Shaders/Test.frag.spv");
 	}
 	else
 	{
 		vertexShader 												= __ReadShaderFile("./build/Shaders/Test.vert.spv");
 		fragmentShader												= __ReadShaderFile("./build/Shaders/Test.frag.spv");
-	}
+	}*/
 
 	VkShaderModule vertexModule										= __CreateShaderModule(vertexShader);
 	VkShaderModule fragmentModule									= __CreateShaderModule(fragmentShader);
@@ -1263,22 +1234,7 @@ QueueFamilyIndices VulkanEngineApplication::__FindQueueFamilies(VkPhysicalDevice
 	}
 	return indices;																								// 無正常的可以處理 Graphics 的 Queue */
 }
-vector<char> VulkanEngineApplication::__ReadShaderFile(const string& path)
-{
-	// 讀取檔案
-	// ate: 從檔案的結果開始讀（主要是判斷檔案的大小，之後還可以移動此指標到想要的位置）
-	// binary: 避免 text transformations
-	ifstream file(path, ios::ate | ios::binary);
-	if (!file.is_open())
-        throw runtime_error("Failed to open the file(" + path + ")");
 
-	size_t fileSize 												= file.tellg();
-	vector<char> buffer(fileSize);
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-	file.close();
-	return buffer;
-}
 VkShaderModule VulkanEngineApplication::__CreateShaderModule(const vector<char>& code)
 {
 	VkShaderModuleCreateInfo createInfo{};

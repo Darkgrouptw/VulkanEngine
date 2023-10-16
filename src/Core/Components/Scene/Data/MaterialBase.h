@@ -22,8 +22,6 @@ public:
     void SetSpecularColor(glm::vec3);
 
     // Vulkan Command
-    //svoid Create
-    //void CreateGraphicsPipeline();
 
 protected:
     glm::vec3 mAmbientColor;

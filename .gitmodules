@@ -4,3 +4,6 @@
 [submodule "Plugins/stb"]
 	path = Plugins/stb
 	url = https://github.com/nothings/stb
+[submodule "Plugins/magic_enum"]
+	path = Plugins/magic_enum
+	url = https://github.com/Neargye/magic_enum

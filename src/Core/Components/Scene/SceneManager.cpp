@@ -18,7 +18,7 @@ void SceneManager::LoadScene(string pSceneName)
 	auto pMaterialDataCallback										= [&](vector<MaterialBase*> pData) { LoadedMaterialDataCallback(pData);};
 #if USE_ASSIMP
 	loader.SetMeshDataCallback(pMeshDataCallback);
-	//loader.SetMaterialDataCallback(pMaterialDataCallback);
+	loader.SetMaterialDataCallback(pMaterialDataCallback);
 	loader.LoadScene(pSceneName);
 #else
 	throw runtime_error("NotImplemented other way to load scene");

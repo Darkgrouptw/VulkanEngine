@@ -114,7 +114,7 @@ void GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial* matD
     // Get Shader Model
     aiShadingMode mode = aiShadingMode::aiShadingMode_Unlit;
     matData->Get(AI_MATKEY_SHADING_MODEL, mode);
-    ShaderType type = ShaderTypeUtil::GetShaderTypeFrom(mode);
+    ShaderType type = GLTFShaderTypeUtils::GetShaderTypeFrom(mode);
 
 
 
