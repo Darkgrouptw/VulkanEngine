@@ -46,9 +46,20 @@ uint32_t MeshObject::GetFaceIndicesSize()
 	return mFaceIndices.size();
 }
 
-
+// Vulkan Stuff
+void MeshObject::CreateVulkanStuff()
+{
+	CreateVertexBuffer();
+	CreateIndexBuffer();
+}
+void MeshObject::DestroyVulkanStuff()
+{
+	DestroyVertexBuffer();
+	DestroyIndexBuffer();
+}
+#pragma endregion
+#pragma region Protected
 // Vulkan Command
-
 void MeshObject::CreateVertexBuffer()
 {
 	#pragma region 建立 Stage Buffer

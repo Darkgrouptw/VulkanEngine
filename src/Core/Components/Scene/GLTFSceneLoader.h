@@ -18,12 +18,12 @@ using namespace std;
 class GLTFSceneLoader : public ISceneLoader
 {
 public:
-	virtual bool LoadScene(string) override;
-	virtual void Destroy() override;
+	bool LoadScene(string) override;
+	void Destroy() override;
 
 protected:
-	virtual void ParseMeshsData(void** const, int) override;
-	virtual void ParseMaterialsData(void** const, int) override;
+	void ParseMeshsData(void** const, int) override;
+	void ParseMaterialsData(void** const, int) override;
 	//virtual void ParseLightsData(void** const, int) override;
 
 	ShaderType GetAllGLTFMaterialData(MaterialBase*, aiMaterial* mat);

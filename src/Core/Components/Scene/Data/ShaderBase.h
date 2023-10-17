@@ -1,34 +1,39 @@
 #pragma once
 #include "Core/Common/Common.h"
-#include "Core/Components/Scene/Data/GLTFShaderTypeUtils.hpp"
+#include "Core/Components/Scene/Data/ShaderType.h"
+#include "Core/Components/Scene/Data/ShaderTypeUtils.hpp"
 #include "Core/Components/Scene/Data/ObjectBase.h"
+#include "Core/Components/Scene/Data/VulkanInterface.h"
 
 using namespace std;
 
-class ShaderBase : public ObjectBase
+class ShaderBase : public ObjectBase, VulkanInterface
 {
 public:
     ShaderBase(const ShaderType);
     ~ShaderBase();
 
-	// Vulkan Command
-	void CreateDescriptorSetLayout();                                                                       // 在建立 GraphicsPipeline 前，要設定好 Uniform Buffer 的設定
-	void CreateGraphicsPipeline();                                                                          // 建立 Graphics Pipeline
+    // Vulkan Stuff
+    void CreateVulkanStuff() override;
+    void DestroyVulkanStuff() override;
 
 protected:
     ShaderType mType;
 
-    glm::vec3 mAmbientColor;
-    glm::vec3 mDiffuseColor;
-    glm::vec3 mSpecularColor;
+	// Vulkan Command
+	void CreateDescriptorSetLayout();                                                                       // 在建立 GraphicsPipeline 前，要設定好 Uniform Buffer 的設定
+	void CreateGraphicsPipeline();                                                                          // 建立 Graphics Pipeline
+	void DestroyDescriptorSetLayout();
+	void DestroyGraphicsPipeline();
 
-    //bool mIsTwoSide                                                 = false;
+    // Helper Function
+    vector<char> __ReadShaderFile(const string&);															// 讀取 ShaderFile
+    VkShaderModule __CreateShaderModule(const vector<char>&);												// 產生 Shader Module
+    void __GenerateInitViewportAndScissor(VkViewport& viewport, VkRect2D& scissor);                         // 產生初始的 Viewport & Scissor
 
-    //float mShininess                                                = 0.f;
-    //float mReflectivitiy                                            = 0.f;
-
-    vector<char> ReadShaderFile(const string&);
 
     // Vulkan Pipeline
     VkDescriptorSetLayout mDescriptorSetLayout;
+    VkPipelineLayout mPipelineLayout;
+    VkPipeline mGraphicsPipeline;
 };

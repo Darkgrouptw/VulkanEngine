@@ -59,9 +59,12 @@ public:
 	static void ResizeCallback(GLFWwindow*, int, int);
 
 	// Vulkan Buffer Function
-	VkDevice GetDevice();																					// 抓取 Device
 	void CreateBuffer(VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags, VkBuffer&, VkDeviceMemory&); // Create Buffer
 	void CopyBuffer(VkBuffer, VkBuffer, VkDeviceSize);														// Copy Buffer
+
+	// Get Vulkan Item
+	inline VkDevice GetDevice() { return mDevice; };														// 抓取 Device
+	inline VkRenderPass GetRenderPass() { return mRenderPass; };											// 抓 RenderPass
 
 private:
 	void InitWindow();																						// 初始化視窗
@@ -90,9 +93,7 @@ private:
 	VkDevice mDevice;
 	
 	// Vulkan Pipeline
-	VkDescriptorSetLayout DescriptorSetLayout;
-	VkPipelineLayout PipelineLayout;
-	VkRenderPass RenderPass;
+	VkRenderPass mRenderPass;
 	VkPipeline GraphicsPipeline;
 	VkCommandPool CommandPool;
 
@@ -147,7 +148,6 @@ private:
 	void __CreateSwapChain();																				// 建立 Swap Chain
 	void __CreateImageViews();																				// 建立 Image Views
 	void __CreateRenderPass();																				// 建立 RenderPass，主要是要設定 Color Buffer & Depth Buffer
-	void __CreateGraphicsPipeline();																		
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateCommandPool();																				// 建立 Command Pool
 	void __CreateTextureImage();																			// 建立 Texture
@@ -159,7 +159,6 @@ private:
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Render Function
 	//////////////////////////////////////////////////////////////////////////
-	void __GenerateInitViewportAndScissor(VkViewport&, VkRect2D&);											// 產生初始的 Viewport & Scissor
 	void __SetupCommandBuffer(VkCommandBuffer, uint32_t);													// 將要執行的 Command 寫入 Command Buffer
 
 	//////////////////////////////////////////////////////////////////////////
@@ -169,8 +168,6 @@ private:
 	bool __CheckDeviceExtensionSupport(VkPhysicalDevice);													// 檢查 DeviceExtension 是否支援某幾項
 	bool __IsDeviceSuitable(VkPhysicalDevice);																// 是否為合適的顯卡
 	QueueFamilyIndices __FindQueueFamilies(VkPhysicalDevice);												// 找顯卡中 對應 Queue 的 Indices
-	vector<char> __ReadShaderFile(const string&);															// 讀取 ShaderFile
-	VkShaderModule __CreateShaderModule(const vector<char>&);												// 產生 Shader Module
 	uint32_t __FindMemoryType(uint32_t, VkMemoryPropertyFlags);												// 找到合適的 Memory Type
 
 	// 產生 Single Time Command

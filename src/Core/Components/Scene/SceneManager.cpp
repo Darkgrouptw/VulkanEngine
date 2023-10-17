@@ -85,12 +85,8 @@ void SceneManager::DeleteShaderData()
 void SceneManager::UploadDataToGPU()
 {
 	#pragma region Mesh
-	for (int i = 0; i < mMeshs.size(); i++)
-	{
-		mMeshs[i]->CreateVertexBuffer();
-		mMeshs[i]->CreateIndexBuffer();
-	}
-	#pragma endregion
+	for (const auto mesh : mMeshs)
+		mesh->CreateVulkanStuff();
 	#pragma region Material
 	for (int i = 0; i < mMaterials.size(); i++)
 	{
@@ -101,11 +97,8 @@ void SceneManager::UploadDataToGPU()
 void SceneManager::DestroyGPUData()
 {
 	#pragma region Mesh
-	for (int i = 0; i < mMeshs.size(); i++)
-	{
-		mMeshs[i]->DestroyVertexBuffer();
-		mMeshs[i]->DestroyIndexBuffer();
-	}
+	for (const auto mesh : mMeshs)
+		mesh->DestroyVulkanStuff();
 	#pragma endregion
 }
 #pragma endregion

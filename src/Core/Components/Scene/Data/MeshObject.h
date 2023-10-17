@@ -3,6 +3,7 @@
 #include "Core/Components/VertexBufferInfo.h"
 #include "Core/Components/Scene/Data/ObjectBase.h"
 #include "Core/Components/Scene/Data/Transform.h"
+#include "Core/Components/Scene/Data/VulkanInterface.h"
 
 #include <string>
 #include <tuple>
@@ -10,7 +11,7 @@
 
 using namespace std;
 
-class MeshObject : public ObjectBase, Transform
+class MeshObject : public ObjectBase, Transform, VulkanInterface
 {
 public:
     MeshObject(string, int);
@@ -25,11 +26,9 @@ public:
 
     uint32_t GetFaceIndicesSize();
 
-    // Vulkan Command
-    void CreateVertexBuffer();
-    void CreateIndexBuffer();
-    void DestroyVertexBuffer();
-    void DestroyIndexBuffer();
+    // Vulkan Stuff
+    void CreateVulkanStuff() override;
+    void DestroyVulkanStuff() override;
 
 protected:
     vector<VertexBufferInfo> mVertices;
@@ -39,4 +38,11 @@ protected:
     // Vulkan Buffer
     VkBuffer mVertexBuffer = nullptr, mIndexBuffer = nullptr;
     VkDeviceMemory mVertexBufferMemory = nullptr, mIndexBufferMemory = nullptr;
+
+
+	// Vulkan Command
+	void CreateVertexBuffer();
+	void CreateIndexBuffer();
+	void DestroyVertexBuffer();
+	void DestroyIndexBuffer();
 };
