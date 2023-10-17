@@ -8,7 +8,7 @@ using namespace std;
 class ShaderBase : public ObjectBase
 {
 public:
-    ShaderBase(string, ShaderType);
+    ShaderBase(const ShaderType);
     ~ShaderBase();
 
 	// Vulkan Command

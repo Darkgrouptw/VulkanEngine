@@ -9,6 +9,6 @@ using namespace std;
 class ShaderTypeUtils
 {
 public:
-	static string GetVertexShaderPath(ShaderType pType)				{ return string(magic_enum::enum_name(pType).data()) + ".vert"; }
-	static string GetFragmentShaderPath(ShaderType pType)			{ return string(magic_enum::enum_name(pType).data()) + ".frag"; }
+	static string GetVertexShaderPath(ShaderType pType)				{ return string(magic_enum::enum_name(pType).data()) + ".vert.spv"; }
+	static string GetFragmentShaderPath(ShaderType pType)			{ return string(magic_enum::enum_name(pType).data()) + ".frag.spv"; }
 };

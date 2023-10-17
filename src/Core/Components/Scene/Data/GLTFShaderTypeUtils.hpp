@@ -13,12 +13,11 @@ class GLTFShaderTypeUtils
 public:
 	static ShaderType GetShaderTypeFrom(aiShadingMode mode)
 	{
-		if (mode == aiShadingMode::aiShadingMode_Unlit)
+		switch (mode)
 		{
-		}
-		else
-		{
-			mType													= ShaderType::Unlit;
+		default:
+			mType = ShaderType::Unlit;
+			break;
 		}
 		return mType;
 	}

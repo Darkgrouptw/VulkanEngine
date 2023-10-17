@@ -26,7 +26,7 @@ protected:
 	virtual void ParseMaterialsData(void** const, int) override;
 	//virtual void ParseLightsData(void** const, int) override;
 
-	void GetAllGLTFMaterialData(MaterialBase*, aiMaterial* mat);
+	ShaderType GetAllGLTFMaterialData(MaterialBase*, aiMaterial* mat);
 private:
 	Assimp::Importer mImporter;
 

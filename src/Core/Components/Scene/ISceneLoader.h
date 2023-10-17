@@ -3,9 +3,11 @@
 #include "Core/Components/Scene/Data/Transform.h"
 #include "Core/Components/Scene/Data/MeshObject.h"
 #include "Core/Components/Scene/Data/MaterialBase.h"
+#include "Core/Components/Scene/Data/ShaderBase.h"
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 #include <functional>
 
 using namespace std;
@@ -22,7 +24,7 @@ public:
 	// 設定 Loading Finished 的 Callback
 	void SetMeshDataCallback(function<void(vector<MeshObject*>)> pCallback) { mMeshDataCallback = pCallback; };
 	void SetMaterialDataCallback(function<void(vector<MaterialBase*>)> pCallback) { mMaterialDataCallback = pCallback; };
-	//virtual void SetLoadingFinishedCallbak_InLightData() = 0;
+	void SetShaderDataCallback(function<void(unordered_set<ShaderType>)> pCallback) { mShaderDataCallback = pCallback; };
 protected:
 	// Parsing Data from loader and trigger callback
 	virtual void ParseMeshsData(void** const, int) = 0;
@@ -32,4 +34,5 @@ protected:
 	// Callback
 	function<void(vector<MeshObject*>)> mMeshDataCallback;
 	function<void(vector<MaterialBase*>)> mMaterialDataCallback;
+	function<void(unordered_set<ShaderType>)> mShaderDataCallback;
 };

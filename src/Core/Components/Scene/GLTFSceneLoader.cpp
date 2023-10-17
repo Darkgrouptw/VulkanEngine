@@ -78,16 +78,22 @@ void GLTFSceneLoader::ParseMeshsData(void** const pData, int pNumData)
 void GLTFSceneLoader::ParseMaterialsData(void** const pData, int pNumData)
 {
     vector<MaterialBase*> materialList;
-	aiMaterial** materials = (aiMaterial**)pData;
+    unordered_set<ShaderType> shaderList;
+	aiMaterial** materials                                          = (aiMaterial**)pData;
     for (int i = 0; i < pNumData; i++)
     {
         auto matData                                                = materials[i];
         MaterialBase* mat                                           = new MaterialBase(string(matData->GetName().C_Str()));
-        GetAllGLTFMaterialData(mat, matData);
+        ShaderType shaderType                                       = GetAllGLTFMaterialData(mat, matData);
+
         materialList.push_back(mat);
+        if (!shaderList.contains(shaderType))
+            shaderList.insert(shaderType);
 	}
 	if (mMaterialDataCallback != NULL)
         mMaterialDataCallback(materialList);
+    if (mShaderDataCallback != NULL)
+        mShaderDataCallback(shaderList);
 }
 /*void GLTFSceneLoader::ParseLightsData(void** const pData, int pNumData)
 {
@@ -99,7 +105,7 @@ void GLTFSceneLoader::ParseMaterialsData(void** const pData, int pNumData)
     }
 }*/
 
-void GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial* matData)
+ShaderType GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial* matData)
 {
     // There are a lot of property
     // https://assimp-docs.readthedocs.io/en/latest/usage/use_the_lib.html#c-api
@@ -114,17 +120,17 @@ void GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial* matD
     // Get Shader Model
     aiShadingMode mode = aiShadingMode::aiShadingMode_Unlit;
     matData->Get(AI_MATKEY_SHADING_MODEL, mode);
-    ShaderType type = GLTFShaderTypeUtils::GetShaderTypeFrom(mode);
 
-
-
-    //#if
     // Debug Material Property
     /*for (int i = 0; i < matData->mNumProperties; i++)
     {
         auto prop = matData->mProperties[i];
         cout << "Material prop: " << prop->mKey.C_Str() << " value: " << (int)(*(prop->mData)) << " length: " << prop->mDataLengthx  << endl;
     }*/
+    
+    // Transfor to Shader Type
+    ShaderType type = GLTFShaderTypeUtils::GetShaderTypeFrom(mode);
+    return type;
 }
 #pragma endregion
 #pragma region Private

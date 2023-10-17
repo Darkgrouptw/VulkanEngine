@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <functional>
 
 using namespace std;
@@ -23,15 +24,18 @@ public:
 protected:
 	// SceneData
 	vector<MeshObject*> mMeshs;
-	vector<MaterialBase*> mMaterials;																		// It's unique ID => like FileID, LocalID, GUID in Unity 
+	vector<MaterialBase*> mMaterials;																		// It's unique ID => like FileID, LocalID, GUID in Unity
+	unordered_map<ShaderType, ShaderBase*> mShaders;
 
 	// Callback
-	void LoadedMeshDataCallback(vector<MeshObject*>);														// 載完 Mesh 之後的 Callback
-	void LoadedMaterialDataCallback(vector<MaterialBase*>);													// 載完 Material 之後的 Callback
+	void LoadedMeshDataCallback(vector<MeshObject*>);														// 整理完 Mesh 之後的 Callback
+	void LoadedMaterialDataCallback(vector<MaterialBase*>);													// 整理完 Material 之後的 Callback
+	void LoadedShaderDataCallback(unordered_set<ShaderType>);												// 整理完 Shader 之後的 Callback
 
 	// Delete
 	void DeleteMeshData();
 	void DeleteMaterialData();
+	void DeleteShaderData();
 
 	// GPU Part
 	void UploadDataToGPU();

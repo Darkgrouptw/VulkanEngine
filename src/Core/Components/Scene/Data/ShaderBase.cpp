@@ -2,7 +2,7 @@
 #include "Core/VulkanEngineApplication.h"
 using VKHelper = VulkanEngineApplication;
 
-ShaderBase::ShaderBase(string pName, ShaderType pType) : ObjectBase(pName)
+ShaderBase::ShaderBase(const ShaderType pType) : ObjectBase(string(magic_enum::enum_name(pType).data()))
 {
 	mType = pType;
 }

@@ -14,11 +14,13 @@ void SceneManager::LoadScene(string pSceneName)
 {
 	pSceneName = Common::GetResourcePath(pSceneName);
 
-	auto pMeshDataCallback											= [&](vector<MeshObject*> pData) { LoadedMeshDataCallback(pData); };
-	auto pMaterialDataCallback										= [&](vector<MaterialBase*> pData) { LoadedMaterialDataCallback(pData);};
+	auto meshDataCallback											= [&](vector<MeshObject*> pData) { LoadedMeshDataCallback(pData); };
+	auto materialDataCallback										= [&](vector<MaterialBase*> pData) { LoadedMaterialDataCallback(pData); };
+	auto shaderDataCallback											= [&](unordered_set<ShaderType> pData) { LoadedShaderDataCallback(pData); };
 #if USE_ASSIMP
-	loader.SetMeshDataCallback(pMeshDataCallback);
-	loader.SetMaterialDataCallback(pMaterialDataCallback);
+	loader.SetMeshDataCallback(meshDataCallback);
+	loader.SetMaterialDataCallback(materialDataCallback);
+	loader.SetShaderDataCallback(shaderDataCallback);
 	loader.LoadScene(pSceneName);
 #else
 	throw runtime_error("NotImplemented other way to load scene");
@@ -43,6 +45,20 @@ void SceneManager::LoadedMaterialDataCallback(vector<MaterialBase*> pData)
 	DeleteMaterialData();
 	mMaterials = pData;
 }
+void SceneManager::LoadedShaderDataCallback(unordered_set<ShaderType> pTypes)
+{
+	DeleteShaderData();
+
+	// 由於 SceneLoader
+	// 只負責整理整個場景所有的 Shader Type
+	// 而新增 Shader Type 是統一的動作
+	// 所以在這裡執行
+	for (const auto& value : pTypes)
+	{
+		ShaderBase* shader = new ShaderBase(value);
+		mShaders.insert({value, shader});
+	}
+}
 
 // Delete
 void SceneManager::DeleteMeshData()
@@ -56,6 +72,13 @@ void SceneManager::DeleteMaterialData()
 	for (int i = 0; i < mMaterials.size(); i++)
 		delete mMaterials[i];
 	mMaterials.clear();
+}
+void SceneManager::DeleteShaderData()
+{
+	for(const auto& [key, value] : mShaders) {
+		delete value;
+	}
+	mShaders.clear();
 }
 
 // GPU Data
@@ -71,7 +94,7 @@ void SceneManager::UploadDataToGPU()
 	#pragma region Material
 	for (int i = 0; i < mMaterials.size(); i++)
 	{
-		
+	
 	}
 	#pragma endregion
 }
