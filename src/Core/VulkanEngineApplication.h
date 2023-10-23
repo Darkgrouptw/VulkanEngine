@@ -62,9 +62,12 @@ public:
 	void CreateBuffer(VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags, VkBuffer&, VkDeviceMemory&); // Create Buffer
 	void CopyBuffer(VkBuffer, VkBuffer, VkDeviceSize);														// Copy Buffer
 
+	// Generate
+
 	// Get Vulkan Item
 	inline VkDevice GetDevice() { return mDevice; };														// 抓取 Device
 	inline VkRenderPass GetRenderPass() { return mRenderPass; };											// 抓 RenderPass
+
 
 private:
 	void InitWindow();																						// 初始化視窗
@@ -108,7 +111,7 @@ private:
 	vector<VkImageView> SwapChainImageViews;
 	vector<VkFramebuffer> SwapChainFrameBuffers;
 	VkFormat SwapChainImageFormat;
-	VkExtent2D SwapChainExtent;
+	VkExtent2D mSwapChainExtent;
 
 	// Vulkan Uniform Buffer
 	vector<VkBuffer> UniformBufferList;
@@ -159,6 +162,7 @@ private:
 	//////////////////////////////////////////////////////////////////////////
 	// Helper Render Function
 	//////////////////////////////////////////////////////////////////////////
+	void __GenerateInitViewportAndScissor(VkViewport&, VkRect2D&);                        					// 產生初始的 Viewport & Scissor
 	void __SetupCommandBuffer(VkCommandBuffer, uint32_t);													// 將要執行的 Command 寫入 Command Buffer
 
 	//////////////////////////////////////////////////////////////////////////

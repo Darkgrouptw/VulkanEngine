@@ -29,8 +29,6 @@ protected:
     // Helper Function
     vector<char> __ReadShaderFile(const string&);															// 讀取 ShaderFile
     VkShaderModule __CreateShaderModule(const vector<char>&);												// 產生 Shader Module
-    void __GenerateInitViewportAndScissor(VkViewport& viewport, VkRect2D& scissor);                         // 產生初始的 Viewport & Scissor
-
 
     // Vulkan Pipeline
     VkDescriptorSetLayout mDescriptorSetLayout;

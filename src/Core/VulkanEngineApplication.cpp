@@ -89,6 +89,10 @@ void VulkanEngineApplication::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer,
 	}
 	__EndSingleTimeCommand(buffer);
 }
+VkExtent2D VulkanEngineApplication::GetSwapchainExtent()
+{
+	return mSwapChainExtent;
+}
 #pragma endregion
 #pragma region Private
 void VulkanEngineApplication::InitWindow()
@@ -591,7 +595,7 @@ void VulkanEngineApplication::__CreateSwapChain()
 	vkGetSwapchainImagesKHR(mDevice, SwapChain, &imageCount, SwapChainImages.data());
 
 	SwapChainImageFormat 											= surfaceFormat.format;
-	SwapChainExtent													= extent;
+	mSwapChainExtent												= extent;
 }
 void VulkanEngineApplication::__CreateImageViews()
 {
@@ -684,8 +688,8 @@ void VulkanEngineApplication::__CreateFrameBuffer()
 		frameBufferInfo.renderPass									= mRenderPass;
 		frameBufferInfo.attachmentCount								= static_cast<uint32_t>(sizeof(attachments) / sizeof(VkImageView));
 		frameBufferInfo.pAttachments								= attachments;
-		frameBufferInfo.width										= SwapChainExtent.width;
-		frameBufferInfo.height										= SwapChainExtent.height;
+		frameBufferInfo.width										= mSwapChainExtent.width;
+		frameBufferInfo.height										= mSwapChainExtent.height;
 		frameBufferInfo.layers										= 1;
 
 		if (vkCreateFramebuffer(mDevice, &frameBufferInfo, nullptr, &SwapChainFrameBuffers[i]) != VK_SUCCESS)
@@ -888,7 +892,23 @@ void VulkanEngineApplication::__CreateSyncObjects()
 //////////////////////////////////////////////////////////////////////////
 // Helper Render Function
 //////////////////////////////////////////////////////////////////////////
+void VulkanEngineApplication::__GenerateInitViewportAndScissor(VkViewport& viewport, VkRect2D& scissor)
+{
+	// Viewport
+	viewport.x 														= 0;
+	viewport.y 														= 0;
 
+	VkExtent2D textureSize 											= VKHelper::Instance->GetSwapchainExtent();
+	viewport.width 													= textureSize.width;
+	viewport.height													= textureSize.height;
+	viewport.minDepth												= 0;
+	viewport.maxDepth												= 1;									// 設定 Depth 0 ~ 1
+
+	// Scissor
+	// https://vulkan-tutorial.com/images/viewports_scissors.png
+	scissor.offset													= {0, 0};
+	scissor.extent													= textureSize;
+}
 void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
 	VkCommandBufferBeginInfo beginInfo{};
@@ -903,7 +923,7 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 	renderPassInfo.renderPass										= mRenderPass;
 	renderPassInfo.framebuffer										= SwapChainFrameBuffers[imageIndex];
 	renderPassInfo.renderArea.offset								= { 0, 0 };
-	renderPassInfo.renderArea.extent								= SwapChainExtent;
+	renderPassInfo.renderArea.extent								= mSwapChainExtent;
 
 	// Clear
 	VkClearValue clearColor 										= {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};

@@ -254,19 +254,5 @@ VkShaderModule ShaderBase::__CreateShaderModule(const vector<char>& code)
 		throw runtime_error("Failed to create shader module");
 	return shaderModule;
 }
-void ShaderBase::__GenerateInitViewportAndScissor(VkViewport& viewport, VkRect2D& scissor)
-{
-	// Viewport
-	viewport.x 														= 0;
-	viewport.y 														= 0;
-	viewport.width 													= SwapChainExtent.width;
-	viewport.height													= SwapChainExtent.height;
-	viewport.minDepth												= 0;
-	viewport.maxDepth												= 1;									// 設定 Depth 0 ~ 1
 
-	// Scissor
-	// https://vulkan-tutorial.com/images/viewports_scissors.png
-	scissor.offset													= {0, 0};
-	scissor.extent													= SwapChainExtent;
-}
 #pragma endregion
