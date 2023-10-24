@@ -105,7 +105,7 @@ void ShaderBase::CreateGraphicsPipeline()
 	// Generate Viewport & Scissor
 	VkViewport viewport{};
 	VkRect2D scissor{};
-	__GenerateInitViewportAndScissor(viewport, scissor);
+	VKHelper::Instance->GetViewportAndScissor(viewport, scissor);
 
 	// Viewport
 	VkPipelineViewportStateCreateInfo viewportInfo{};

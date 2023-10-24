@@ -89,9 +89,23 @@ void VulkanEngineApplication::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer,
 	}
 	__EndSingleTimeCommand(buffer);
 }
-VkExtent2D VulkanEngineApplication::GetSwapchainExtent()
+
+// Get Vulkan Item
+void VulkanEngineApplication::GetViewportAndScissor(VkViewport& viewport, VkRect2D& scissor)
 {
-	return mSwapChainExtent;
+	// Viewport
+	viewport.x 														= 0;
+	viewport.y 														= 0;
+
+	viewport.width 													= mSwapChainExtent.width;
+	viewport.height													= mSwapChainExtent.height;
+	viewport.minDepth												= 0;
+	viewport.maxDepth												= 1;									// 設定 Depth 0 ~ 1
+
+	// Scissor
+	// https://vulkan-tutorial.com/images/viewports_scissors.png
+	scissor.offset													= {0, 0};
+	scissor.extent													= mSwapChainExtent;
 }
 #pragma endregion
 #pragma region Private
@@ -892,23 +906,6 @@ void VulkanEngineApplication::__CreateSyncObjects()
 //////////////////////////////////////////////////////////////////////////
 // Helper Render Function
 //////////////////////////////////////////////////////////////////////////
-void VulkanEngineApplication::__GenerateInitViewportAndScissor(VkViewport& viewport, VkRect2D& scissor)
-{
-	// Viewport
-	viewport.x 														= 0;
-	viewport.y 														= 0;
-
-	VkExtent2D textureSize 											= VKHelper::Instance->GetSwapchainExtent();
-	viewport.width 													= textureSize.width;
-	viewport.height													= textureSize.height;
-	viewport.minDepth												= 0;
-	viewport.maxDepth												= 1;									// 設定 Depth 0 ~ 1
-
-	// Scissor
-	// https://vulkan-tutorial.com/images/viewports_scissors.png
-	scissor.offset													= {0, 0};
-	scissor.extent													= textureSize;
-}
 void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
 	VkCommandBufferBeginInfo beginInfo{};
