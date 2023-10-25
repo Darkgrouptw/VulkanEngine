@@ -25,7 +25,6 @@ void ShaderBase::DestroyVulkanStuff()
 
 #pragma endregion
 #pragma region Protected
-
 // Vulkan Command
 void ShaderBase::CreateDescriptorSetLayout()
 {
@@ -254,5 +253,4 @@ VkShaderModule ShaderBase::__CreateShaderModule(const vector<char>& code)
 		throw runtime_error("Failed to create shader module");
 	return shaderModule;
 }
-
 #pragma endregion

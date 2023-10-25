@@ -937,7 +937,7 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 		// 所以這裡需要在指定一次
 		VkViewport viewport{};
 		VkRect2D scissor{};
-		__GenerateInitViewportAndScissor(viewport, scissor);
+		GetViewportAndScissor(viewport, scissor);
 
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
