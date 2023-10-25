@@ -15,9 +15,11 @@ void ShaderBase::CreateVulkanStuff()
 {
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
+	CreateUniformBuffer();
 }
 void ShaderBase::DestroyVulkanStuff()
 {
+	DestroyUniformBuffer();
 	DestroyGraphicsPipeline();
 	DestroyDescriptorSetLayout();
 }
@@ -216,6 +218,10 @@ void ShaderBase::CreateGraphicsPipeline()
 	vkDestroyShaderModule(VKHelper::Instance->GetDevice(), fragmentModule, nullptr);
 	#pragma endregion
 }
+void ShaderBase::CreateUniformBuffer()
+{
+
+}
 void ShaderBase::DestroyDescriptorSetLayout()
 {
 	vkDestroyDescriptorSetLayout(VKHelper::Instance->GetDevice(), mDescriptorSetLayout, nullptr);
@@ -223,6 +229,10 @@ void ShaderBase::DestroyDescriptorSetLayout()
 void ShaderBase::DestroyGraphicsPipeline()
 {
 	vkDestroyPipeline(VKHelper::Instance->GetDevice(), mGraphicsPipeline, nullptr);
+}
+void ShaderBase::DestroyUniformBuffer()
+{
+
 }
 
 vector<char> ShaderBase::__ReadShaderFile(const string& path)

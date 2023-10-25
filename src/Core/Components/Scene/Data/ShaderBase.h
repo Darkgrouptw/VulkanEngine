@@ -23,8 +23,11 @@ protected:
 	// Vulkan Command
 	void CreateDescriptorSetLayout();                                                                       // 在建立 GraphicsPipeline 前，要設定好 Uniform Buffer 的設定
 	void CreateGraphicsPipeline();                                                                          // 建立 Graphics Pipeline
+    void CreateUniformBuffer();                                                                             // 建立 Uniform Buffer
+
 	void DestroyDescriptorSetLayout();
 	void DestroyGraphicsPipeline();
+    void DestroyUniformBuffer();
 
     // Helper Function
     vector<char> __ReadShaderFile(const string&);															// 讀取 ShaderFile
