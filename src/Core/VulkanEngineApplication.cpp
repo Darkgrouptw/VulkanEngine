@@ -140,7 +140,6 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateFrameBuffer();
 	__CreateCommandPool();
 	__CreateTextureImage();
-	__CreateUniformBuffer();
 	__CreateDescriptor();
 	__CreateCommandBuffer();
 	__CreateSyncObjects();
@@ -202,13 +201,6 @@ void VulkanEngineApplication::Destroy()
 	#pragma region Uniform Descriptor
 	vkDestroyDescriptorPool(mDevice, DescriptorPool, nullptr);
 	#pragma endregion
-	#pragma region UniformBuffer
-	for (size_t i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
-	{
-		vkDestroyBuffer(mDevice, UniformBufferList[i], nullptr);
-		vkFreeMemory(mDevice, UniformBufferMemoryList[i], nullptr);
-	}
-	#pragma endregion
 	#pragma region Command Pool
 	vkDestroyCommandPool(mDevice, CommandPool, nullptr);
 	#pragma endregion
@@ -251,7 +243,7 @@ void VulkanEngineApplication::DrawFrame()
 	// 4. Submit Command Buffer
 	// 5. 顯示 Swap Chain Image
 	#pragma region 1.
-	vkWaitForFences(mDevice, 1, &InFlightFences[CurrentFrameIndex], VK_TRUE, UINT64_MAX);
+	vkWaitForFences(mDevice, 1, &InFlightFences[mCurrentFrameIndex], VK_TRUE, UINT64_MAX);
 	#pragma endregion
 	#pragma region 2.
 	// 這裡要判斷是否已經過期
@@ -259,7 +251,7 @@ void VulkanEngineApplication::DrawFrame()
 	// 1. swap chain 的資料過期了 （通常發生在視窗大小改變，要重新建立新的 swap chain） 
 	// 2. 可以繼續表現到 surface 上
 	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(mDevice, SwapChain, UINT64_MAX, ImageAvailbleSemaphore[CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(mDevice, SwapChain, UINT64_MAX, ImageAvailbleSemaphore[mCurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		ReCreateSwapChain();
@@ -269,35 +261,35 @@ void VulkanEngineApplication::DrawFrame()
 		throw runtime_error("Failed to acquire swap chain image");
 
 	// 更新 UniformBuffer
-	UpdateUniformBuffer(CurrentFrameIndex);
+	UpdateUniformBuffer(mCurrentFrameIndex);
 
-	vkResetFences(mDevice, 1, &InFlightFences[CurrentFrameIndex]);											// Reset Fences
+	vkResetFences(mDevice, 1, &InFlightFences[mCurrentFrameIndex]);											// Reset Fences
 	#pragma endregion
 	#pragma region 3.
 	// Reset & Write
-	vkResetCommandBuffer(CommandBuffers[CurrentFrameIndex], 0);												// 後面的參數 Flag，目前還不用，暫時先留 0
-	__SetupCommandBuffer(CommandBuffers[CurrentFrameIndex], imageIndex);
+	vkResetCommandBuffer(mCommandBuffers[mCurrentFrameIndex], 0);											// 後面的參數 Flag，目前還不用，暫時先留 0
+	__SetupCommandBuffer(mCommandBuffers[mCurrentFrameIndex], imageIndex);
 	#pragma endregion
 	#pragma region 4.
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType												= VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	
 	// 等待 Semaphore 完成，在做 pass
-	VkSemaphore waitSemaphores[] 									= { ImageAvailbleSemaphore[CurrentFrameIndex] };
+	VkSemaphore waitSemaphores[] 									= { ImageAvailbleSemaphore[mCurrentFrameIndex] };
 	VkPipelineStageFlags waitStages[]								= { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount									= static_cast<uint32_t>(sizeof(waitSemaphores) / sizeof(VkSemaphore));
 	submitInfo.pWaitSemaphores										= waitSemaphores;
 	submitInfo.pWaitDstStageMask									= waitStages;
 
 	submitInfo.commandBufferCount									= 1;
-	submitInfo.pCommandBuffers										= &CommandBuffers[CurrentFrameIndex];
+	submitInfo.pCommandBuffers										= &mCommandBuffers[mCurrentFrameIndex];
 
 	// 完成此 Submit 要觸發 singalSempahore
-	VkSemaphore signalSemphores[]									= { RenderFinishedSemaphore[CurrentFrameIndex] };
+	VkSemaphore signalSemphores[]									= { RenderFinishedSemaphore[mCurrentFrameIndex] };
 	submitInfo.signalSemaphoreCount									= static_cast<uint32_t>(sizeof(signalSemphores) / sizeof(VkSemaphore));
 	submitInfo.pSignalSemaphores									= signalSemphores;
 
-	if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, InFlightFences[CurrentFrameIndex]) != VK_SUCCESS)
+	if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, InFlightFences[mCurrentFrameIndex]) != VK_SUCCESS)
 		throw runtime_error("Failed to submit draw command buffer");
 	#pragma endregion
 	#pragma region 5.
@@ -322,7 +314,7 @@ void VulkanEngineApplication::DrawFrame()
 		throw runtime_error("Failed to present swap chan image");
 
 	// 切換下一張
-	CurrentFrameIndex = (CurrentFrameIndex + 1) % MAX_FRAME_IN_FLIGHTS;
+	mCurrentFrameIndex = (mCurrentFrameIndex + 1) % MAX_FRAME_IN_FLIGHTS;
 	#pragma endregion
 }
 void VulkanEngineApplication::ReCreateSwapChain()
@@ -754,26 +746,6 @@ void VulkanEngineApplication::__CreateTextureImage()
 	TextM->CreateImageView();
 	TextM->CreateSampler(PhysiclaDevice);*/
 }
-void VulkanEngineApplication::__CreateUniformBuffer()
-{
-	/*VkDeviceSize bufferSize 										= sizeof(UniformBufferInfo);
-
-	UniformBufferList.resize(MAX_FRAME_IN_FLIGHTS);
-	UniformBufferMemoryList.resize(MAX_FRAME_IN_FLIGHTS);
-	UniformBufferMappedDataList.resize(MAX_FRAME_IN_FLIGHTS);
-
-	for (size_t i = 0; i < MAX_FRAME_IN_FLIGHTS; i++)
-	{
-		__CreateBuffer(
-			bufferSize,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			UniformBufferList[i],
-			UniformBufferMemoryList[i]);
-
-		vkMapMemory(Device, UniformBufferMemoryList[i], 0, bufferSize, 0, &UniformBufferMappedDataList[i]);
-	}*/
-}
 void VulkanEngineApplication::__CreateDescriptor()
 {
 	//#pragma region Descriptor Pool
@@ -870,15 +842,15 @@ void VulkanEngineApplication::__CreateDescriptor()
 }
 void VulkanEngineApplication::__CreateCommandBuffer()
 {
-	CommandBuffers.resize(MAX_FRAME_IN_FLIGHTS);
+	mCommandBuffers.resize(MAX_FRAME_IN_FLIGHTS);
 	
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocateInfo.commandPool										= CommandPool;
 	allocateInfo.level												= VK_COMMAND_BUFFER_LEVEL_PRIMARY;		// 如果是 Primary，代表直接送 Command Buffer，無法被其他 Command Buffer 讀取
-	allocateInfo.commandBufferCount									= static_cast<uint32_t>(CommandBuffers.size());
+	allocateInfo.commandBufferCount									= static_cast<uint32_t>(mCommandBuffers.size());
 
-	if (vkAllocateCommandBuffers(mDevice, &allocateInfo, CommandBuffers.data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(mDevice, &allocateInfo, mCommandBuffers.data()) != VK_SUCCESS)
 		throw runtime_error("Failed to create command buffer");
 }
 void VulkanEngineApplication::__CreateSyncObjects()

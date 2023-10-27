@@ -37,4 +37,10 @@ protected:
     VkDescriptorSetLayout mDescriptorSetLayout;
     VkPipelineLayout mPipelineLayout;
     VkPipeline mGraphicsPipeline;
+
+
+    // Vulkan Uniform Buffer
+    vector<VkBuffer> mUniformBufferList;
+    vector<VkDeviceMemory> mUniformBufferMemoryList;
+    vector<void*> mUniformBufferMappedDataList;
 };

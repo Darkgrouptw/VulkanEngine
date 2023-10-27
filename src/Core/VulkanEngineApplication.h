@@ -62,12 +62,12 @@ public:
 	void CreateBuffer(VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags, VkBuffer&, VkDeviceMemory&); // Create Buffer
 	void CopyBuffer(VkBuffer, VkBuffer, VkDeviceSize);														// Copy Buffer
 
-
 	// Get Vulkan Item
+	static const uint32_t MAX_FRAME_IN_FLIGHTS						= 2;									// 最大上限的 Frame 數
 	inline VkDevice GetDevice() { return mDevice; };														// 抓取 Device
 	inline VkRenderPass GetRenderPass() { return mRenderPass; };											// 抓 RenderPass
 	void GetViewportAndScissor(VkViewport&, VkRect2D&);                        								// 拿 Viewport & Scissor
-
+	inline uint32_t GetCurrentFrameIndex() { return mCurrentFrameIndex; }									// 抓取目前在話那一個 Frame
 
 private:
 	void InitWindow();																						// 初始化視窗
@@ -113,20 +113,14 @@ private:
 	VkFormat SwapChainImageFormat;
 	VkExtent2D mSwapChainExtent;
 
-	// Vulkan Uniform Buffer
-	vector<VkBuffer> UniformBufferList;
-	vector<VkDeviceMemory> UniformBufferMemoryList;
-	vector<void*> UniformBufferMappedDataList;
-
 	VkDescriptorPool DescriptorPool;
 	vector<VkDescriptorSet> DescriptorSets;
 	VkDescriptorPool ImGuiDescriptorPool;
 
 	// Vulkan Command Buffer
 	// 這裡是卡住上限，避免畫太多資料
-	const uint32_t MAX_FRAME_IN_FLIGHTS 							= 2;
-	uint32_t CurrentFrameIndex 										= 0;
-	vector<VkCommandBuffer> CommandBuffers;
+	uint32_t mCurrentFrameIndex 									= 0;
+	vector<VkCommandBuffer> mCommandBuffers;
 
 	// Vulkan Semaphore & Fence
 	// Semaphore: 主要是用來當作信號使用，等 Work 執行完後會觸發 Semaphore，會指使下一個 Work 繼續執行
@@ -154,7 +148,6 @@ private:
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateCommandPool();																				// 建立 Command Pool
 	void __CreateTextureImage();																			// 建立 Texture
-	void __CreateUniformBuffer();																			// 建立 Uniform Buffer
 	void __CreateDescriptor();																				// 建立 Descriptor Pool & Set (給 Unifrom Buffer 用)
 	void __CreateCommandBuffer();																			// 建立 Command Buffer
 	void __CreateSyncObjects();

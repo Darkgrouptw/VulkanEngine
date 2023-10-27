@@ -220,7 +220,23 @@ void ShaderBase::CreateGraphicsPipeline()
 }
 void ShaderBase::CreateUniformBuffer()
 {
+	VkDeviceSize bufferSize 										= sizeof(UniformBufferInfo);
 
+	mUniformBufferList.resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
+	mUniformBufferMemoryList.resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
+	mUniformBufferMappedDataList.resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
+
+	for (size_t i = 0; i < VKHelper::MAX_FRAME_IN_FLIGHTS; i++)
+	{
+		VKHelper::Instance->CreateBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			mUniformBufferList[i],
+			mUniformBufferMemoryList[i]);
+
+		vkMapMemory(VKHelper::Instance->GetDevice(), mUniformBufferMemoryList[i], 0, bufferSize, 0, &mUniformBufferMappedDataList[i]);
+	}
 }
 void ShaderBase::DestroyDescriptorSetLayout()
 {
@@ -232,7 +248,12 @@ void ShaderBase::DestroyGraphicsPipeline()
 }
 void ShaderBase::DestroyUniformBuffer()
 {
-
+	VkDevice device = VKHelper::Instance->GetDevice();
+	for (size_t i = 0; i < VKHelper::MAX_FRAME_IN_FLIGHTS; i++)
+	{
+		vkDestroyBuffer(device, mUniformBufferList[i], nullptr);
+		vkFreeMemory(device, mUniformBufferMemoryList[i], nullptr);
+	}
 }
 
 vector<char> ShaderBase::__ReadShaderFile(const string& path)
