@@ -20,14 +20,17 @@ public:
 protected:
     ShaderType mType;
 
-	// Vulkan Command
+	// Vulkan Create Command
 	void CreateDescriptorSetLayout();                                                                       // 在建立 GraphicsPipeline 前，要設定好 Uniform Buffer 的設定
 	void CreateGraphicsPipeline();                                                                          // 建立 Graphics Pipeline
     void CreateUniformBuffer();                                                                             // 建立 Uniform Buffer
+    void CreateDescriptor();                                                                                // 建立 Descriptor Pool & Set (給 Unifrom Buffer 用)
 
+    // Vulkan Destroy Command
 	void DestroyDescriptorSetLayout();
 	void DestroyGraphicsPipeline();
     void DestroyUniformBuffer();
+    void DesctroyDescriptor();
 
     // Helper Function
     vector<char> __ReadShaderFile(const string&);															// 讀取 ShaderFile
@@ -38,9 +41,12 @@ protected:
     VkPipelineLayout mPipelineLayout;
     VkPipeline mGraphicsPipeline;
 
-
     // Vulkan Uniform Buffer
     vector<VkBuffer> mUniformBufferList;
     vector<VkDeviceMemory> mUniformBufferMemoryList;
     vector<void*> mUniformBufferMappedDataList;
+
+    // Vulkan Descriptor
+    VkDescriptorPool mDescriptorPool;
+    vector<VkDescriptorSet> mDescriptorSets;
 };

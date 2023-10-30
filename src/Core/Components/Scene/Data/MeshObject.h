@@ -39,10 +39,11 @@ protected:
     VkBuffer mVertexBuffer = nullptr, mIndexBuffer = nullptr;
     VkDeviceMemory mVertexBufferMemory = nullptr, mIndexBufferMemory = nullptr;
 
-
-	// Vulkan Command
+	// Vulkan Create Command
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
+
+    // Vulkan Destroy Command
 	void DestroyVertexBuffer();
 	void DestroyIndexBuffer();
 };

@@ -10,6 +10,7 @@ ShaderBase::~ShaderBase()
 {
 }
 
+#pragma region Public
 // Vulkan Stuff
 void ShaderBase::CreateVulkanStuff()
 {
@@ -23,11 +24,9 @@ void ShaderBase::DestroyVulkanStuff()
 	DestroyGraphicsPipeline();
 	DestroyDescriptorSetLayout();
 }
-#pragma region Public
-
 #pragma endregion
 #pragma region Protected
-// Vulkan Command
+// Vulkan Create Command
 void ShaderBase::CreateDescriptorSetLayout()
 {
 	VkDescriptorSetLayoutBinding uboLayout{};
@@ -238,6 +237,12 @@ void ShaderBase::CreateUniformBuffer()
 		vkMapMemory(VKHelper::Instance->GetDevice(), mUniformBufferMemoryList[i], 0, bufferSize, 0, &mUniformBufferMappedDataList[i]);
 	}
 }
+void ShaderBase::CreateDescriptor()
+{
+
+}
+
+// Vulkan Destroy Command
 void ShaderBase::DestroyDescriptorSetLayout()
 {
 	vkDestroyDescriptorSetLayout(VKHelper::Instance->GetDevice(), mDescriptorSetLayout, nullptr);
@@ -254,6 +259,10 @@ void ShaderBase::DestroyUniformBuffer()
 		vkDestroyBuffer(device, mUniformBufferList[i], nullptr);
 		vkFreeMemory(device, mUniformBufferMemoryList[i], nullptr);
 	}
+}
+void ShaderBase::DesctroyDescriptor()
+{
+
 }
 
 vector<char> ShaderBase::__ReadShaderFile(const string& path)

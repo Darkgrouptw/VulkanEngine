@@ -113,8 +113,7 @@ private:
 	VkFormat SwapChainImageFormat;
 	VkExtent2D mSwapChainExtent;
 
-	VkDescriptorPool DescriptorPool;
-	vector<VkDescriptorSet> DescriptorSets;
+	// ImGui DescriptorPool
 	VkDescriptorPool ImGuiDescriptorPool;
 
 	// Vulkan Command Buffer
@@ -148,7 +147,6 @@ private:
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateCommandPool();																				// 建立 Command Pool
 	void __CreateTextureImage();																			// 建立 Texture
-	void __CreateDescriptor();																				// 建立 Descriptor Pool & Set (給 Unifrom Buffer 用)
 	void __CreateCommandBuffer();																			// 建立 Command Buffer
 	void __CreateSyncObjects();
 
