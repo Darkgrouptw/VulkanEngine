@@ -17,9 +17,11 @@ void ShaderBase::CreateVulkanStuff()
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	CreateUniformBuffer();
+	CreateDescriptor();
 }
 void ShaderBase::DestroyVulkanStuff()
 {
+	DestroyDescriptor();
 	DestroyUniformBuffer();
 	DestroyGraphicsPipeline();
 	DestroyDescriptorSetLayout();
@@ -239,7 +241,74 @@ void ShaderBase::CreateUniformBuffer()
 }
 void ShaderBase::CreateDescriptor()
 {
+	VkDevice device = VKHelper::Instance->GetDevice();
+	#pragma region Descriptor Pool
+	vector<VkDescriptorPoolSize> poolSizes{};
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type													= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount										= VKHelper::MAX_FRAME_IN_FLIGHTS;
 
+	poolSizes.push_back(poolSize);
+	//poolSizes.push_back(TextM->CreateDescriptorPoolSize(MAX_FRAME_IN_FLIGHTS));
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType													= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount											= poolSizes.size();
+	poolInfo.pPoolSizes												= poolSizes.data();
+	poolInfo.maxSets												= VKHelper::MAX_FRAME_IN_FLIGHTS;
+
+	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS)
+		throw runtime_error("Failed to create descriptor pool");
+	#pragma endregion
+	#pragma region Descriptor Set
+	vector<VkDescriptorSetLayout> layouts(VKHelper::MAX_FRAME_IN_FLIGHTS, mDescriptorSetLayout);
+
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorPool										= mDescriptorPool;
+	allocateInfo.descriptorSetCount									= VKHelper::MAX_FRAME_IN_FLIGHTS;
+	allocateInfo.pSetLayouts										= layouts.data();
+
+	mDescriptorSets.resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
+	if (vkAllocateDescriptorSets(device, &allocateInfo, mDescriptorSets.data()) != VK_SUCCESS)
+		throw runtime_error("Failed to create allocate descriptor set");
+
+	for (size_t i = 0; i < VKHelper::MAX_FRAME_IN_FLIGHTS; i++)
+	{
+		VkDescriptorBufferInfo bufferinfo{};
+		bufferinfo.buffer											= mUniformBufferList[i];
+		bufferinfo.offset											= 0;
+		bufferinfo.range											= sizeof(UniformBufferInfo);
+
+		//VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
+
+		vector<VkWriteDescriptorSet> descriptorWrites;
+		//descriptorWrites.resize(2);
+		descriptorWrites.resize(1);
+		#pragma region Uniform Buffer
+		descriptorWrites[0].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet									= mDescriptorSets[i];
+		descriptorWrites[0].dstBinding								= 0;
+		descriptorWrites[0].dstArrayElement							= 0;
+
+		descriptorWrites[0].descriptorType							= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrites[0].descriptorCount							= 1;
+		descriptorWrites[0].pBufferInfo								= &bufferinfo;
+		#pragma endregion
+		/*#pragma region Image Info
+		descriptorWrites[1].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[1].dstSet									= DescriptorSets[i];
+		descriptorWrites[1].dstBinding								= 1;
+		descriptorWrites[1].dstArrayElement							= 0;
+
+		descriptorWrites[1].descriptorType							= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[1].descriptorCount							= 1;
+		descriptorWrites[1].pImageInfo								= &imageInfo;
+		#pragma endregion*/
+
+		vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+	}
+	#pragma endregion
 }
 
 // Vulkan Destroy Command
@@ -260,9 +329,10 @@ void ShaderBase::DestroyUniformBuffer()
 		vkFreeMemory(device, mUniformBufferMemoryList[i], nullptr);
 	}
 }
-void ShaderBase::DesctroyDescriptor()
+void ShaderBase::DestroyDescriptor()
 {
-
+	VkDevice device = VKHelper::Instance->GetDevice();
+	vkDestroyDescriptorPool(device, mDescriptorPool, nullptr);
 }
 
 vector<char> ShaderBase::__ReadShaderFile(const string& path)

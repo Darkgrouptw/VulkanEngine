@@ -114,7 +114,7 @@ private:
 	VkExtent2D mSwapChainExtent;
 
 	// ImGui DescriptorPool
-	VkDescriptorPool ImGuiDescriptorPool;
+	VkDescriptorPool mImGuiDescriptorPool;
 
 	// Vulkan Command Buffer
 	// 這裡是卡住上限，避免畫太多資料
@@ -147,6 +147,7 @@ private:
 	void __CreateFrameBuffer();																				// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateCommandPool();																				// 建立 Command Pool
 	void __CreateTextureImage();																			// 建立 Texture
+	void __CreateIMGUIDescriptor();																			// 建立 IMGUI Descriptor Pool & Set
 	void __CreateCommandBuffer();																			// 建立 Command Buffer
 	void __CreateSyncObjects();
 

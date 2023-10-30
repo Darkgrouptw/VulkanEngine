@@ -30,7 +30,7 @@ protected:
 	void DestroyDescriptorSetLayout();
 	void DestroyGraphicsPipeline();
     void DestroyUniformBuffer();
-    void DesctroyDescriptor();
+    void DestroyDescriptor();
 
     // Helper Function
     vector<char> __ReadShaderFile(const string&);															// 讀取 ShaderFile
