@@ -16,6 +16,8 @@ public:
     // Vulkan Stuff
     void CreateVulkanStuff() override;
     void DestroyVulkanStuff() override;
+    void BindGraphicsPipeline(const VkCommandBuffer);
+    //void UploadVertexData(const VkCommandBuffer, );
 
 protected:
     ShaderType mType;
@@ -37,9 +39,9 @@ protected:
     VkShaderModule __CreateShaderModule(const vector<char>&);												// 產生 Shader Module
 
     // Vulkan Pipeline
-    VkDescriptorSetLayout mDescriptorSetLayout;
-    VkPipelineLayout mPipelineLayout;
-    VkPipeline mGraphicsPipeline;
+    VkDescriptorSetLayout mDescriptorSetLayout                      = NULL;
+    VkPipelineLayout mPipelineLayout                                = NULL;
+    VkPipeline mGraphicsPipeline                                    = NULL;
 
     // Vulkan Uniform Buffer
     vector<VkBuffer> mUniformBufferList;
@@ -47,6 +49,6 @@ protected:
     vector<void*> mUniformBufferMappedDataList;
 
     // Vulkan Descriptor
-    VkDescriptorPool mDescriptorPool;
+    VkDescriptorPool mDescriptorPool                                = NULL;
     vector<VkDescriptorSet> mDescriptorSets;
 };

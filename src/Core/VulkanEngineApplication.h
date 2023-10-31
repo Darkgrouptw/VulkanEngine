@@ -78,7 +78,6 @@ private:
 	
 	void DrawFrame();																						// 繪製畫面
 	void ReCreateSwapChain();																				// 重新建立 SwapChain
-	void UpdateUniformBuffer(uint32_t);																		// 更新 Uniform Buffer
 
 	// 視窗設定
 	GLFWwindow* Window												= NULL;									// GLFW Window
@@ -97,7 +96,6 @@ private:
 	
 	// Vulkan Pipeline
 	VkRenderPass mRenderPass;
-	VkPipeline GraphicsPipeline;
 	VkCommandPool CommandPool;
 
 	// Vulkan Queue

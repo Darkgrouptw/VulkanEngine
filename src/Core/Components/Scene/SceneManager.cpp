@@ -27,6 +27,21 @@ void SceneManager::LoadScene(string pSceneName)
 #endif
 	UploadDataToGPU();
 }
+void SceneManager::UpdateScene()
+{
+	// 這裡有做幾件事
+	// 1. 更新全場景的物件
+	// 2. 更新Uniform Buffer
+}
+void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
+{
+	// ToDo: 如果有空的話，以後來做 AABB 的 BVH 
+	for (const auto mesh : mMeshs)
+	{
+		int index = mesh->GetMaterialIndex();
+		mShaders[index]->BindGraphicsPipeline(pCommandBuffer);
+	}
+}
 void SceneManager::UnloadScene()
 {
 	DestroyGPUData();
@@ -75,9 +90,8 @@ void SceneManager::DeleteMaterialData()
 }
 void SceneManager::DeleteShaderData()
 {
-	for(const auto& [key, value] : mShaders) {
+	for(const auto& [key, value] : mShaders)
 		delete value;
-	}
 	mShaders.clear();
 }
 
@@ -87,11 +101,10 @@ void SceneManager::UploadDataToGPU()
 	#pragma region Mesh
 	for (const auto mesh : mMeshs)
 		mesh->CreateVulkanStuff();
-	#pragma region Material
-	for (int i = 0; i < mMaterials.size(); i++)
-	{
-	
-	}
+	#pragma endregion
+	#pragma region Shader
+	for (const auto& [key, shader] : mShaders)
+		shader->CreateVulkanStuff();
 	#pragma endregion
 }
 void SceneManager::DestroyGPUData()
@@ -99,6 +112,10 @@ void SceneManager::DestroyGPUData()
 	#pragma region Mesh
 	for (const auto mesh : mMeshs)
 		mesh->DestroyVulkanStuff();
+	#pragma endregion
+	#pragma region Shader
+	for (const auto& [key, shader] : mShaders)
+		shader->DestroyVulkanStuff();
 	#pragma endregion
 }
 #pragma endregion

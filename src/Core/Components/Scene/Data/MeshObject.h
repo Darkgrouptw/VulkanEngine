@@ -22,7 +22,8 @@ public:
     void InsertVertexData(glm::vec3, glm::vec3);
     void InsertVertexData(glm::vec3);
     void InsertFaceIndex(uint32_t);
-    void SetMaterialIndex(int);
+    inline int GetMaterialIndex() { return mMaterialIndex; };
+    inline void SetMaterialIndex(int pIndex) { mMaterialIndex = pIndex; };
 
     uint32_t GetFaceIndicesSize();
 

@@ -257,8 +257,8 @@ void VulkanEngineApplication::DrawFrame()
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) // VK_SUBOPTIMAL_KHR 代表，雖然可以正常顯示到 surface 上，但是 surface 其實不需要了
 		throw runtime_error("Failed to acquire swap chain image");
 
-	// 更新 UniformBuffer
-	UpdateUniformBuffer(mCurrentFrameIndex);
+	// 更新場景的所有資料
+	SceneM->UpdateScene();
 
 	vkResetFences(mDevice, 1, &InFlightFences[mCurrentFrameIndex]);											// Reset Fences
 	#pragma endregion
@@ -334,35 +334,35 @@ void VulkanEngineApplication::ReCreateSwapChain()
 	__CreateImageViews();
 	__CreateFrameBuffer();
 }
-void VulkanEngineApplication::UpdateUniformBuffer(uint32_t frameIndex)
-{
-	// 只有第一幀的時候設定
-	//static auto startTime											= chrono::high_resolution_clock::now();
-	//auto currentTime												= chrono::high_resolution_clock::now();
-	//float duration													= 0;//chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
-
-	//// MVP
-	//UniformBufferInfo bufferData{};
-	//bufferData.ModelMatrix											= glm::rotate(
-	//																	glm::mat4(1.f),
-	//																	duration * glm::radians(90.f),
-	//																	glm::vec3(0, 0, 1)
-	//																);
-	//bufferData.ViewMatrix											= glm::lookAt(
-	//																	glm::vec3(2, 2, 2),
-	//																	glm::vec3(0, 0, 0),
-	//																	glm::vec3(0, 0, 1)
-	//																);
-	//bufferData.ProjectionMatrix										= glm::perspective(
-	//																	glm::radians(45.f),
-	//																	(float)SwapChainExtent.width / SwapChainExtent.height,
-	//																	0.1f,
-	//																	10.f);
-	//// 這裡必須要反轉
-	//// 因為 GLM 是針對 OpenGL 做的 (y 的方向是相反的)
-	//bufferData.ProjectionMatrix[1][1]								*= -1;
-	//memcpy(UniformBufferMappedDataList[frameIndex], &bufferData, sizeof(UniformBufferInfo));
-}
+//void VulkanEngineApplication::UpdateUniformBuffer(uint32_t frameIndex)
+//{
+//	// 只有第一幀的時候設定
+//	//static auto startTime											= chrono::high_resolution_clock::now();
+//	//auto currentTime												= chrono::high_resolution_clock::now();
+//	//float duration													= 0;//chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
+//
+//	//// MVP
+//	//UniformBufferInfo bufferData{};
+//	//bufferData.ModelMatrix											= glm::rotate(
+//	//																	glm::mat4(1.f),
+//	//																	duration * glm::radians(90.f),
+//	//																	glm::vec3(0, 0, 1)
+//	//																);
+//	//bufferData.ViewMatrix											= glm::lookAt(
+//	//																	glm::vec3(2, 2, 2),
+//	//																	glm::vec3(0, 0, 0),
+//	//																	glm::vec3(0, 0, 1)
+//	//																);
+//	//bufferData.ProjectionMatrix										= glm::perspective(
+//	//																	glm::radians(45.f),
+//	//																	(float)SwapChainExtent.width / SwapChainExtent.height,
+//	//																	0.1f,
+//	//																	10.f);
+//	//// 這裡必須要反轉
+//	//// 因為 GLM 是針對 OpenGL 做的 (y 的方向是相反的)
+//	//bufferData.ProjectionMatrix[1][1]								*= -1;
+//	//memcpy(UniformBufferMappedDataList[frameIndex], &bufferData, sizeof(UniformBufferInfo));
+//}
 
 //////////////////////////////////////////////////////////////////////////
 // Helper Init Function
@@ -832,17 +832,7 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 	// 設定 RenderPass (且無其他 Pass => CONTENTS_INLINE)
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	{
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, GraphicsPipeline);
-		
-		// 由於前面設定 VkPipelineDynamicStateCreateInfo
-		// 設定了 VK_DYNAMIC_STATE_VIEWPORT & VK_DYNAMIC_STATE_SCISSOR
-		// 所以這裡需要在指定一次
-		VkViewport viewport{};
-		VkRect2D scissor{};
-		GetViewportAndScissor(viewport, scissor);
-
-		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+		SceneM->RenderScene(commandBuffer);
 
 		// 送 Buffer 上去 
 		/*VkBuffer buffers[]											= { VertexBuffer };

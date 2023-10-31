@@ -19,8 +19,10 @@ public:
 	SceneManager();
 	~SceneManager();
 
-	void LoadScene(string);
-	void UnloadScene();
+	void LoadScene(string);																					// 讀取場景
+	void UpdateScene();																						// 更新資料 (Ex: Uniform Buffer)
+	void RenderScene(const VkCommandBuffer);																// 開始化場景
+	void UnloadScene();																						// 卸載
 protected:
 	// SceneData
 	vector<MeshObject*> mMeshs;

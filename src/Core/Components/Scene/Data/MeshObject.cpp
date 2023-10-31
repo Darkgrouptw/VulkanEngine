@@ -35,10 +35,6 @@ void MeshObject::InsertFaceIndex(uint32_t indices)
 {
 	mFaceIndices.push_back(indices);
 }
-void MeshObject::SetMaterialIndex(int pIndex)
-{
-	mMaterialIndex = pIndex;
-}
 
 // Get
 uint32_t MeshObject::GetFaceIndicesSize()
