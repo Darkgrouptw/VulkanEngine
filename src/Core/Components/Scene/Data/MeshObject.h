@@ -30,6 +30,7 @@ public:
     // Vulkan Stuff
     void CreateVulkanStuff() override;
     void DestroyVulkanStuff() override;
+    void Render(const VkCommandBuffer);
 
 protected:
     vector<VertexBufferInfo> mVertices;

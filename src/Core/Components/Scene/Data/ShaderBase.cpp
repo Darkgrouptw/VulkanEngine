@@ -29,16 +29,6 @@ void ShaderBase::DestroyVulkanStuff()
 void ShaderBase::BindGraphicsPipeline(const VkCommandBuffer pCommandBuffer)
 {
 	vkCmdBindPipeline(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
-
-	// 由於前面設定 VkPipelineDynamicStateCreateInfo
-	// 設定了 VK_DYNAMIC_STATE_VIEWPORT & VK_DYNAMIC_STATE_SCISSOR
-	// 所以這裡需要在指定一次
-	VkViewport viewport{};
-	VkRect2D scissor{};
-	VKHelper::Instance->GetViewportAndScissor(viewport, scissor);
-
-	vkCmdSetViewport(pCommandBuffer, 0, 1, &viewport);
-	vkCmdSetScissor(pCommandBuffer, 0, 1, &scissor);
 }
 #pragma endregion
 #pragma region Protected

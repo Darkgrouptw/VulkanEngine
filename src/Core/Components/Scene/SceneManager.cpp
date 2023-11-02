@@ -40,6 +40,7 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 	{
 		int index = mesh->GetMaterialIndex();
 		mShaders[index]->BindGraphicsPipeline(pCommandBuffer);
+		mesh->Render(pCommandBuffer);
 	}
 }
 void SceneManager::UnloadScene()

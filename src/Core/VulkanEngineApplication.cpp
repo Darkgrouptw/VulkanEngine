@@ -832,20 +832,18 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 	// 設定 RenderPass (且無其他 Pass => CONTENTS_INLINE)
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	{
+		// 由於前面設定 VkPipelineDynamicStateCreateInfo
+		// 設定了 VK_DYNAMIC_STATE_VIEWPORT & VK_DYNAMIC_STATE_SCISSOR
+		// 所以這裡需要在指定一次
+		VkViewport viewport{};
+		VkRect2D scissor{};
+		GetViewportAndScissor(viewport, scissor);
+
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		// Render
 		SceneM->RenderScene(commandBuffer);
-
-		// 送 Buffer 上去 
-		/*VkBuffer buffers[]											= { VertexBuffer };
-		VkDeviceSize offsets[]										= { 0 };
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-		vkCmdBindIndexBuffer(commandBuffer, IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescriptorSets[CurrentFrameIndex], 0, nullptr);
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);*/
-
-		// 原先是這兩個配
-		//vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-
 		ImGuiWindowM->Render(commandBuffer);
 	}
 	vkCmdEndRenderPass(commandBuffer);

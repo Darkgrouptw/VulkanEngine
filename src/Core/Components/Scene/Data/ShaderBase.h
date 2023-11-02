@@ -17,7 +17,9 @@ public:
     void CreateVulkanStuff() override;
     void DestroyVulkanStuff() override;
     void BindGraphicsPipeline(const VkCommandBuffer);
-    //void UploadVertexData(const VkCommandBuffer, );
+
+    // Get Vulkan Item
+    inline VkPipelineLayout GetPipelineLayout() { return mPipelineLayout; };
 
 protected:
     ShaderType mType;
