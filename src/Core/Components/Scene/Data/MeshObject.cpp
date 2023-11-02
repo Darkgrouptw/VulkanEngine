@@ -53,15 +53,15 @@ void MeshObject::DestroyVulkanStuff()
 	DestroyVertexBuffer();
 	DestroyIndexBuffer();
 }
-void MeshObject::Render(const VkCommandBuffer pCommandBuffer)
+void MeshObject::Render(const VkCommandBuffer pCommandBuffer, const VkPipelineLayout pPipelineLayout, const VkDescriptorSet& pDescriptorSet)
 {
 	// 送 Buffer 上去
 	VkBuffer buffers[]											= { mVertexBuffer };
 	VkDeviceSize offsets[]										= { 0 };
 	vkCmdBindVertexBuffers(pCommandBuffer, 0, 1, buffers, offsets);
-	vkCmdBindIndexBuffer(mVertexBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
-	vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescriptorSets[CurrentFrameIndex], 0, nullptr);
-	vkCmdDrawIndexed(pCommandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+	vkCmdBindIndexBuffer(pCommandBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineLayout, 0, 1, &pDescriptorSet, 0, nullptr);
+	vkCmdDrawIndexed(pCommandBuffer, static_cast<uint32_t>(mFaceIndices.size()), 1, 0, 0, 0);
 
 	// 原先是這兩個配
 	//vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);

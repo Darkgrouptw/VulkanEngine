@@ -130,6 +130,7 @@ ShaderType GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial
     
     // Transfor to Shader Type
     ShaderType type = GLTFShaderTypeUtils::GetShaderTypeFrom(mode);
+    mat->SetShaderType(type);
     return type;
 }
 #pragma endregion

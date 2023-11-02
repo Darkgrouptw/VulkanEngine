@@ -21,13 +21,16 @@ public:
     void SetDiffuseColor(glm::vec3);
     void SetSpecularColor(glm::vec3);
 
-    // Vulkan Command
+    // ShaderType
+    inline ShaderType GetShaderType() { return mShaderType; };
+    void SetShaderType(ShaderType pType) { mShaderType = pType; };
 
 protected:
     glm::vec3 mAmbientColor;
     glm::vec3 mDiffuseColor;
     glm::vec3 mSpecularColor;
 
+    ShaderType mShaderType                                          = ShaderType::Unlit;
     //bool mIsTwoSide                                                 = false;
 
     //float mShininess                                                = 0.f;

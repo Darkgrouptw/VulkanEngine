@@ -38,9 +38,16 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 	// ToDo: 如果有空的話，以後來做 AABB 的 BVH 
 	for (const auto mesh : mMeshs)
 	{
-		int index = mesh->GetMaterialIndex();
-		mShaders[index]->BindGraphicsPipeline(pCommandBuffer);
-		mesh->Render(pCommandBuffer);
+		#pragma region 抓取資料
+		int matIndex 												= mesh->GetMaterialIndex();
+		MaterialBase* mat											= mMaterials[matIndex];
+		ShaderType shaderType 										= mat->GetShaderType();
+		ShaderBase* shader 											= mShaders[shaderType];
+		#pragma endregion
+		#pragma region 畫
+		shader->BindGraphicsPipeline(pCommandBuffer);
+		mesh->Render(pCommandBuffer, mShaders[shaderType]->GetPipelineLayout());
+		#pragma endregion
 	}
 }
 void SceneManager::UnloadScene()
