@@ -20,6 +20,7 @@ public:
 
     // Get Vulkan Item
     inline VkPipelineLayout GetPipelineLayout() { return mPipelineLayout; };
+    inline VkDescriptorSet GetCurrentDescriptorSet() { return mDescriptorSets[__GetCurrentFrameIndex()]; };
 
 protected:
     ShaderType mType;
@@ -39,6 +40,7 @@ protected:
     // Helper Function
     vector<char> __ReadShaderFile(const string&);															// 讀取 ShaderFile
     VkShaderModule __CreateShaderModule(const vector<char>&);												// 產生 Shader Module
+    uint32_t __GetCurrentFrameIndex();                                                                      // 拿要現在的 FrameIndex
 
     // Vulkan Pipeline
     VkDescriptorSetLayout mDescriptorSetLayout                      = NULL;

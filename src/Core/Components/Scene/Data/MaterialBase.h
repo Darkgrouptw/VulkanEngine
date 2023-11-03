@@ -2,6 +2,7 @@
 #include "Core/Common/Common.h"
 #include "Core/Components/Scene/Data/ObjectBase.h"
 #include "Core/Components/Scene/Data/Transform.h"
+#include "Core/Components/Scene/Data/ShaderType.h"
 
 #include <unordered_map>
 

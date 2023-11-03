@@ -367,4 +367,8 @@ VkShaderModule ShaderBase::__CreateShaderModule(const vector<char>& code)
 		throw runtime_error("Failed to create shader module");
 	return shaderModule;
 }
+uint32_t ShaderBase::__GetCurrentFrameIndex()
+{
+	return VKHelper::Instance->GetCurrentFrameIndex();
+}
 #pragma endregion
