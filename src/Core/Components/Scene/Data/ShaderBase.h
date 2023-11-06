@@ -20,7 +20,7 @@ public:
 
     // Get Vulkan Item
     inline VkPipelineLayout GetPipelineLayout() { return mPipelineLayout; };
-    inline VkDescriptorSet GetCurrentDescriptorSet() { return mDescriptorSets[__GetCurrentFrameIndex()]; };
+    inline VkDescriptorSet& GetCurrentDescriptorSet() { return mDescriptorSets[__GetCurrentFrameIndex()]; };
 
 protected:
     ShaderType mType;

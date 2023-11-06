@@ -48,7 +48,7 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 		#pragma endregion
 		#pragma region Draw Command
 		shader->BindGraphicsPipeline(pCommandBuffer);
-		mesh->Render(pCommandBuffer, shader->GetPipelineLayout(), &set);
+		mesh->Render(pCommandBuffer, shader->GetPipelineLayout(), set);
 		#pragma endregion
 	}
 }
