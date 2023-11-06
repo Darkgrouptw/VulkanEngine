@@ -9,8 +9,8 @@ struct VertexBufferInfo
 {
     glm::vec3 Position;                                                                                     // 頂點
     glm::vec3 Normal;                                                                                       // Normal
+    glm::vec4 VertexColor;                                                                                  // 頂點顏色
     glm::vec2 Texcoord;                                                                                     // 貼圖座標
-    glm::vec3 VertexColor;                                                                                  // 頂點顏色
 
     // 設定 Vulkan 的 Vertex Input
     static vector<VkVertexInputAttributeDescription> GetAttributeDescription()
@@ -30,17 +30,18 @@ struct VertexBufferInfo
         desc[1].format                                              = VK_FORMAT_R32G32B32_SFLOAT;
         desc[1].offset                                              = offsetof(VertexBufferInfo, Normal);
 
+        // Vertex Color
+        desc[3].binding                                             = 0;
+        desc[3].location                                            = 2;
+        desc[3].format                                              = VK_FORMAT_R32G32B32A32_SFLOAT;
+        desc[3].offset                                              = offsetof(VertexBufferInfo, VertexColor);
+
         // Texture Coordinate
         desc[2].binding                                             = 0;
-        desc[2].location                                            = 2;
+        desc[2].location                                            = 3;
         desc[2].format                                              = VK_FORMAT_R32G32_SFLOAT;
         desc[2].offset                                              = offsetof(VertexBufferInfo, Texcoord);
 
-        // Vertex Color
-        desc[3].binding                                             = 0;
-        desc[3].location                                            = 3;
-        desc[3].format                                              = VK_FORMAT_R32G32B32_SFLOAT;
-        desc[3].offset                                              = offsetof(VertexBufferInfo, VertexColor);
         return desc;
     }
 

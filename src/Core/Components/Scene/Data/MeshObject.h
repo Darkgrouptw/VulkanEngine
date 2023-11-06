@@ -17,10 +17,7 @@ public:
     MeshObject(string, int);
     ~MeshObject();
 
-    void InsertVertexData(glm::vec3, glm::vec3, glm::vec2, glm::vec3);
-    void InsertVertexData(glm::vec3, glm::vec3, glm::vec2);
-    void InsertVertexData(glm::vec3, glm::vec3);
-    void InsertVertexData(glm::vec3);
+    void InsertVertexData(glm::vec3, glm::vec3, glm::vec4, glm::vec2);
     void InsertFaceIndex(uint32_t);
     inline int GetMaterialIndex() { return mMaterialIndex; };
     inline void SetMaterialIndex(int pIndex) { mMaterialIndex = pIndex; };

@@ -39,20 +39,30 @@ void GLTFSceneLoader::ParseMeshsData(void** const pData, int pNumData)
             string name(meshData->mName.data);
 
 			MeshObject* mesh = new MeshObject(name, meshData->mMaterialIndex);
-			auto vertcies = meshData->mVertices;
-            auto normals = meshData->mNormals;
+			auto vertcies                                           = meshData->mVertices;
+            auto normals                                            = meshData->mNormals;
+            auto vcolors                                            = meshData->mColors;
+            auto uvs                                                = meshData->mTextureCoords;
 
-            bool hasNormal = meshData->HasNormals();
+            
+            // Currently support set 0
+            bool hasNormal                                          = meshData->HasNormals();
+            bool hasVertexColor                                     = meshData->HasVertexColors(0);
+            bool hasTexcoords                                       = meshData->HasTextureCoords(0);
 			for (int j = 0; j < meshData->mNumVertices; j++)
 			{
                 glm::vec3 pos(vertcies[j].x, vertcies[j].y, vertcies[j].z);
-				if (hasNormal)
-				{
-	                glm::vec3 nomral(normals[j].x, normals[j].y, normals[j].z);
-					mesh->InsertVertexData(pos, nomral);
-			    }
-				else
-                    mesh->InsertVertexData(pos);
+                glm::vec3 normal(0.f, 0.f, 0.f);
+                glm::vec4 vcolor(0.f, 0.f, 0.f, 0.f);
+                glm::vec2 uv(0.f, 0.f);
+
+                if (hasNormal)
+                    normal                                          = glm::vec3((float)normals[j].x, (float)normals[j].y, (float)normals[j].z);
+                if (hasVertexColor)
+                    vcolor                                          = glm::vec4((float)vcolors[0][j].r, (float)vcolors[0][j].g, (float)vcolors[0][j].b, (float)vcolors[0][j].a);
+                if (hasTexcoords)
+                    uv                                              = glm::vec2((float)uvs[0][j].x, (float)uvs[0][j].y);
+                mesh->InsertVertexData(pos, normal, vcolor, uv);
 			}
             bool hasFaces = meshData->HasFaces();
             if (hasFaces)

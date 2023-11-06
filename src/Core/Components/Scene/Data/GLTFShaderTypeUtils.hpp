@@ -15,6 +15,9 @@ public:
 	{
 		switch (mode)
 		{
+		case aiShadingMode_PBR_BRDF:
+			mType = ShaderType::PBR;
+			break;
 		default:
 			mType = ShaderType::Unlit;
 			break;

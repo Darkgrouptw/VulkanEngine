@@ -14,22 +14,10 @@ MeshObject::~MeshObject()
 }
 
 // Insert Method
-void MeshObject::InsertVertexData(glm::vec3 pPos, glm::vec3 pNormal, glm::vec2 pTexcoord, glm::vec3 pVertexColor)
+void MeshObject::InsertVertexData(glm::vec3 pPos, glm::vec3 pNormal, glm::vec4 pVertexColor, glm::vec2 pTexcoord)
 {
 	// ToDo:: Add Transform Matrix
-	mVertices.push_back({ pPos, pNormal, pTexcoord, pVertexColor });
-}
-void MeshObject::InsertVertexData(glm::vec3 pPos, glm::vec3 pNormal, glm::vec2 pTexcoord)
-{
-	InsertVertexData(pPos, pNormal, glm::vec2(), glm::vec3());
-}
-void MeshObject::InsertVertexData(glm::vec3 pPos, glm::vec3 pNormal)
-{
-	InsertVertexData(pPos, pNormal, glm::vec2(), glm::vec3());
-}
-void MeshObject::InsertVertexData(glm::vec3 pPos)
-{
-	InsertVertexData(pPos, glm::vec3(), glm::vec2(), glm::vec3());
+	mVertices.push_back({ pPos, pNormal, pVertexColor, pTexcoord });
 }
 void MeshObject::InsertFaceIndex(uint32_t indices)
 {
