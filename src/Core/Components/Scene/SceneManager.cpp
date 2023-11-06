@@ -17,10 +17,12 @@ void SceneManager::LoadScene(string pSceneName)
 	auto meshDataCallback											= [&](vector<MeshObject*> pData) { LoadedMeshDataCallback(pData); };
 	auto materialDataCallback										= [&](vector<MaterialBase*> pData) { LoadedMaterialDataCallback(pData); };
 	auto shaderDataCallback											= [&](unordered_set<ShaderType> pData) { LoadedShaderDataCallback(pData); };
+	auto tranformMatrixCallback										= [&](string pName, glm::mat4x4 pMatrix) { LoadedTransformMatrixCallback(pName, pMatrix); }; 
 #if USE_ASSIMP
 	loader.SetMeshDataCallback(meshDataCallback);
 	loader.SetMaterialDataCallback(materialDataCallback);
 	loader.SetShaderDataCallback(shaderDataCallback);
+	loader.SetTransforMatrixCallback(tranformMatrixCallback);
 	loader.LoadScene(pSceneName);
 #else
 	throw runtime_error("NotImplemented other way to load scene");

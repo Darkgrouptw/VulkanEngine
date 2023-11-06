@@ -25,14 +25,16 @@ public:
 	void SetMeshDataCallback(function<void(vector<MeshObject*>)> pCallback) { mMeshDataCallback = pCallback; };
 	void SetMaterialDataCallback(function<void(vector<MaterialBase*>)> pCallback) { mMaterialDataCallback = pCallback; };
 	void SetShaderDataCallback(function<void(unordered_set<ShaderType>)> pCallback) { mShaderDataCallback = pCallback; };
+	void SetTransforMatrixCallback(function<void(string, glm::mat4x4)> pCallback) { mTransformMatrixCallback = pCallback; };
 protected:
 	// Parsing Data from loader and trigger callback
 	virtual void ParseMeshsData(void** const, int) = 0;
 	virtual void ParseMaterialsData(void** const, int) = 0;
-	//virtual void ParseLightsData(void** const, int) = 0;
+	virtual void ParseTransformMatrixData(void** const, int) = 0;
 
 	// Callback
 	function<void(vector<MeshObject*>)> mMeshDataCallback;
 	function<void(vector<MaterialBase*>)> mMaterialDataCallback;
 	function<void(unordered_set<ShaderType>)> mShaderDataCallback;
+	function<void(string, glm::mat4x4)> mTransformMatrixCallback;
 };

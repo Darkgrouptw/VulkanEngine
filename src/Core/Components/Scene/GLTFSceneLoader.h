@@ -24,7 +24,7 @@ public:
 protected:
 	void ParseMeshsData(void** const, int) override;
 	void ParseMaterialsData(void** const, int) override;
-	//virtual void ParseLightsData(void** const, int) override;
+	void ParseTransformMatrixData(void** const, int) override;
 
 	ShaderType GetAllGLTFMaterialData(MaterialBase*, aiMaterial* mat);
 private:

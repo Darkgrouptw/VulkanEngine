@@ -105,15 +105,24 @@ void GLTFSceneLoader::ParseMaterialsData(void** const pData, int pNumData)
     if (mShaderDataCallback != NULL)
         mShaderDataCallback(shaderList);
 }
-/*void GLTFSceneLoader::ParseLightsData(void** const pData, int pNumData)
+void GLTFSceneLoader::ParseTransformMatrixData(void** const pData, int pNumData)
 {
-    aiLight** lights = (aiLight**)pData;
-    for (int i = 0; i < pNumData; i++)
+    aiNode** nodes                                                  = (aiNode**)pData;
+    for(int i = 0 ; i < pNumData; i++)
     {
-        auto light                                                  = lights[i];
-        cout << light->mColorAmbient.r << endl;
+        auto matrix                                                 = nodes[i]->mTransformation;
+        glm::mat4x4 toMatrix;
+
+        // glm is column major, Assimp matrix is row major
+        toMatrix[0][0] = matrix.a1; toMatrix[1][0] = matrix.a2; toMatrix[2][0] = matrix.a3; toMatrix[3][0] = matrix.a4;
+        toMatrix[0][1] = matrix.b1; toMatrix[1][1] = matrix.b2; toMatrix[2][1] = matrix.b3; toMatrix[3][1] = matrix.b4;
+        toMatrix[0][2] = matrix.c1; toMatrix[1][2] = matrix.c2; toMatrix[2][2] = matrix.c3; toMatrix[3][2] = matrix.c4;
+        toMatrix[0][3] = matrix.d1; toMatrix[1][3] = matrix.d2; toMatrix[2][3] = matrix.d3; toMatrix[3][3] = matrix.d4;
+
+        // send to callback
+        mTransformMatrixCallback(string(nodes[i]->mName.data), toMatrix);
     }
-}*/
+}
 
 ShaderType GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial* matData)
 {
@@ -147,6 +156,8 @@ ShaderType GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial
 #pragma region Private
 void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
 {
+    auto* rootNode                                                  = pScene->mRootNode;
+
     cout << "========== Convert Scene Part ==========" << endl;
     cout << "Animation Count: "                                     << pScene->mNumAnimations << endl;
     cout << "Camera Count: "                                        << pScene->mNumCameras << endl;
@@ -156,11 +167,11 @@ void GLTFSceneLoader::ConvertNode(const aiScene* pScene)
     cout << "Skeleton Count: "                                      << pScene->mNumSkeletons << endl;
     cout << "Textures Count: "                                      << pScene->mNumTextures << endl;
     cout << endl;
-    cout << "Node Children Count: "                                 << pScene->mRootNode->mNumChildren << endl;
+    cout << "Node Children Count: "                                 << rootNode->mNumChildren << endl;
     cout << "========== Convert Scene End ==========" << endl;
 
     ParseMeshsData((void **)pScene->mMeshes,                        pScene->mNumMeshes);
     ParseMaterialsData((void**)pScene->mMaterials,                  pScene->mNumMaterials);
-    //ParseLightsData((void**)pScene->mLights,                        pScene->mNumLights);
+    ParseTransformMatrixData((void**)rootNode->mChildren,           rootNode->mNumChildren);
 }
 #pragma endregion
