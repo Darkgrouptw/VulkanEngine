@@ -111,7 +111,7 @@ void GLTFSceneLoader::ParseTransformMatrixData(void** const pData, int pNumData)
     for(int i = 0 ; i < pNumData; i++)
     {
         auto matrix                                                 = nodes[i]->mTransformation;
-        glm::mat4x4 toMatrix;
+        glm::mat4 toMatrix;
 
         // glm is column major, Assimp matrix is row major
         toMatrix[0][0] = matrix.a1; toMatrix[1][0] = matrix.a2; toMatrix[2][0] = matrix.a3; toMatrix[3][0] = matrix.a4;

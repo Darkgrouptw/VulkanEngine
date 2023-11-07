@@ -17,7 +17,7 @@ void SceneManager::LoadScene(string pSceneName)
 	auto meshDataCallback											= [&](vector<MeshObject*> pData) { LoadedMeshDataCallback(pData); };
 	auto materialDataCallback										= [&](vector<MaterialBase*> pData) { LoadedMaterialDataCallback(pData); };
 	auto shaderDataCallback											= [&](unordered_set<ShaderType> pData) { LoadedShaderDataCallback(pData); };
-	auto tranformMatrixCallback										= [&](string pName, glm::mat4x4 pMatrix) { LoadedTransformMatrixCallback(pName, pMatrix); }; 
+	auto tranformMatrixCallback										= [&](string pName, glm::mat4 pMatrix) { LoadedTransformMatrixCallback(pName, pMatrix); }; 
 #if USE_ASSIMP
 	loader.SetMeshDataCallback(meshDataCallback);
 	loader.SetMaterialDataCallback(materialDataCallback);
@@ -86,20 +86,28 @@ void SceneManager::LoadedShaderDataCallback(unordered_set<ShaderType> pTypes)
 		mShaders.insert({value, shader});
 	}
 }
-void SceneManager::LoadedTransformMatrixCallback(string pName, glm::mat4x4 pMatrix)
+void SceneManager::LoadedTransformMatrixCallback(string pName, glm::mat4 pMatrix)
 {
 	// Parse every data if it is the name
-	glm::vec3 pos();
-	glm::quat rotate();
-	glm::vec3 scale(1.f, 1.f, 1.f);
+	glm::vec3 position;
+	glm::quat rotation;
+	glm::vec3 scale;
 	
 	glm::vec3 skew;
 	glm::vec4 perspective;
+	glm::decompose(pMatrix, scale, rotation, position, skew, perspective);
+	rotation = glm::conjugate(rotation);
+
+	#pragma region Parse Mesh
 	for (const auto mesh : mMeshs)
 		if (mesh->GetName() == pName)
 		{
-			glm::decompose(pMatrix, scale, rotate, pos, skew, perspective);
+			mesh->Position = position;
+			mesh->Rotation = rotation;
+			mesh->Scale = scale;
+			break;
 		}
+	#pragma endregion
 }
 
 // Delete

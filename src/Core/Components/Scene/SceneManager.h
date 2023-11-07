@@ -5,6 +5,8 @@
 #include "Core/Components/Scene/GLTFSceneLoader.h"
 #endif
 
+#include <glm/gtx/matrix_decompose.hpp>
+
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -33,7 +35,7 @@ protected:
 	void LoadedMeshDataCallback(vector<MeshObject*>);														// 整理完 Mesh 之後的 Callback
 	void LoadedMaterialDataCallback(vector<MaterialBase*>);													// 整理完 Material 之後的 Callback
 	void LoadedShaderDataCallback(unordered_set<ShaderType>);												// 整理完 Shader 之後的 Callback
-	void LoadedTransformMatrixCallback(string, glm::mat4x4);												// 整理完 Tranform Matrix 的 Callback
+	void LoadedTransformMatrixCallback(string, glm::mat4);													// 整理完 Tranform Matrix 的 Callback
 
 	// Delete
 	void DeleteMeshData();

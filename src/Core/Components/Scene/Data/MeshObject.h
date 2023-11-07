@@ -11,7 +11,7 @@
 
 using namespace std;
 
-class MeshObject : public ObjectBase, Transform, VulkanInterface
+class MeshObject : public ObjectBase, public Transform, VulkanInterface
 {
 public:
     MeshObject(string, int);
