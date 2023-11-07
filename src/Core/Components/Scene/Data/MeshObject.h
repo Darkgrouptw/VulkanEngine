@@ -23,6 +23,7 @@ public:
     inline void SetMaterialIndex(int pIndex) { mMaterialIndex = pIndex; };
 
     uint32_t GetFaceIndicesSize();
+    glm::mat4 GetModelMatrix();
 
     // Vulkan Stuff
     void CreateVulkanStuff() override;

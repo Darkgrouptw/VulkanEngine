@@ -4,6 +4,8 @@
 #include "Core/Components/Scene/Data/ShaderTypeUtils.hpp"
 #include "Core/Components/Scene/Data/ObjectBase.h"
 #include "Core/Components/Scene/Data/VulkanInterface.h"
+#include "Core/Components/VertexBufferInfo.h"
+#include "Core/Components/UniformBufferInfo.h"
 
 using namespace std;
 

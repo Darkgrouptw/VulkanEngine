@@ -3,8 +3,6 @@
 * Vulkan 系統的 Application
 */
 #include "Common/Common.h"
-#include "Components/VertexBufferInfo.h"
-#include "Components/UniformBufferInfo.h"
 #include "Components/ImGuiWindowManager.h"
 #include "Components/TextureManager.h"
 

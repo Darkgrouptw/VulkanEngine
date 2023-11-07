@@ -29,6 +29,13 @@ uint32_t MeshObject::GetFaceIndicesSize()
 {
 	return mFaceIndices.size();
 }
+glm::mat4 MeshObject::GetModelMatrix()
+{
+	glm::mat4 mat;
+	mat = glm::translate(mat, Position);
+	mat = glm::scale(mat * glm::mat4_cast(Rotation), Scale);
+	return mat;
+}
 
 // Vulkan Stuff
 void MeshObject::CreateVulkanStuff()
