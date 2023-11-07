@@ -86,6 +86,21 @@ void SceneManager::LoadedShaderDataCallback(unordered_set<ShaderType> pTypes)
 		mShaders.insert({value, shader});
 	}
 }
+void SceneManager::LoadedTransformMatrixCallback(string pName, glm::mat4x4 pMatrix)
+{
+	// Parse every data if it is the name
+	glm::vec3 pos();
+	glm::quat rotate();
+	glm::vec3 scale(1.f, 1.f, 1.f);
+	
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	for (const auto mesh : mMeshs)
+		if (mesh->GetName() == pName)
+		{
+			glm::decompose(pMatrix, scale, rotate, pos, skew, perspective);
+		}
+}
 
 // Delete
 void SceneManager::DeleteMeshData()
