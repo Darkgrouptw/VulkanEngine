@@ -54,7 +54,7 @@ void MeshObject::Render(const VkCommandBuffer pCommandBuffer, const VkPipelineLa
 	VkBuffer buffers[]											= { mVertexBuffer };
 	VkDeviceSize offsets[]										= { 0 };
 	vkCmdBindVertexBuffers(pCommandBuffer, 0, 1, buffers, offsets);
-	vkCmdBindIndexBuffer(pCommandBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(pCommandBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 	vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineLayout, 0, 1, &pDescriptorSet, 0, nullptr);
 	vkCmdDrawIndexed(pCommandBuffer, static_cast<uint32_t>(mFaceIndices.size()), 1, 0, 0, 0);
 
@@ -123,7 +123,7 @@ void MeshObject::CreateIndexBuffer()
 	#pragma region Mapping 到 GPU
 	void* data;
 	vkMapMemory(VKHelper::Instance->GetDevice(), stageBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, mVertices.data(), static_cast<size_t>(bufferSize));
+	memcpy(data, mFaceIndices.data(), static_cast<size_t>(bufferSize));
 	vkUnmapMemory(VKHelper::Instance->GetDevice(), stageBufferMemory);
 	#pragma endregion
 	#pragma region Copy Buffer 只給 GPU 用

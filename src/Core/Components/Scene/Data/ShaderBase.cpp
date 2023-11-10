@@ -135,6 +135,7 @@ void ShaderBase::CreateGraphicsPipeline()
 	rasterizationInfo.frontFace										= VK_FRONT_FACE_CLOCKWISE;				// 逆時針的 Vertex，算 Front Face
 	rasterizationInfo.depthBiasEnable								= VK_FALSE;
 	rasterizationInfo.lineWidth										= 1.0;
+	rasterizationInfo.polygonMode									= VK_POLYGON_MODE_FILL;					// 如果要只看 Wireframe，是在這裡設定
 	// 當設定為 False，底下設定就不需要設定
 	//rasterizationInfo.depthBiasConstantFactor 						= 0.0f;
 	//rasterizationInfo.depthBiasClamp 								= 0.0f;
