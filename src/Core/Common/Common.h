@@ -25,6 +25,9 @@ class Common
 public:
     static string GetResourcePath(string);
     static string GetShaderPath(string);
+
+    static glm::vec3 VectorForward() { return glm::vec3(0, 0, 1); };
+    static glm::vec3 VectorUp() { return glm::vec3(0, 1, 0); };
 };
 #endif
 
