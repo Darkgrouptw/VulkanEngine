@@ -19,13 +19,11 @@ public:
     void CreateVulkanStuff() override;
     void DestroyVulkanStuff() override;
     void BindGraphicsPipeline(const VkCommandBuffer);
-
-    // 設定 Uniform Buffer
-    void SetUniformBuffer0(const glm::mat4, const glm::mat4, const glm::mat4);
+    void SetUniformBuffer0(const glm::mat4, const glm::mat4, const glm::mat4);                              // 設定 Uniform Buffer
 
     // Get Vulkan Item
-    inline VkPipelineLayout GetPipelineLayout() { return mPipelineLayout; };
-    inline VkDescriptorSet& GetCurrentDescriptorSet() { return mDescriptorSets[__GetCurrentFrameIndex()]; };
+    inline VkPipelineLayout GetPipelineLayout()                     { return mPipelineLayout; };
+    inline VkDescriptorSet& GetCurrentDescriptorSet()               { return mDescriptorSets[__GetCurrentFrameIndex()]; };
 
 protected:
     ShaderType mType;

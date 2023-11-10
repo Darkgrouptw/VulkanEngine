@@ -30,6 +30,11 @@ void ShaderBase::BindGraphicsPipeline(const VkCommandBuffer pCommandBuffer)
 {
 	vkCmdBindPipeline(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 }
+void ShaderBase::SetUniformBuffer0(const glm::mat4 pProjM, const glm::mat4 pViewM, const glm::mat4 pModelM)
+{
+	UniformBufferInfo tempBuffer{ .ModelMatrix = pModelM, .ViewMatrix = pViewM, .ProjectionMatrix = pProjM };
+	memcpy(mUniformBufferMappedDataList[VKHelper::Instance->GetCurrentFrameIndex()], &tempBuffer, sizeof(UniformBufferInfo));
+}
 #pragma endregion
 #pragma region Protected
 // Vulkan Create Command

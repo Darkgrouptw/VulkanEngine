@@ -23,8 +23,8 @@ public:
     void SetSpecularColor(glm::vec3);
 
     // ShaderType
-    inline ShaderType GetShaderType() { return mShaderType; };
-    void SetShaderType(ShaderType pType) { mShaderType = pType; };
+    inline ShaderType GetShaderType()                               { return mShaderType; };
+    inline void SetShaderType(ShaderType pType)                     { mShaderType = pType; };
 
 protected:
     glm::vec3 mAmbientColor;

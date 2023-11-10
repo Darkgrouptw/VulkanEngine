@@ -11,7 +11,7 @@ public:
     ObjectBase(string);
     ~ObjectBase();
 
-    string GetName() { return mName; };
+    inline string GetName()                                         { return mName; };
 
 protected:
     string mName;

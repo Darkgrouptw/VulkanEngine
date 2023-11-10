@@ -27,6 +27,7 @@ public:
 	void UnloadScene();																						// 卸載
 protected:
 	// SceneData
+	Camera mMainCamera;
 	vector<MeshObject*> mMeshs;
 	vector<MaterialBase*> mMaterials;																		// It's unique ID => like FileID, LocalID, GUID in Unity
 	unordered_map<ShaderType, ShaderBase*> mShaders;

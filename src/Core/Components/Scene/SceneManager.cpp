@@ -50,7 +50,10 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 		#pragma endregion
 		#pragma region Draw Command
 		shader->BindGraphicsPipeline(pCommandBuffer);
-		mesh->GetModelMatrix();
+		glm::mat4 projM;
+		glm::mat4 viewM;
+		glm::mat4 modelM = mesh->GetModelMatrix();
+		shader->SetUniformBuffer0(projM, viewM, modelM);
 
 		mesh->Render(pCommandBuffer, shader->GetPipelineLayout(), set);
 		#pragma endregion

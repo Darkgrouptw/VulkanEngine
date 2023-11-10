@@ -62,10 +62,10 @@ public:
 
 	// Get Vulkan Item
 	static const uint32_t MAX_FRAME_IN_FLIGHTS						= 2;									// 最大上限的 Frame 數
-	inline VkDevice GetDevice() { return mDevice; };														// 抓取 Device
-	inline VkRenderPass GetRenderPass() { return mRenderPass; };											// 抓 RenderPass
+	inline VkDevice GetDevice()										{ return mDevice; };					// 抓取 Device
+	inline VkRenderPass GetRenderPass()								{ return mRenderPass; };				// 抓 RenderPass
 	void GetViewportAndScissor(VkViewport&, VkRect2D&);                        								// 拿 Viewport & Scissor
-	inline uint32_t GetCurrentFrameIndex() { return mCurrentFrameIndex; }									// 抓取目前在話那一個 Frame
+	inline uint32_t GetCurrentFrameIndex()							{ return mCurrentFrameIndex; }			// 抓取目前在話那一個 Frame
 
 private:
 	void InitWindow();																						// 初始化視窗
