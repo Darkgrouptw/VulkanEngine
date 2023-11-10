@@ -4,8 +4,8 @@
 #include "Core/Components/Scene/Data/ShaderTypeUtils.hpp"
 #include "Core/Components/Scene/Data/ObjectBase.h"
 #include "Core/Components/Scene/Data/VulkanInterface.h"
-#include "Core/Components/VertexBufferInfo.h"
-#include "Core/Components/UniformBufferInfo.h"
+#include "Core/Components/Buffer/VertexBufferInfo.h"
+#include "Core/Components/Buffer/UniformBufferInfo.h"
 
 using namespace std;
 
@@ -19,7 +19,11 @@ public:
     void CreateVulkanStuff() override;
     void DestroyVulkanStuff() override;
     void BindGraphicsPipeline(const VkCommandBuffer);
-    void SetUniformBuffer0(const glm::mat4, const glm::mat4, const glm::mat4);                              // 設定 Uniform Buffer
+
+    // 設定 Uniform Buffer
+    // ToDo: 優化這裡的接口
+    void SetUniformBuffer0(const glm::mat4, const glm::mat4, const glm::mat4);
+    void SetUniformBuffer1(const glm::vec4, const glm::vec4, const glm::vec4);
 
     // Get Vulkan Item
     inline VkPipelineLayout GetPipelineLayout()                     { return mPipelineLayout; };
@@ -51,9 +55,9 @@ protected:
     VkPipeline mGraphicsPipeline                                    = NULL;
 
     // Vulkan Uniform Buffer
-    vector<VkBuffer> mUniformBufferList;
-    vector<VkDeviceMemory> mUniformBufferMemoryList;
-    vector<void*> mUniformBufferMappedDataList;
+    vector<vector<VkBuffer>> mUniformBufferList;
+    vector<vector<VkDeviceMemory>> mUniformBufferMemoryList;
+    vector<vector<void*>> mUniformBufferMappedDataList;
 
     // Vulkan Descriptor
     VkDescriptorPool mDescriptorPool                                = NULL;

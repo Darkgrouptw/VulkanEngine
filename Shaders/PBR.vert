@@ -8,19 +8,25 @@ layout (location = 2) in vec4 InVertexColor;
 layout (location = 3) in vec2 InTexcoord;
 
 // Uniform
-layout (binding = 0) uniform UniformBufferInfo {
+layout (binding = 0) uniform MVPBufferInfo {
     mat4 ModelMatrix;
     mat4 ViewMatrix;
     mat4 ProjectionMatrix;
-} UBObject;
+} MVPInfo;
+layout (binding = 1) uniform MaterialBufferInfo{
+    vec4 AmbientColor;
+    vec4 DiffuseColor;
+    vec4 SpecularColor;
+} AmbientColor;
+
 
 // Out
 layout (location = 0) out vec4 FragColor;
 
 void main()
 {
-    gl_Position                                                     = UBObject.ProjectionMatrix * UBObject.ViewMatrix * UBObject.ModelMatrix * vec4(InPosition, 1);
+    gl_Position                                                     = MVPInfo.ProjectionMatrix * MVPInfo.ViewMatrix * MVPInfo.ModelMatrix * vec4(InPosition, 1);
 
     // Send to Fragment
-    FragColor                                                       = vec4(1, 0, 0 ,1);
+    FragColor                                                       = InVertexColor;
 }

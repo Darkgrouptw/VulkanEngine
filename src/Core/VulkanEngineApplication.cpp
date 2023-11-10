@@ -120,7 +120,7 @@ void VulkanEngineApplication::InitWindow()
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);															// 預設初始化設定預設是 OpenGL，所以只用 NO_API
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);																// 設定不做 Resize
 
-	Window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+	Window = glfwCreateWindow(WIDTH, HEIGHT, "Duke Vulkan Engine", nullptr, nullptr);
 	glfwSetWindowUserPointer(Window, this);
 	glfwSetFramebufferSizeCallback(Window, VulkanEngineApplication::ResizeCallback);
 #if defined(VKENGINE_DEBUG_DETAILS)

@@ -30,10 +30,17 @@ void ShaderBase::BindGraphicsPipeline(const VkCommandBuffer pCommandBuffer)
 {
 	vkCmdBindPipeline(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 }
+
+// 設定 Uniform Buffer
 void ShaderBase::SetUniformBuffer0(const glm::mat4 pProjM, const glm::mat4 pViewM, const glm::mat4 pModelM)
 {
-	UniformBufferInfo tempBuffer{ .ModelMatrix = pModelM, .ViewMatrix = pViewM, .ProjectionMatrix = pProjM };
-	memcpy(mUniformBufferMappedDataList[VKHelper::Instance->GetCurrentFrameIndex()], &tempBuffer, sizeof(UniformBufferInfo));
+	MVPBufferInfo tempBuffer{ .ModelMatrix = pModelM, .ViewMatrix = pViewM, .ProjectionMatrix = pProjM };
+	memcpy(mUniformBufferMappedDataList[VKHelper::Instance->GetCurrentFrameIndex()][0], &tempBuffer, sizeof(MVPBufferInfo));
+}
+void ShaderBase::SetUniformBuffer1(const glm::vec4 pAmbient, const glm::vec4 pDiffuse, const glm::vec4 pSpecular)
+{
+	MaterialBufferInfo tempBuffer{ .AmbientColor = pAmbient, .DiffuseColor = pDiffuse, .SpecularColor = pSpecular };
+	memcpy(mUniformBufferMappedDataList[VKHelper::Instance->GetCurrentFrameIndex()][1], &tempBuffer, sizeof(MaterialBufferInfo));
 }
 #pragma endregion
 #pragma region Protected
@@ -231,23 +238,47 @@ void ShaderBase::CreateGraphicsPipeline()
 }
 void ShaderBase::CreateUniformBuffer()
 {
-	VkDeviceSize bufferSize 										= sizeof(UniformBufferInfo);
-
-	mUniformBufferList.resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
-	mUniformBufferMemoryList.resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
-	mUniformBufferMappedDataList.resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
-
-	for (size_t i = 0; i < VKHelper::MAX_FRAME_IN_FLIGHTS; i++)
+	#pragma region 填寫 Buffer Size
+	vector<VkDeviceSize> bufferList;
+	bufferList.push_back(sizeof(MVPBufferInfo));															// Default 必須要有一個 MVP Buffer Info
+	switch (mType)
 	{
-		VKHelper::Instance->CreateBuffer(
-			bufferSize,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			mUniformBufferList[i],
-			mUniformBufferMemoryList[i]);
-
-		vkMapMemory(VKHelper::Instance->GetDevice(), mUniformBufferMemoryList[i], 0, bufferSize, 0, &mUniformBufferMappedDataList[i]);
+	case ShaderType::Unlit:
+		break;
+	case ShaderType::PBR:
+		bufferList.push_back(sizeof(MaterialBufferInfo));
+		break;
+	default:
+		cout << "Uniform Buffer error: (" << magic_enum::enum_name(mType).data() << ") May not be implemented bufferSize";
+		break;
 	}
+	#pragma endregion
+	#pragma region Create Buffer
+	int size = bufferList.size();
+	mUniformBufferList.resize(size);
+	mUniformBufferMemoryList.resize(size);
+	mUniformBufferMappedDataList.resize(size);
+	for (int i = 0; i < size; i++)
+	{
+		VkDeviceSize bufferSize = bufferList[i];
+
+		mUniformBufferList[i].resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
+		mUniformBufferMemoryList[i].resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
+		mUniformBufferMappedDataList[i].resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
+
+		for (size_t j = 0; j < VKHelper::MAX_FRAME_IN_FLIGHTS; j++)
+		{
+			VKHelper::Instance->CreateBuffer(
+				bufferSize,
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				mUniformBufferList[i][j],
+				mUniformBufferMemoryList[i][j]);
+
+			vkMapMemory(VKHelper::Instance->GetDevice(), mUniformBufferMemoryList[i][j], 0, bufferSize, 0, &mUniformBufferMappedDataList[i][j]);
+		}
+	}
+	#pragma endregion
 }
 void ShaderBase::CreateDescriptor()
 {

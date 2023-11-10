@@ -61,6 +61,8 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 		auto currentTime												= chrono::high_resolution_clock::now();
 		float duration													= chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();*/
 		shader->SetUniformBuffer0(projM, viewM, modelM);
+		if (shaderType == ShaderType::PBR)
+
 
 		mesh->Render(pCommandBuffer, shader->GetPipelineLayout(), set);
 		#pragma endregion

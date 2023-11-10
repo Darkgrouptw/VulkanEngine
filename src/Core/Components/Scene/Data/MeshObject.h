@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Common/Common.h"
-#include "Core/Components/VertexBufferInfo.h"
+#include "Core/Components/Buffer/VertexBufferInfo.h"
 #include "Core/Components/Scene/Data/ObjectBase.h"
 #include "Core/Components/Scene/Data/Transform.h"
 #include "Core/Components/Scene/Data/VulkanInterface.h"
