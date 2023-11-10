@@ -56,6 +56,26 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 		glm::mat4 projM 											= mMainCamera->GetProjectMatrix();
 		glm::mat4 viewM												= mMainCamera->GetViewMatrix();
 		glm::mat4 modelM 											= mesh->GetModelMatrix();
+
+		static auto startTime											= chrono::high_resolution_clock::now();
+		auto currentTime												= chrono::high_resolution_clock::now();
+		float duration													= chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
+		// MVP
+		projM											=  glm::perspective(
+																		glm::radians(60.f),
+																		1.777f,
+																		0.1f,
+																		100.f);
+		modelM											= glm::rotate(
+																		glm::mat4(1.f),
+																		duration * glm::radians(90.f),
+																		glm::vec3(0, 0, 1)
+																	);
+		viewM											= glm::lookAt(
+																		glm::vec3(2, 2, 2),
+																		glm::vec3(0, 0, 0),
+																		glm::vec3(0, 0, 1)
+																	);
 		shader->SetUniformBuffer0(projM, viewM, modelM);
 
 		mesh->Render(pCommandBuffer, shader->GetPipelineLayout(), set);
@@ -118,14 +138,14 @@ void SceneManager::LoadedTransformMatrixCallback(string pName, glm::mat4 pMatrix
 	#pragma endregion
 	#pragma region Camera
 	// ToDo: Add multi camera
-	if (pName.find("Camera") != string::npos)
+	/*if (pName.find("Camera") != string::npos)
 	{
 		cout << "Main Camera(" << pName << ") position: " << position.x << " " << position.y << " " << position.z << endl;
 		cout << "Main Camera(" << pName << ") rotation: " << rotation.x << " " << rotation.y << " " << rotation.z << " " << rotation.w << endl;
 		mMainCamera->Position = position;
 		mMainCamera->Rotation = rotation;
 		return;
-	}
+	}*/
 	#pragma endregion
 }
 

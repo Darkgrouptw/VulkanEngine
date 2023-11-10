@@ -337,35 +337,6 @@ void VulkanEngineApplication::ReCreateSwapChain()
 
 	__ResetCameraAspect();
 }
-//void VulkanEngineApplication::UpdateUniformBuffer(uint32_t frameIndex)
-//{
-//	// 只有第一幀的時候設定
-//	//static auto startTime											= chrono::high_resolution_clock::now();
-//	//auto currentTime												= chrono::high_resolution_clock::now();
-//	//float duration													= 0;//chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
-//
-//	//// MVP
-//	//UniformBufferInfo bufferData{};
-//	//bufferData.ModelMatrix											= glm::rotate(
-//	//																	glm::mat4(1.f),
-//	//																	duration * glm::radians(90.f),
-//	//																	glm::vec3(0, 0, 1)
-//	//																);
-//	//bufferData.ViewMatrix											= glm::lookAt(
-//	//																	glm::vec3(2, 2, 2),
-//	//																	glm::vec3(0, 0, 0),
-//	//																	glm::vec3(0, 0, 1)
-//	//																);
-//	//bufferData.ProjectionMatrix										= glm::perspective(
-//	//																	glm::radians(45.f),
-//	//																	(float)SwapChainExtent.width / SwapChainExtent.height,
-//	//																	0.1f,
-//	//																	10.f);
-//	//// 這裡必須要反轉
-//	//// 因為 GLM 是針對 OpenGL 做的 (y 的方向是相反的)
-//	//bufferData.ProjectionMatrix[1][1]								*= -1;
-//	//memcpy(UniformBufferMappedDataList[frameIndex], &bufferData, sizeof(UniformBufferInfo));
-//}
 
 //////////////////////////////////////////////////////////////////////////
 // Helper Init Function
