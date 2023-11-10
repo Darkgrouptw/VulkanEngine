@@ -169,6 +169,7 @@ void VulkanEngineApplication::InitScene()
 {
 	SceneM = new SceneManager();
 	SceneM->LoadScene("Scenes/Teapot/teapot.gltf");
+	__ResetCameraAspect();
 }
 void VulkanEngineApplication::MainLoop()
 {
@@ -333,6 +334,8 @@ void VulkanEngineApplication::ReCreateSwapChain()
 	__CreateSwapChain();
 	__CreateImageViews();
 	__CreateFrameBuffer();
+
+	__ResetCameraAspect();
 }
 //void VulkanEngineApplication::UpdateUniformBuffer(uint32_t frameIndex)
 //{
@@ -685,7 +688,7 @@ void VulkanEngineApplication::__CreateFrameBuffer()
 	SwapChainFrameBuffers.resize(SwapChainImageViews.size());
 	for (size_t i = 0; i < SwapChainImageViews.size(); i++)
 	{
-		VkImageView attachments[] = { SwapChainImageViews[i] };
+		VkImageView attachments[] 									= { SwapChainImageViews[i] };
 		VkFramebufferCreateInfo frameBufferInfo{};
 		frameBufferInfo.sType										= VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		frameBufferInfo.renderPass									= mRenderPass;
@@ -1055,6 +1058,11 @@ void VulkanEngineApplication::__CleanupSwapChain()
 	#pragma region Swap Cahin
 	vkDestroySwapchainKHR(mDevice, SwapChain, nullptr);
 	#pragma endregion
+}
+void VulkanEngineApplication::__ResetCameraAspect() 
+{
+	float aspect = (float)mSwapChainExtent.width / mSwapChainExtent.height;
+	SceneM->SetCameraAspect(aspect);
 }
 
 #if defined(VKENGINE_DEBUG_DETAILS)

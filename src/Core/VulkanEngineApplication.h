@@ -174,6 +174,7 @@ private:
 	VkPresentModeKHR __ChooseSwapPresentMode(const vector<VkPresentModeKHR>&);								// 選擇裝置的 PresentMode
 	VkExtent2D __ChooseSwapExtent(const VkSurfaceCapabilitiesKHR&);											// 根據裝置的 Capabillities 選擇 Extent
 	void __CleanupSwapChain();																				// 清空 SwapChain
+	void __ResetCameraAspect();																				// 重新設定 Camera Aspect
 
 	// 檢查項目
 	vector<const char*> deviceExtensionNames						= 

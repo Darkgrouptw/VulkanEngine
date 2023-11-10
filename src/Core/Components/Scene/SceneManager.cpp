@@ -3,11 +3,14 @@
 #pragma region Public
 SceneManager::SceneManager()
 {
+	mMainCamera = new Camera("Main Camera");
 }
 SceneManager::~SceneManager()
 {
 	DeleteMeshData();
 	DeleteMaterialData();
+
+	delete mMainCamera;
 }
 
 void SceneManager::LoadScene(string pSceneName)
@@ -50,9 +53,9 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 		#pragma endregion
 		#pragma region Draw Command
 		shader->BindGraphicsPipeline(pCommandBuffer);
-		glm::mat4 projM;
-		glm::mat4 viewM;
-		glm::mat4 modelM = mesh->GetModelMatrix();
+		glm::mat4 projM 											= mMainCamera->GetProjectMatrix();
+		glm::mat4 viewM												= mMainCamera->GetViewMatrix();
+		glm::mat4 modelM 											= mesh->GetModelMatrix();
 		shader->SetUniformBuffer0(projM, viewM, modelM);
 
 		mesh->Render(pCommandBuffer, shader->GetPipelineLayout(), set);
@@ -103,15 +106,26 @@ void SceneManager::LoadedTransformMatrixCallback(string pName, glm::mat4 pMatrix
 	glm::decompose(pMatrix, scale, rotation, position, skew, perspective);
 	rotation = glm::conjugate(rotation);
 
-	#pragma region Parse Mesh
+	#pragma region Mesh
 	for (const auto mesh : mMeshs)
 		if (mesh->GetName() == pName)
 		{
 			mesh->Position = position;
 			mesh->Rotation = rotation;
 			mesh->Scale = scale;
-			break;
+			return;
 		}
+	#pragma endregion
+	#pragma region Camera
+	// ToDo: Add multi camera
+	if (pName.find("Camera") != string::npos)
+	{
+		cout << "Main Camera(" << pName << ") position: " << position.x << " " << position.y << " " << position.z << endl;
+		cout << "Main Camera(" << pName << ") rotation: " << rotation.x << " " << rotation.y << " " << rotation.z << " " << rotation.w << endl;
+		mMainCamera->Position = position;
+		mMainCamera->Rotation = rotation;
+		return;
+	}
 	#pragma endregion
 }
 

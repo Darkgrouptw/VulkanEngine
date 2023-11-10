@@ -25,9 +25,11 @@ public:
 	void UpdateScene();																						// 更新資料 (Ex: Uniform Buffer)
 	void RenderScene(const VkCommandBuffer);																// 開始化場景
 	void UnloadScene();																						// 卸載
+
+	inline void SetCameraAspect(const float pAspect) { return mMainCamera->SetCameraAspect(pAspect); };		// 設定 Camera Aspect	
 protected:
 	// SceneData
-	Camera mMainCamera;
+	Camera* mMainCamera;
 	vector<MeshObject*> mMeshs;
 	vector<MaterialBase*> mMaterials;																		// It's unique ID => like FileID, LocalID, GUID in Unity
 	unordered_map<ShaderType, ShaderBase*> mShaders;
