@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Common/Common.h"
-#include "Core/Components/Scene/Data/ShaderType.h"
-#include "Core/Components/Scene/Data/ShaderTypeUtils.hpp"
+#include "Core/Components/Scene/Data/Shader/ShaderType.h"
+#include "Core/Components/Scene/Data/Shader/ShaderTypeUtils.hpp"
 #include "Core/Components/Scene/Data/ObjectBase.h"
 #include "Core/Components/Scene/Data/VulkanInterface.h"
 #include "Core/Components/Buffer/VertexBufferInfo.h"
@@ -12,7 +12,7 @@ using namespace std;
 class ShaderBase : public ObjectBase, VulkanInterface
 {
 public:
-    ShaderBase(const ShaderType);
+    ShaderBase();
     ~ShaderBase();
 
     // Vulkan Stuff
@@ -21,16 +21,16 @@ public:
     void BindGraphicsPipeline(const VkCommandBuffer);
 
     // 設定 Uniform Buffer
-    // ToDo: 優化這裡的接口
-    void SetUniformBuffer0(const glm::mat4, const glm::mat4, const glm::mat4);
-    void SetUniformBuffer1(const glm::vec4, const glm::vec4, const glm::vec4);
+    void SetMVPUniformBuffer(const glm::mat4, const glm::mat4, const glm::mat4);
 
     // Get Vulkan Item
     inline VkPipelineLayout GetPipelineLayout()                     { return mPipelineLayout; };
     inline VkDescriptorSet& GetCurrentDescriptorSet()               { return mDescriptorSets[__GetCurrentFrameIndex()]; };
 
 protected:
-    ShaderType mType;
+    vector<VkDeviceSize> GetVKBufferSize();
+    vector<VkDescriptorPoolSize> GetVKDescriptorSize();
+    virtual ShaderType GetShaderType() = 0;
 
 	// Vulkan Create Command
 	void CreateDescriptorSetLayout();                                                                       // 在建立 GraphicsPipeline 前，要設定好 Uniform Buffer 的設定

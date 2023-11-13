@@ -60,8 +60,11 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 		/*static auto startTime											= chrono::high_resolution_clock::now();
 		auto currentTime												= chrono::high_resolution_clock::now();
 		float duration													= chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();*/
-		shader->SetUniformBuffer0(projM, viewM, modelM);
+		shader->SetMVPUniformBuffer(projM, viewM, modelM);
 		if (shaderType == ShaderType::PBR)
+		{
+
+		}
 
 
 		mesh->Render(pCommandBuffer, shader->GetPipelineLayout(), set);
@@ -96,7 +99,7 @@ void SceneManager::LoadedShaderDataCallback(unordered_set<ShaderType> pTypes)
 	// 所以在這裡執行
 	for (const auto& value : pTypes)
 	{
-		ShaderBase* shader = new ShaderBase(value);
+		ShaderBase* shader = ShaderTypeUtils::GenerateShaderFactory(value);
 		mShaders.insert({value, shader});
 	}
 }

@@ -1,7 +1,7 @@
 #pragma once
 #if USE_ASSIMP
-#include "Core/Components/Scene/Data/ShaderType.h"
-#include "Core/Components/Scene/Data/ShaderTypeUtils.hpp"
+#include "Core/Components/Scene/Data/Shader/ShaderType.h"
+#include "Core/Components/Scene/Data/Shader/ShaderTypeUtils.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -16,7 +16,11 @@ public:
 		switch (mode)
 		{
 		case aiShadingMode_PBR_BRDF:
-			mType = ShaderType::PBR;
+			cout << "Temporary Set To Phone Shading" << endl;
+			mType = ShaderType::PhoneShading;
+			break;
+		case aiShadingMode_Phong:
+			mType = ShaderType::PhoneShading;
 			break;
 		default:
 			mType = ShaderType::Unlit;

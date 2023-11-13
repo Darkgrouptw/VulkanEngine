@@ -1,10 +1,9 @@
-#include "Core/Components/Scene/Data/ShaderBase.h"
+#include "Core/Components/Scene/Data/Shader/ShaderBase.h"
 #include "Core/VulkanEngineApplication.h"
 using VKHelper = VulkanEngineApplication;
 
-ShaderBase::ShaderBase(const ShaderType pType) : ObjectBase(string(magic_enum::enum_name(pType).data()))
+ShaderBase::ShaderBase() : ObjectBase(string(magic_enum::enum_name(GetShaderType()).data()))
 {
-	mType = pType;
 }
 ShaderBase::~ShaderBase()
 {
@@ -32,15 +31,10 @@ void ShaderBase::BindGraphicsPipeline(const VkCommandBuffer pCommandBuffer)
 }
 
 // 設定 Uniform Buffer
-void ShaderBase::SetUniformBuffer0(const glm::mat4 pProjM, const glm::mat4 pViewM, const glm::mat4 pModelM)
+void ShaderBase::SetMVPUniformBuffer(const glm::mat4 pProjM, const glm::mat4 pViewM, const glm::mat4 pModelM)
 {
 	MVPBufferInfo tempBuffer{ .ModelMatrix = pModelM, .ViewMatrix = pViewM, .ProjectionMatrix = pProjM };
 	memcpy(mUniformBufferMappedDataList[VKHelper::Instance->GetCurrentFrameIndex()][0], &tempBuffer, sizeof(MVPBufferInfo));
-}
-void ShaderBase::SetUniformBuffer1(const glm::vec4 pAmbient, const glm::vec4 pDiffuse, const glm::vec4 pSpecular)
-{
-	MaterialBufferInfo tempBuffer{ .AmbientColor = pAmbient, .DiffuseColor = pDiffuse, .SpecularColor = pSpecular };
-	memcpy(mUniformBufferMappedDataList[VKHelper::Instance->GetCurrentFrameIndex()][1], &tempBuffer, sizeof(MaterialBufferInfo));
 }
 #pragma endregion
 #pragma region Protected
@@ -70,8 +64,9 @@ void ShaderBase::CreateGraphicsPipeline()
 	// 讀取檔案並建立 Shader Module
 	#pragma region VkShaderModule
 	vector<char> vertexShader, fragmentShader;
-	vertexShader													= __ReadShaderFile(ShaderTypeUtils::GetVertexShaderPath(mType));
-	fragmentShader													= __ReadShaderFile(ShaderTypeUtils::GetFragmentShaderPath(mType));
+	ShaderType shaderType											= GetShaderType();
+	vertexShader													= __ReadShaderFile(ShaderTypeUtils::GetVertexShaderPath(shaderType));
+	fragmentShader													= __ReadShaderFile(ShaderTypeUtils::GetFragmentShaderPath(shaderType));
 	
 	VkShaderModule vertexModule										= __CreateShaderModule(vertexShader);
 	VkShaderModule fragmentModule									= __CreateShaderModule(fragmentShader);
@@ -239,28 +234,16 @@ void ShaderBase::CreateGraphicsPipeline()
 void ShaderBase::CreateUniformBuffer()
 {
 	#pragma region 填寫 Buffer Size
-	vector<VkDeviceSize> bufferList;
-	bufferList.push_back(sizeof(MVPBufferInfo));															// Default 必須要有一個 MVP Buffer Info
-	switch (mType)
-	{
-	case ShaderType::Unlit:
-		break;
-	case ShaderType::PBR:
-		bufferList.push_back(sizeof(MaterialBufferInfo));
-		break;
-	default:
-		cout << "Uniform Buffer error: (" << magic_enum::enum_name(mType).data() << ") May not be implemented bufferSize";
-		break;
-	}
+	vector<VkDeviceSize> bufferList									= GetVKBufferSize();
 	#pragma endregion
 	#pragma region Create Buffer
-	int size = bufferList.size();
+	int size														= bufferList.size();
 	mUniformBufferList.resize(size);
 	mUniformBufferMemoryList.resize(size);
 	mUniformBufferMappedDataList.resize(size);
 	for (int i = 0; i < size; i++)
 	{
-		VkDeviceSize bufferSize = bufferList[i];
+		VkDeviceSize bufferSize										= bufferList[i];
 
 		mUniformBufferList[i].resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
 		mUniformBufferMemoryList[i].resize(VKHelper::MAX_FRAME_IN_FLIGHTS);
@@ -282,14 +265,14 @@ void ShaderBase::CreateUniformBuffer()
 }
 void ShaderBase::CreateDescriptor()
 {
-	VkDevice device = VKHelper::Instance->GetDevice();
 	#pragma region Descriptor Pool
-	vector<VkDescriptorPoolSize> poolSizes{};
-	VkDescriptorPoolSize poolSize{};
+	VkDevice device													= VKHelper::Instance->GetDevice();
+	vector<VkDeviceSize> bufferList									= GetVKBufferSize();
+	vector<VkDescriptorPoolSize> poolSizes							= GetVKDescriptorSize();
+	/*VkDescriptorPoolSize poolSize{};
 	poolSize.type													= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSize.descriptorCount										= VKHelper::MAX_FRAME_IN_FLIGHTS;
-
-	poolSizes.push_back(poolSize);
+	poolSizes.push_back(bufferList.size());*/
 	//poolSizes.push_back(TextM->CreateDescriptorPoolSize(MAX_FRAME_IN_FLIGHTS));
 
 	VkDescriptorPoolCreateInfo poolInfo{};
@@ -314,41 +297,40 @@ void ShaderBase::CreateDescriptor()
 	if (vkAllocateDescriptorSets(device, &allocateInfo, mDescriptorSets.data()) != VK_SUCCESS)
 		throw runtime_error("Failed to create allocate descriptor set");
 
-	for (size_t i = 0; i < VKHelper::MAX_FRAME_IN_FLIGHTS; i++)
-	{
-		VkDescriptorBufferInfo bufferinfo{};
-		bufferinfo.buffer											= mUniformBufferList[i];
-		bufferinfo.offset											= 0;
-		bufferinfo.range											= sizeof(UniformBufferInfo);
+	for (size_t i = 0; i < bufferList.size(); i++)
+		for (size_t j = 0; j < VKHelper::MAX_FRAME_IN_FLIGHTS; j++)
+		{
+			VkDescriptorBufferInfo bufferinfo{};
+			bufferinfo.buffer											= mUniformBufferList[i][j];
+			bufferinfo.offset											= 0;
+			bufferinfo.range											= bufferList[i];
 
-		//VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
+			//VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
 
-		vector<VkWriteDescriptorSet> descriptorWrites;
-		//descriptorWrites.resize(2);
-		descriptorWrites.resize(1);
-		#pragma region Uniform Buffer
-		descriptorWrites[0].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet									= mDescriptorSets[i];
-		descriptorWrites[0].dstBinding								= 0;
-		descriptorWrites[0].dstArrayElement							= 0;
+			vector<VkWriteDescriptorSet> descriptorWrites;
+			#pragma region Uniform Buffer
+			descriptorWrites[0].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[0].dstSet									= mDescriptorSets[i];
+			descriptorWrites[0].dstBinding								= 0;
+			descriptorWrites[0].dstArrayElement							= 0;
 
-		descriptorWrites[0].descriptorType							= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount							= 1;
-		descriptorWrites[0].pBufferInfo								= &bufferinfo;
-		#pragma endregion
-		/*#pragma region Image Info
-		descriptorWrites[1].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet									= DescriptorSets[i];
-		descriptorWrites[1].dstBinding								= 1;
-		descriptorWrites[1].dstArrayElement							= 0;
+			descriptorWrites[0].descriptorType							= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[0].descriptorCount							= 1;
+			descriptorWrites[0].pBufferInfo								= &bufferinfo;
+			#pragma endregion
+			/*#pragma region Image Info
+			descriptorWrites[1].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[1].dstSet									= DescriptorSets[i];
+			descriptorWrites[1].dstBinding								= 1;
+			descriptorWrites[1].dstArrayElement							= 0;
 
-		descriptorWrites[1].descriptorType							= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[1].descriptorCount							= 1;
-		descriptorWrites[1].pImageInfo								= &imageInfo;
-		#pragma endregion*/
+			descriptorWrites[1].descriptorType							= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrites[1].descriptorCount							= 1;
+			descriptorWrites[1].pImageInfo								= &imageInfo;
+			#pragma endregion*/
 
-		vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-	}
+			vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+		}
 	#pragma endregion
 }
 
@@ -364,11 +346,13 @@ void ShaderBase::DestroyGraphicsPipeline()
 void ShaderBase::DestroyUniformBuffer()
 {
 	VkDevice device = VKHelper::Instance->GetDevice();
-	for (size_t i = 0; i < VKHelper::MAX_FRAME_IN_FLIGHTS; i++)
-	{
-		vkDestroyBuffer(device, mUniformBufferList[i], nullptr);
-		vkFreeMemory(device, mUniformBufferMemoryList[i], nullptr);
-	}
+	vector<VkDeviceSize> bufferList = GetVKBufferSize();
+	for(size_t i = 0; i < bufferList.size(); i++)
+		for (size_t j = 0; j < VKHelper::MAX_FRAME_IN_FLIGHTS; j++)
+		{
+			vkDestroyBuffer(device, mUniformBufferList[i][j], nullptr);
+			vkFreeMemory(device, mUniformBufferMemoryList[i][j], nullptr);
+		}
 }
 void ShaderBase::DestroyDescriptor()
 {

@@ -3,7 +3,7 @@
 #include "Core/Components/Scene/Data/Transform.h"
 #include "Core/Components/Scene/Data/MeshObject.h"
 #include "Core/Components/Scene/Data/MaterialBase.h"
-#include "Core/Components/Scene/Data/ShaderBase.h"
+#include "Core/Components/Scene/Data/Shader/ShaderBase.h"
 
 #include <string>
 #include <vector>

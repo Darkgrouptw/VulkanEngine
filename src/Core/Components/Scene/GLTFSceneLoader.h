@@ -3,7 +3,7 @@
 #include "Core/Common/Common.h"
 #include "Core/Components/Scene/ISceneLoader.h"
 #include "Core/Components/Scene/Data/Camera.h"
-#include "Core/Components/Scene/Data/GLTFShaderTypeUtils.hpp"
+#include "Core/Components/Scene/Data/Shader/GLTFShaderTypeUtils.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>

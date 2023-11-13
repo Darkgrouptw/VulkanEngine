@@ -76,6 +76,7 @@ set (MAGIC_ENUM_INCLUDE_DIR "Plugins/magic_enum/include")
 file(GLOB_RECURSE SOURCE_FILES
     "src/*.h"
     "src/*.cpp"
+    "src/*.hpp"
 )
 
 # message("All Files: ${SOURCE_FILES}")
