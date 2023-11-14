@@ -2,7 +2,7 @@
 #include "Core/Common/Common.h"
 #include "Core/Components/Scene/Data/Shader/ShaderType.h"
 #include "Core/Components/Scene/Data/Shader/UnlitShader.h"
-//#include "Core/Components/Scene/Data/Shader/PhoneShadingShader.h"
+#include "Core/Components/Scene/Data/Shader/PhoneShadingShader.h"
 
 #include <magic_enum.hpp>
 #include <string>

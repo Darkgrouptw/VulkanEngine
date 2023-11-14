@@ -1,7 +1,6 @@
 #pragma once
 #include "Core/Common/Common.h"
 #include "Core/Components/Scene/Data/Shader/ShaderType.h"
-#include "Core/Components/Scene/Data/Shader/ShaderTypeUtils.hpp"
 #include "Core/Components/Scene/Data/ObjectBase.h"
 #include "Core/Components/Scene/Data/VulkanInterface.h"
 #include "Core/Components/Buffer/VertexBufferInfo.h"
@@ -12,8 +11,8 @@ using namespace std;
 class ShaderBase : public ObjectBase, VulkanInterface
 {
 public:
-    ShaderBase();
-    ~ShaderBase();
+    ShaderBase(string);
+    virtual ~ShaderBase() = default;
 
     // Vulkan Stuff
     void CreateVulkanStuff() override;

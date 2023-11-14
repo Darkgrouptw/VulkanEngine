@@ -6,4 +6,7 @@ class UnlitShader : public ShaderBase
 public:
 	UnlitShader();
 	~UnlitShader();
+
+protected:
+    ShaderType GetShaderType() override;
 };

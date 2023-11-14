@@ -2,10 +2,7 @@
 #include "Core/VulkanEngineApplication.h"
 using VKHelper = VulkanEngineApplication;
 
-ShaderBase::ShaderBase() : ObjectBase(string(magic_enum::enum_name(GetShaderType()).data()))
-{
-}
-ShaderBase::~ShaderBase()
+ShaderBase::ShaderBase(string pName) : ObjectBase(pName)
 {
 }
 
@@ -308,6 +305,7 @@ void ShaderBase::CreateDescriptor()
 	if (vkAllocateDescriptorSets(device, &allocateInfo, mDescriptorSets.data()) != VK_SUCCESS)
 		throw runtime_error("Failed to create allocate descriptor set");
 
+	int size
 	for (size_t i = 0; i < bufferList.size(); i++)
 		for (size_t j = 0; j < VKHelper::MAX_FRAME_IN_FLIGHTS; j++)
 		{
@@ -319,6 +317,7 @@ void ShaderBase::CreateDescriptor()
 			//VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
 
 			vector<VkWriteDescriptorSet> descriptorWrites;
+			descriptorWrites.resize(bufferList.size());
 			#pragma region Uniform Buffer
 			descriptorWrites[0].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[0].dstSet									= mDescriptorSets[i];
