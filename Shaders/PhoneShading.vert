@@ -17,7 +17,7 @@ layout (binding = 1) uniform MaterialBufferInfo{
     vec4 AmbientColor;
     vec4 DiffuseColor;
     vec4 SpecularColor;
-} AmbientColor;
+} MatInfo;
 
 
 // Out

@@ -8,5 +8,9 @@ public:
 	~PhoneShadingShader();
 
 protected:
+	vector<VkDescriptorSetLayoutBinding> GetVKDescriptorSetLayoutBinding() override;
+	vector<VkDeviceSize> GetVKBufferSize() override;
+	vector<VkDescriptorPoolSize> GetVKDescriptorSize();
+	vector<VkWriteDescriptorSet> GetVKWriteDescriptorSet(size_t);
 	ShaderType GetShaderType() override;
 };

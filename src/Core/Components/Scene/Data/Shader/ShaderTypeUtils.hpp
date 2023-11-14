@@ -22,6 +22,7 @@ public:
 		case ShaderType::Unlit:
 			return new UnlitShader();
 			break;
+		case ShaderType::PhoneShading:
 		case ShaderType::PBR:
 			return new PhoneShadingShader();
 			break;

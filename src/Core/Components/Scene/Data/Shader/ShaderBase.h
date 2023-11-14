@@ -27,9 +27,17 @@ public:
     inline VkDescriptorSet& GetCurrentDescriptorSet()               { return mDescriptorSets[__GetCurrentFrameIndex()]; };
 
 protected:
-    vector<VkDeviceSize> GetVKBufferSize();
-    vector<VkDescriptorPoolSize> GetVKDescriptorSize();
+    virtual vector<VkDescriptorSetLayoutBinding> GetVKDescriptorSetLayoutBinding() = 0;                     // 要建立 Layout 的時候使用
+    virtual vector<VkDeviceSize> GetVKBufferSize() = 0;                                                     // 拿總共需要件多少 Buffer Size
+    virtual vector<VkDescriptorPoolSize> GetVKDescriptorSize() = 0;                                         // 建立 Descriptor Pool Size
+    virtual vector<VkWriteDescriptorSet> GetVKWriteDescriptorSet(size_t) = 0;                               // 建立 WriteDescriptorSet
     virtual ShaderType GetShaderType() = 0;
+
+    // 共同設定給下方人用的 Function
+    vector<VkDescriptorSetLayoutBinding> CommonSetupForGetVKDescriptorSetLayoutBinding();
+    vector<VkDeviceSize> CommonSetupForGetVKBufferSize();
+    vector<VkDescriptorPoolSize> CommonSetupForGetVKDescriptorSize();
+    vector<VkWriteDescriptorSet> CommonSetupForGetVKWriteDescriptorSet(size_t);
 
 	// Vulkan Create Command
 	void CreateDescriptorSetLayout();                                                                       // 在建立 GraphicsPipeline 前，要設定好 Uniform Buffer 的設定

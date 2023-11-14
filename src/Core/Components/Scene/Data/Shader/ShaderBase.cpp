@@ -31,28 +31,12 @@ void ShaderBase::BindGraphicsPipeline(const VkCommandBuffer pCommandBuffer)
 void ShaderBase::SetMVPUniformBuffer(const glm::mat4 pProjM, const glm::mat4 pViewM, const glm::mat4 pModelM)
 {
 	MVPBufferInfo tempBuffer{ .ModelMatrix = pModelM, .ViewMatrix = pViewM, .ProjectionMatrix = pProjM };
-	memcpy(mUniformBufferMappedDataList[VKHelper::Instance->GetCurrentFrameIndex()][0], &tempBuffer, sizeof(MVPBufferInfo));
+	memcpy(mUniformBufferMappedDataList[0][VKHelper::Instance->GetCurrentFrameIndex()], &tempBuffer, sizeof(MVPBufferInfo));
 }
 #pragma endregion
 #pragma region Protected
-vector<VkDeviceSize> ShaderBase::GetVKBufferSize()
-{
-	vector<VkDeviceSize> sizeList;
-	sizeList.push_back(sizeof(MVPBufferInfo));
-	return sizeList;
-}
-vector<VkDescriptorPoolSize> ShaderBase::GetVKDescriptorSize()
-{
-	vector<VkDescriptorPoolSize> poolSizes;
-	VkDescriptorPoolSize mvpPoolSize{};
-	mvpPoolSize.type												= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	mvpPoolSize.descriptorCount										= VKHelper::MAX_FRAME_IN_FLIGHTS;
-	poolSizes.push_back(mvpPoolSize);
-	return poolSizes;
-}
-
-// Vulkan Create Command
-void ShaderBase::CreateDescriptorSetLayout()
+// 共同設定給下方人用的 Function
+vector<VkDescriptorSetLayoutBinding> ShaderBase::CommonSetupForGetVKDescriptorSetLayoutBinding()
 {
 	VkDescriptorSetLayoutBinding uboLayout{};
 	uboLayout.binding 												= 0;
@@ -63,7 +47,68 @@ void ShaderBase::CreateDescriptorSetLayout()
 	// ToDo: Add Texture
 	//auto textureLayout												= TextM->CreateDescriptorSetLayout();
 	//vector<VkDescriptorSetLayoutBinding> bindings					= { uboLayout, textureLayout };
-	vector<VkDescriptorSetLayoutBinding> bindings					= { uboLayout };
+	vector<VkDescriptorSetLayoutBinding> bindings;
+	bindings.push_back(uboLayout);
+	return bindings;
+}
+vector<VkDeviceSize> ShaderBase::CommonSetupForGetVKBufferSize()
+{
+	vector<VkDeviceSize> sizeList;
+	sizeList.push_back(sizeof(MVPBufferInfo));
+	return sizeList;
+}
+vector<VkDescriptorPoolSize> ShaderBase::CommonSetupForGetVKDescriptorSize()
+{
+	vector<VkDescriptorPoolSize> poolSizes;
+	VkDescriptorPoolSize mvpPoolSize{};
+	mvpPoolSize.type												= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	mvpPoolSize.descriptorCount										= VKHelper::MAX_FRAME_IN_FLIGHTS;
+	poolSizes.push_back(mvpPoolSize);
+	return poolSizes;
+}
+vector<VkWriteDescriptorSet> ShaderBase::CommonSetupForGetVKWriteDescriptorSet(size_t pFrameIndex)
+{
+	VkDescriptorBufferInfo bufferinfo{};
+	bufferinfo.buffer												= mUniformBufferList[0][pFrameIndex];
+	bufferinfo.offset												= 0;
+	bufferinfo.range												= sizeof(MVPBufferInfo);
+
+	vector<VkWriteDescriptorSet> descriptorWrites;
+	VkWriteDescriptorSet descriptorSet{};
+	descriptorSet.sType												= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorSet.dstSet											= mDescriptorSets[pFrameIndex];
+	descriptorSet.dstBinding										= 0;
+	descriptorSet.dstArrayElement									= 0;
+
+	descriptorSet.descriptorType									= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorSet.descriptorCount									= 1;
+	descriptorSet.pBufferInfo										= &bufferinfo;
+	descriptorWrites.push_back(descriptorSet);
+	/*
+	//VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
+
+	vector<VkWriteDescriptorSet> descriptorWrites;
+	descriptorWrites.resize(bufferList.size());
+	#pragma region Uniform Buffer
+
+	#pragma endregion
+	#pragma region Image Info
+	descriptorWrites[1].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[1].dstSet									= DescriptorSets[i];
+	descriptorWrites[1].dstBinding								= 1;
+	descriptorWrites[1].dstArrayElement							= 0;
+
+	descriptorWrites[1].descriptorType							= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrites[1].descriptorCount							= 1;
+	descriptorWrites[1].pImageInfo								= &imageInfo;
+	#pragma endregion*/
+	return descriptorWrites;
+}
+
+// Vulkan Create Command
+void ShaderBase::CreateDescriptorSetLayout()
+{
+	vector<VkDescriptorSetLayoutBinding> bindings					= GetVKDescriptorSetLayoutBinding();
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType												= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutInfo.bindingCount											= bindings.size();
@@ -305,42 +350,11 @@ void ShaderBase::CreateDescriptor()
 	if (vkAllocateDescriptorSets(device, &allocateInfo, mDescriptorSets.data()) != VK_SUCCESS)
 		throw runtime_error("Failed to create allocate descriptor set");
 
-	int size
-	for (size_t i = 0; i < bufferList.size(); i++)
-		for (size_t j = 0; j < VKHelper::MAX_FRAME_IN_FLIGHTS; j++)
-		{
-			VkDescriptorBufferInfo bufferinfo{};
-			bufferinfo.buffer											= mUniformBufferList[i][j];
-			bufferinfo.offset											= 0;
-			bufferinfo.range											= bufferList[i];
-
-			//VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
-
-			vector<VkWriteDescriptorSet> descriptorWrites;
-			descriptorWrites.resize(bufferList.size());
-			#pragma region Uniform Buffer
-			descriptorWrites[0].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet									= mDescriptorSets[i];
-			descriptorWrites[0].dstBinding								= 0;
-			descriptorWrites[0].dstArrayElement							= 0;
-
-			descriptorWrites[0].descriptorType							= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrites[0].descriptorCount							= 1;
-			descriptorWrites[0].pBufferInfo								= &bufferinfo;
-			#pragma endregion
-			/*#pragma region Image Info
-			descriptorWrites[1].sType									= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[1].dstSet									= DescriptorSets[i];
-			descriptorWrites[1].dstBinding								= 1;
-			descriptorWrites[1].dstArrayElement							= 0;
-
-			descriptorWrites[1].descriptorType							= VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[1].descriptorCount							= 1;
-			descriptorWrites[1].pImageInfo								= &imageInfo;
-			#pragma endregion*/
-
-			vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-		}
+	for (size_t i = 0; i < VKHelper::MAX_FRAME_IN_FLIGHTS; i++)
+	{
+		vector<VkWriteDescriptorSet> descriptorWrites				= GetVKWriteDescriptorSet(i);
+		vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+	}
 	#pragma endregion
 }
 
