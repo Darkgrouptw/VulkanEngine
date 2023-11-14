@@ -38,6 +38,22 @@ void ShaderBase::SetMVPUniformBuffer(const glm::mat4 pProjM, const glm::mat4 pVi
 }
 #pragma endregion
 #pragma region Protected
+vector<VkDeviceSize> ShaderBase::GetVKBufferSize()
+{
+	vector<VkDeviceSize> sizeList;
+	sizeList.push_back(sizeof(MVPBufferInfo));
+	return sizeList;
+}
+vector<VkDescriptorPoolSize> ShaderBase::GetVKDescriptorSize()
+{
+	vector<VkDescriptorPoolSize> poolSizes;
+	VkDescriptorPoolSize mvpPoolSize{};
+	mvpPoolSize.type												= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	mvpPoolSize.descriptorCount										= VKHelper::MAX_FRAME_IN_FLIGHTS;
+	poolSizes.push_back(mvpPoolSize);
+	return poolSizes;
+}
+
 // Vulkan Create Command
 void ShaderBase::CreateDescriptorSetLayout()
 {
@@ -269,11 +285,6 @@ void ShaderBase::CreateDescriptor()
 	VkDevice device													= VKHelper::Instance->GetDevice();
 	vector<VkDeviceSize> bufferList									= GetVKBufferSize();
 	vector<VkDescriptorPoolSize> poolSizes							= GetVKDescriptorSize();
-	/*VkDescriptorPoolSize poolSize{};
-	poolSize.type													= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize.descriptorCount										= VKHelper::MAX_FRAME_IN_FLIGHTS;
-	poolSizes.push_back(bufferList.size());*/
-	//poolSizes.push_back(TextM->CreateDescriptorPoolSize(MAX_FRAME_IN_FLIGHTS));
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType													= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
