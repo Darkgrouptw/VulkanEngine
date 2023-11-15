@@ -68,10 +68,10 @@ vector<VkDescriptorPoolSize> ShaderBase::CommonSetupForGetVKDescriptorSize()
 }
 vector<VkWriteDescriptorSet> ShaderBase::CommonSetupForGetVKWriteDescriptorSet(size_t pFrameIndex)
 {
-	VkDescriptorBufferInfo bufferinfo{};
-	bufferinfo.buffer												= mUniformBufferList[0][pFrameIndex];
-	bufferinfo.offset												= 0;
-	bufferinfo.range												= sizeof(MVPBufferInfo);
+	VkDescriptorBufferInfo *bufferinfo								= new VkDescriptorBufferInfo{};
+	bufferinfo->buffer												= mUniformBufferList[0][pFrameIndex];
+	bufferinfo->offset												= 0;
+	bufferinfo->range												= sizeof(MVPBufferInfo);
 
 	vector<VkWriteDescriptorSet> descriptorWrites;
 	VkWriteDescriptorSet descriptorSet{};
@@ -82,7 +82,7 @@ vector<VkWriteDescriptorSet> ShaderBase::CommonSetupForGetVKWriteDescriptorSet(s
 
 	descriptorSet.descriptorType									= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorSet.descriptorCount									= 1;
-	descriptorSet.pBufferInfo										= &bufferinfo;
+	descriptorSet.pBufferInfo										= bufferinfo;
 	descriptorWrites.push_back(descriptorSet);
 	/*
 	//VkDescriptorImageInfo imageInfo								= TextM->CreateDescriptorImageInfo();
@@ -354,6 +354,10 @@ void ShaderBase::CreateDescriptor()
 	{
 		vector<VkWriteDescriptorSet> descriptorWrites				= GetVKWriteDescriptorSet(i);
 		vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+
+		// Delete Buffer Info
+		for (int j = 0; j < descriptorWrites.size(); j++)
+			delete descriptorWrites[j].pBufferInfo;
 	}
 	#pragma endregion
 }

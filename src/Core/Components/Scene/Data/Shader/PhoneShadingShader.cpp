@@ -18,7 +18,7 @@ vector<VkDescriptorSetLayoutBinding> PhoneShadingShader::GetVKDescriptorSetLayou
 	matLayout.binding 												= 1;
 	matLayout.descriptorType										= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;	// Uniform Buffer
 	matLayout.descriptorCount										= 1;
-	matLayout.stageFlags											= VK_SHADER_STAGE_VERTEX_BIT;			// ¨Ï¥Î©ó Vertex Buffer ªº Uniform Buffer
+	matLayout.stageFlags											= VK_SHADER_STAGE_VERTEX_BIT;			// ä½¿ç”¨æ–¼ Vertex Buffer çš„ Uniform Buffer
 
 	vector<VkDescriptorSetLayoutBinding> bindings					= CommonSetupForGetVKDescriptorSetLayoutBinding();
 	bindings.push_back(matLayout);
@@ -41,10 +41,10 @@ vector<VkDescriptorPoolSize> PhoneShadingShader::GetVKDescriptorSize()
 }
 vector<VkWriteDescriptorSet> PhoneShadingShader::GetVKWriteDescriptorSet(size_t pFrameIndex)
 {
-	VkDescriptorBufferInfo bufferinfo{};
-	bufferinfo.buffer												= mUniformBufferList[1][pFrameIndex];
-	bufferinfo.offset												= 0;
-	bufferinfo.range												= sizeof(MaterialBufferInfo);
+	VkDescriptorBufferInfo* bufferinfo								= new VkDescriptorBufferInfo{};
+	bufferinfo->buffer												= mUniformBufferList[1][pFrameIndex];
+	bufferinfo->offset												= 0;
+	bufferinfo->range												= sizeof(MaterialBufferInfo);
 	
     vector<VkWriteDescriptorSet> descriptorWrites                   = CommonSetupForGetVKWriteDescriptorSet(pFrameIndex);
     VkWriteDescriptorSet descriptorSet{};
@@ -55,7 +55,7 @@ vector<VkWriteDescriptorSet> PhoneShadingShader::GetVKWriteDescriptorSet(size_t 
 
 	descriptorSet.descriptorType                                    = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorSet.descriptorCount                                   = 1;
-	descriptorSet.pBufferInfo                                       = &bufferinfo;
+	descriptorSet.pBufferInfo                                       = bufferinfo;
 	descriptorWrites.push_back(descriptorSet);
 	return descriptorWrites;
 }
