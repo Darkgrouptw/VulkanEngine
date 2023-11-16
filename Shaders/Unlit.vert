@@ -1,4 +1,5 @@
 #version 450
+#include "Common.glsl"
 
 // In
 // 可以使用 devc2 => double vec
@@ -15,12 +16,14 @@ layout (binding = 0) uniform UniformBufferInfo {
 } UBObject;
 
 // Out
-layout (location = 0) out vec4 FragColor;
+layout (location = 0) out vec4 OutVertexColor;
+layout (location = 1) out vec3 OutBaryCoordinate;
 
 void main()
 {
     gl_Position                                                     = UBObject.ProjectionMatrix * UBObject.ViewMatrix * UBObject.ModelMatrix * vec4(InPosition, 1);
 
     // Send to Fragment
-    FragColor                                                       = vec4(1, 0, 0, 1);
+    OutVertexColor                                                  = InVertexColor;
+    OutBaryCoordinate                                               = BaryCoordPos[gl_VertexIndex % 3];
 }
