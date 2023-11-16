@@ -800,7 +800,7 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 	renderPassInfo.renderArea.extent								= mSwapChainExtent;
 
 	// Clear
-	VkClearValue clearColor 										= {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+	VkClearValue clearColor 										= {{{ 0.2f, 0.84f, 0.8f, 1 }}};
 	renderPassInfo.clearValueCount									= 1;
 	renderPassInfo.pClearValues										= &clearColor;
 

@@ -57,9 +57,11 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 		glm::mat4 viewM												= mMainCamera->GetViewMatrix();
 		glm::mat4 modelM 											= mesh->GetModelMatrix();
 
-		/*static auto startTime											= chrono::high_resolution_clock::now();
-		auto currentTime												= chrono::high_resolution_clock::now();
-		float duration													= chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();*/
+		static auto startTime										= chrono::high_resolution_clock::now();
+		auto currentTime											= chrono::high_resolution_clock::now();
+		float duration												= chrono::duration<float, chrono::seconds::period>(currentTime - startTime).count();
+		modelM = glm::rotate(modelM, duration, glm::vec3(0, 1, 0));
+
 		shader->SetMVPUniformBuffer(projM, viewM, modelM);
 		if (shaderType == ShaderType::PBR)
 		{

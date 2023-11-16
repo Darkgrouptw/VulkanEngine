@@ -22,5 +22,5 @@ void main()
     gl_Position                                                     = UBObject.ProjectionMatrix * UBObject.ViewMatrix * UBObject.ModelMatrix * vec4(InPosition, 1);
 
     // Send to Fragment
-    FragColor                                                       = InVertexColor;
+    FragColor                                                       = vec4(1, 0, 0, 1);
 }

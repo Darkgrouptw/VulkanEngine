@@ -15,10 +15,11 @@ public:
 	{
 		switch (mode)
 		{
-		case aiShadingMode_PBR_BRDF:
+		/*case aiShadingMode_PBR_BRDF:
 			mType = ShaderType::PBR;
-			break;
+			break;*/
 		default:
+			cout << "Temporary set shader type to Unlit" << endl;
 			mType = ShaderType::Unlit;
 			break;
 		}

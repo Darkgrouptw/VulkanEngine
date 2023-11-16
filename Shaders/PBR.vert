@@ -13,7 +13,6 @@ layout (binding = 0) uniform MVPBufferInfo {
     mat4 ViewMatrix;
     mat4 ProjectionMatrix;
 } MVPInfo;
-layout (binding = 1) vec3 LightPos;
 
 
 // Out
@@ -27,7 +26,7 @@ void main()
     gl_Position                                                     = MVPInfo.ProjectionMatrix * MVPInfo.ViewMatrix * worldPos;
 
     // Send to Fragment
-    OutWorldSpaceNormal                                             = normalize((MVPInfo.ModelMatrix * vec4(InNormal, 1)).xyz);
+    /*OutWorldSpaceNormal                                             = normalize((MVPInfo.ModelMatrix * vec4(InNormal, 1)).xyz);
     OutVertexColor                                                  = InVertexColor;
-    ToLightVector                                                   = normalize(LightPos - worldPos);
+    ToLightVector                                                   = normalize(LightPos - worldPos);*/
 }

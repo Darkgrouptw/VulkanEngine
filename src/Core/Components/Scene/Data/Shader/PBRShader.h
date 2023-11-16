@@ -16,7 +16,7 @@ public:
 protected:
 	vector<VkDescriptorSetLayoutBinding> GetVKDescriptorSetLayoutBinding() override;
 	vector<VkDeviceSize> GetVKBufferSize() override;
-	vector<VkDescriptorPoolSize> GetVKDescriptorSize();
-	vector<VkWriteDescriptorSet> GetVKWriteDescriptorSet(size_t);
+	vector<VkDescriptorPoolSize> GetVKDescriptorSize() override;
+	vector<VkWriteDescriptorSet> GetVKWriteDescriptorSet(size_t) override;
 	ShaderType GetShaderType() override;
 };
