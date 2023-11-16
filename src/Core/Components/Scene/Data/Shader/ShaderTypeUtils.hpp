@@ -2,7 +2,7 @@
 #include "Core/Common/Common.h"
 #include "Core/Components/Scene/Data/Shader/ShaderType.h"
 #include "Core/Components/Scene/Data/Shader/UnlitShader.h"
-#include "Core/Components/Scene/Data/Shader/PhoneShadingShader.h"
+#include "Core/Components/Scene/Data/Shader/PBRShader.h"
 
 #include <magic_enum.hpp>
 #include <string>
@@ -22,9 +22,8 @@ public:
 		case ShaderType::Unlit:
 			return new UnlitShader();
 			break;
-		case ShaderType::PhoneShading:
 		case ShaderType::PBR:
-			return new PhoneShadingShader();
+			return new PBRShader();
 			break;
 		default:
 			break;

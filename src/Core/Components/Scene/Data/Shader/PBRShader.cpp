@@ -20,20 +20,28 @@ void PBRShader::SetMatUniformBuffer(const glm::vec4 pAmbient, const glm::vec4 pD
 #pragma region Protected
 vector<VkDescriptorSetLayoutBinding> PBRShader::GetVKDescriptorSetLayoutBinding()
 {
-	//
+	// Scene Buffer Info
+	VkDescriptorSetLayoutBinding sceneLayout{};
+	sceneLayout.binding 											= 1;
+	sceneLayout.descriptorType										= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;	// Uniform Buffer
+	sceneLayout.descriptorCount										= 1;
+	sceneLayout.stageFlags											= VK_SHADER_STAGE_VERTEX_BIT;			// 使用於 Vertex Buffer 的 Uniform Buffer
+	
 	VkDescriptorSetLayoutBinding matLayout{};
-	matLayout.binding 												= 1;
+	matLayout.binding 												= 2;
 	matLayout.descriptorType										= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;	// Uniform Buffer
 	matLayout.descriptorCount										= 1;
-	matLayout.stageFlags											= VK_SHADER_STAGE_VERTEX_BIT;			// 使用於 Vertex Buffer 的 Uniform Buffer
+	matLayout.stageFlags											= VK_SHADER_STAGE_FRAGMENT_BIT;			// 使用於 Fragment Buffer 的 Uniform Buffer
 
 	vector<VkDescriptorSetLayoutBinding> bindings					= CommonSetupForGetVKDescriptorSetLayoutBinding();
+	bindings.push_back(sceneLayout);
 	bindings.push_back(matLayout);
 	return bindings;
 }
 vector<VkDeviceSize> PBRShader::GetVKBufferSize()
 {
     vector<VkDeviceSize> bufferSize                                 = CommonSetupForGetVKBufferSize();
+	bufferSize.push_back(sizeof(SceneBufferInfo));
     bufferSize.push_back(sizeof(MaterialBufferInfo));
     return bufferSize;
 }

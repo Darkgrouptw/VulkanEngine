@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/Components/Scene/Data/Shader/ShaderBase.h"
+#include "Core/Components/Buffer/SceneBufferInfo.h"
 #include "Core/Components/Buffer/MaterialBufferInfo.h"
 
 class PBRShader : public ShaderBase
@@ -9,6 +10,7 @@ public:
 	~PBRShader();
 
 	// 設定 Uniform Buffer
+	//void SetSceneUniformBuffer();
 	void SetMatUniformBuffer(const glm::vec4, const glm::vec4, const glm::vec4);
 
 protected:
