@@ -13,20 +13,21 @@ layout (binding = 0) uniform MVPBufferInfo {
     mat4 ViewMatrix;
     mat4 ProjectionMatrix;
 } MVPInfo;
-layout (binding = 1) uniform MaterialBufferInfo{
-    vec4 AmbientColor;
-    vec4 DiffuseColor;
-    vec4 SpecularColor;
-} MatInfo;
+layout (binding = 1) vec3 LightPos;
 
 
 // Out
-layout (location = 0) out vec4 FragColor;
+layout (location = 0) out vec3 OutWorldSpaceNormal;
+layout (location = 1) out vec4 OutVertexColor;
+layout (location = 2) out vec3 ToLightVector;
 
 void main()
 {
-    gl_Position                                                     = MVPInfo.ProjectionMatrix * MVPInfo.ViewMatrix * MVPInfo.ModelMatrix * vec4(InPosition, 1);
+    vec4 worldPos                                                   = MVPInfo.ModelMatrix * vec4(InPosition, 1);
+    gl_Position                                                     = MVPInfo.ProjectionMatrix * MVPInfo.ViewMatrix * worldPos;
 
     // Send to Fragment
-    FragColor                                                       = InVertexColor;
+    OutWorldSpaceNormal                                             = normalize((MVPInfo.ModelMatrix * vec4(InNormal, 1)).xyz);
+    OutVertexColor                                                  = InVertexColor;
+    ToLightVector                                                   = normalize(LightPos - worldPos);
 }

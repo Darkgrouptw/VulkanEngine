@@ -63,7 +63,8 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 		shader->SetMVPUniformBuffer(projM, viewM, modelM);
 		if (shaderType == ShaderType::PBR)
 		{
-
+			PhoneShadingShader* phoneShading						= (PhoneShadingShader*)shader;
+			phoneShading->SetMatUniformBuffer(mat->GetAmbientColor(), mat->GetDiffuseColor(), mat->GetSpecularColor());
 		}
 
 

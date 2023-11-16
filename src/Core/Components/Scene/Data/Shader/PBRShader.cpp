@@ -1,19 +1,26 @@
-#include "Core/Components/Scene/Data/Shader/PhoneShadingShader.h"
+#include "Core/Components/Scene/Data/Shader/PBRShader.h"
 #include "Core/VulkanEngineApplication.h"
 using VKHelper = VulkanEngineApplication;
 
-PhoneShadingShader::PhoneShadingShader() : ShaderBase(string(magic_enum::enum_name(GetShaderType()).data()))
+PBRShader::PBRShader() : ShaderBase(string(magic_enum::enum_name(GetShaderType()).data()))
 {
 }
-PhoneShadingShader::~PhoneShadingShader()
+PBRShader::~PBRShader()
 {
 }
 
 #pragma region Public
+// 設定 Uniform Buffer
+void PBRShader::SetMatUniformBuffer(const glm::vec4 pAmbient, const glm::vec4 pDiffuse, const glm::vec4 pSpecular)
+{
+	MaterialBufferInfo bufferInfo{ .AmbientColor = pAmbient, .DiffuseColor = pDiffuse, .SpecularColor = pSpecular };
+	memcpy(mUniformBufferMappedDataList[1][VKHelper::Instance->GetCurrentFrameIndex()], &bufferInfo, sizeof(MaterialBufferInfo));
+}
 #pragma endregion
 #pragma region Protected
-vector<VkDescriptorSetLayoutBinding> PhoneShadingShader::GetVKDescriptorSetLayoutBinding()
+vector<VkDescriptorSetLayoutBinding> PBRShader::GetVKDescriptorSetLayoutBinding()
 {
+	//
 	VkDescriptorSetLayoutBinding matLayout{};
 	matLayout.binding 												= 1;
 	matLayout.descriptorType										= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;	// Uniform Buffer
@@ -24,13 +31,13 @@ vector<VkDescriptorSetLayoutBinding> PhoneShadingShader::GetVKDescriptorSetLayou
 	bindings.push_back(matLayout);
 	return bindings;
 }
-vector<VkDeviceSize> PhoneShadingShader::GetVKBufferSize()
+vector<VkDeviceSize> PBRShader::GetVKBufferSize()
 {
     vector<VkDeviceSize> bufferSize                                 = CommonSetupForGetVKBufferSize();
     bufferSize.push_back(sizeof(MaterialBufferInfo));
     return bufferSize;
 }
-vector<VkDescriptorPoolSize> PhoneShadingShader::GetVKDescriptorSize()
+vector<VkDescriptorPoolSize> PBRShader::GetVKDescriptorSize()
 {
 	vector<VkDescriptorPoolSize> poolSizes                          = CommonSetupForGetVKDescriptorSize();
     VkDescriptorPoolSize matPoolSize{};
@@ -39,7 +46,7 @@ vector<VkDescriptorPoolSize> PhoneShadingShader::GetVKDescriptorSize()
 	poolSizes.push_back(matPoolSize);
     return poolSizes;
 }
-vector<VkWriteDescriptorSet> PhoneShadingShader::GetVKWriteDescriptorSet(size_t pFrameIndex)
+vector<VkWriteDescriptorSet> PBRShader::GetVKWriteDescriptorSet(size_t pFrameIndex)
 {
 	VkDescriptorBufferInfo* bufferinfo								= new VkDescriptorBufferInfo{};
 	bufferinfo->buffer												= mUniformBufferList[1][pFrameIndex];
@@ -59,8 +66,8 @@ vector<VkWriteDescriptorSet> PhoneShadingShader::GetVKWriteDescriptorSet(size_t 
 	descriptorWrites.push_back(descriptorSet);
 	return descriptorWrites;
 }
-ShaderType PhoneShadingShader::GetShaderType()
+ShaderType PBRShader::GetShaderType()
 {
-    return ShaderType::PhoneShading;
+    return ShaderType::PBR;
 }
 #pragma endregion

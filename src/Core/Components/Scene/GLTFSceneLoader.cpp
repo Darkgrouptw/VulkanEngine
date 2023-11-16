@@ -128,13 +128,13 @@ ShaderType GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial
 {
     // There are a lot of property
     // https://assimp-docs.readthedocs.io/en/latest/usage/use_the_lib.html#c-api
-    aiColor3D tempColor(0.f, 0.f, 0.f);
+    aiColor4D tempColor(0.f, 0.f, 0.f, 0.f);
     if (matData->Get(AI_MATKEY_COLOR_AMBIENT, tempColor) == AI_SUCCESS)
-        mat->SetAmbientColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
+        mat->SetAmbientColor(glm::vec4(tempColor.r, tempColor.g, tempColor.b, tempColor.a));
     if (matData->Get(AI_MATKEY_COLOR_DIFFUSE, tempColor) == AI_SUCCESS)
-        mat->SetDiffuseColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
+        mat->SetDiffuseColor(glm::vec4(tempColor.r, tempColor.g, tempColor.b, tempColor.a));
     if (matData->Get(AI_MATKEY_COLOR_SPECULAR, tempColor) == AI_SUCCESS)
-        mat->SetSpecularColor(glm::vec3(tempColor.r, tempColor.g, tempColor.b));
+        mat->SetSpecularColor(glm::vec4(tempColor.r, tempColor.g, tempColor.b, tempColor.a));
 
     // Get Shader Model
     aiShadingMode mode = aiShadingMode::aiShadingMode_Unlit;
@@ -144,7 +144,7 @@ ShaderType GLTFSceneLoader::GetAllGLTFMaterialData(MaterialBase* mat, aiMaterial
     /*for (int i = 0; i < matData->mNumProperties; i++)
     {
         auto prop = matData->mProperties[i];
-        cout << "Material prop: " << prop->mKey.C_Str() << " value: " << (int)(*(prop->mData)) << " length: " << prop->mDataLengthx  << endl;
+        cout << "Material prop: " << prop->mKey.C_Str() << " value: " << (int)(*(prop->mData)) << " length: " << prop->mDataLength  << endl;
     }*/
     
     // Transfor to Shader Type

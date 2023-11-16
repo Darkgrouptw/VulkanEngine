@@ -14,22 +14,22 @@ public:
     MaterialBase(string);
     ~MaterialBase();
 
-    glm::vec3 GetAmbientColor();
-    glm::vec3 GetDiffuseColor();
-    glm::vec3 GetSpecularColor();
+    inline glm::vec4 GetAmbientColor()                              { return mAmbientColor; };
+    inline glm::vec4 GetDiffuseColor()                              { return mDiffuseColor; };
+    inline glm::vec4 GetSpecularColor()                             { return mSpecularColor; };
 
-    void SetAmbientColor(glm::vec3);
-    void SetDiffuseColor(glm::vec3);
-    void SetSpecularColor(glm::vec3);
+    inline void SetAmbientColor(const glm::vec4 pColor)             { mAmbientColor = pColor; };
+    inline void SetDiffuseColor(const glm::vec4 pColor)             { mDiffuseColor = pColor; };
+    inline void SetSpecularColor(const glm::vec4 pColor)            { mSpecularColor = pColor; };
 
     // ShaderType
     inline ShaderType GetShaderType()                               { return mShaderType; };
     inline void SetShaderType(ShaderType pType)                     { mShaderType = pType; };
 
 protected:
-    glm::vec3 mAmbientColor;
-    glm::vec3 mDiffuseColor;
-    glm::vec3 mSpecularColor;
+    glm::vec4 mAmbientColor;
+    glm::vec4 mDiffuseColor;
+    glm::vec4 mSpecularColor;
 
     ShaderType mShaderType                                          = ShaderType::Unlit;
     //bool mIsTwoSide                                                 = false;

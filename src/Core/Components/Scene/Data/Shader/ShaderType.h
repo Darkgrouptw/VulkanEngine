@@ -2,6 +2,5 @@
 enum class ShaderType
 {
 	Unlit = 0,
-	PhoneShading,
 	PBR,
 };

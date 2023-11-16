@@ -1,11 +1,15 @@
 #pragma once
 #include "Core/Components/Scene/Data/Shader/ShaderBase.h"
+#include "Core/Components/Buffer/MaterialBufferInfo.h"
 
-class PhoneShadingShader : public ShaderBase
+class PBRShader : public ShaderBase
 {
 public:
-	PhoneShadingShader();
-	~PhoneShadingShader();
+	PBRShader();
+	~PBRShader();
+
+	// 設定 Uniform Buffer
+	void SetMatUniformBuffer(const glm::vec4, const glm::vec4, const glm::vec4);
 
 protected:
 	vector<VkDescriptorSetLayoutBinding> GetVKDescriptorSetLayoutBinding() override;

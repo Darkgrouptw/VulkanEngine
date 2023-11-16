@@ -16,11 +16,7 @@ public:
 		switch (mode)
 		{
 		case aiShadingMode_PBR_BRDF:
-			cout << "Temporary Set To Phone Shading" << endl;
-			mType = ShaderType::PhoneShading;
-			break;
-		case aiShadingMode_Phong:
-			mType = ShaderType::PhoneShading;
+			mType = ShaderType::PBR;
 			break;
 		default:
 			mType = ShaderType::Unlit;
