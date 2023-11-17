@@ -10,7 +10,7 @@ public:
 	~PBRShader();
 
 	// 設定 Uniform Buffer
-	//void SetSceneUniformBuffer();
+	void SetSceneUniformBuffer(const glm::vec3, const glm::vec3);
 	void SetMatUniformBuffer(const glm::vec4, const glm::vec4, const glm::vec4);
 
 protected:

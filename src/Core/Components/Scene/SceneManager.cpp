@@ -35,8 +35,7 @@ void SceneManager::LoadScene(string pSceneName)
 void SceneManager::UpdateScene()
 {
 	// 這裡有做幾件事
-	// 1. 更新全場景的物件
-	// 2. 更新Uniform Buffer
+	// 1. 更新全場景的物件的資訊
 }
 void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 {
@@ -66,6 +65,7 @@ void SceneManager::RenderScene(const VkCommandBuffer pCommandBuffer)
 		if (shaderType == ShaderType::PBR)
 		{
 			PBRShader* pbrShader									= (PBRShader*)shader;
+			pbrShader->SetSceneUniformBuffer(mMainCamera->Position, glm::vec3(0, 10, 10));
 			pbrShader->SetMatUniformBuffer(mat->GetAmbientColor(), mat->GetDiffuseColor(), mat->GetSpecularColor());
 		}
 

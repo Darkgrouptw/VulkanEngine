@@ -9,4 +9,5 @@ struct SceneBufferInfo
 {
 	alignas(16) glm::vec3 CameraPos;
 	alignas(16) glm::vec3 LightPos;
+	alignas(16) glm::vec3 LightColor;
 };

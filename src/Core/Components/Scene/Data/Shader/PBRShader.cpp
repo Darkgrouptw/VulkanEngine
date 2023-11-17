@@ -11,10 +11,15 @@ PBRShader::~PBRShader()
 
 #pragma region Public
 // 設定 Uniform Buffer
+void PBRShader::SetSceneUniformBuffer(const glm::vec3 pCameraPos, const glm::vec3 pLightPos)
+{
+	SceneBufferInfo bufferInfo{ .CameraPos = pCameraPos };
+	memcpy(mUniformBufferMappedDataList[1][VKHelper::Instance->GetCurrentFrameIndex()], &bufferInfo, sizeof(SceneBufferInfo));
+}
 void PBRShader::SetMatUniformBuffer(const glm::vec4 pAmbient, const glm::vec4 pDiffuse, const glm::vec4 pSpecular)
 {
 	MaterialBufferInfo bufferInfo{ .AmbientColor = pAmbient, .DiffuseColor = pDiffuse, .SpecularColor = pSpecular };
-	memcpy(mUniformBufferMappedDataList[1][VKHelper::Instance->GetCurrentFrameIndex()], &bufferInfo, sizeof(MaterialBufferInfo));
+	memcpy(mUniformBufferMappedDataList[2][VKHelper::Instance->GetCurrentFrameIndex()], &bufferInfo, sizeof(MaterialBufferInfo));
 }
 #pragma endregion
 #pragma region Protected
@@ -56,22 +61,40 @@ vector<VkDescriptorPoolSize> PBRShader::GetVKDescriptorSize()
 }
 vector<VkWriteDescriptorSet> PBRShader::GetVKWriteDescriptorSet(size_t pFrameIndex)
 {
-	VkDescriptorBufferInfo* bufferinfo								= new VkDescriptorBufferInfo{};
-	bufferinfo->buffer												= mUniformBufferList[1][pFrameIndex];
-	bufferinfo->offset												= 0;
-	bufferinfo->range												= sizeof(MaterialBufferInfo);
-	
-    vector<VkWriteDescriptorSet> descriptorWrites                   = CommonSetupForGetVKWriteDescriptorSet(pFrameIndex);
-    VkWriteDescriptorSet descriptorSet{};
-	descriptorSet.sType											    = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorSet.dstSet											= mDescriptorSets[pFrameIndex];
-	descriptorSet.dstBinding										= 1;
-	descriptorSet.dstArrayElement								    = 0;
+    vector<VkWriteDescriptorSet> descriptorWrites					= CommonSetupForGetVKWriteDescriptorSet(pFrameIndex);
+	{
+		VkDescriptorBufferInfo* bufferinfo							= new VkDescriptorBufferInfo{};
+		bufferinfo->buffer											= mUniformBufferList[1][pFrameIndex];
+		bufferinfo->offset											= 0;
+		bufferinfo->range											= sizeof(SceneBufferInfo);
 
-	descriptorSet.descriptorType                                    = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorSet.descriptorCount                                   = 1;
-	descriptorSet.pBufferInfo                                       = bufferinfo;
-	descriptorWrites.push_back(descriptorSet);
+		VkWriteDescriptorSet descriptorSet{};
+		descriptorSet.sType											= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorSet.dstSet										= mDescriptorSets[pFrameIndex];
+		descriptorSet.dstBinding									= 1;
+		descriptorSet.dstArrayElement								= 0;
+
+		descriptorSet.descriptorType								= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorSet.descriptorCount								= 1;
+		descriptorSet.pBufferInfo									= bufferinfo;
+		descriptorWrites.push_back(descriptorSet);
+	}
+	{
+		VkDescriptorBufferInfo* bufferinfo							= new VkDescriptorBufferInfo{};
+		bufferinfo->buffer											= mUniformBufferList[2][pFrameIndex];
+		bufferinfo->offset											= 0;
+		bufferinfo->range											= sizeof(MaterialBufferInfo);
+
+		VkWriteDescriptorSet descriptorSet{};
+		descriptorSet.sType											= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorSet.dstSet										= mDescriptorSets[pFrameIndex];
+		descriptorSet.dstBinding									= 1;
+		descriptorSet.dstArrayElement								= 0;
+
+		descriptorSet.descriptorType								= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorSet.descriptorCount								= 1;
+		descriptorSet.pBufferInfo									= bufferinfo;
+	}
 	return descriptorWrites;
 }
 ShaderType PBRShader::GetShaderType()
