@@ -1,5 +1,5 @@
 #version 450
-#include "Common.glsl"
+#include "CommonFragment.glsl"
 
 // In
 layout (location = 0) in vec4 VertexColor;
@@ -7,7 +7,6 @@ layout (location = 1) in vec3 BaryCoordinate;
 
 // Out
 layout (location = 0) out vec4 OutColor;
-
 
 void main()
 {

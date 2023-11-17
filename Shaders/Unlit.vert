@@ -1,5 +1,5 @@
 #version 450
-#include "Common.glsl"
+#include "CommonVertex.glsl"
 
 // In
 // 可以使用 devc2 => double vec
