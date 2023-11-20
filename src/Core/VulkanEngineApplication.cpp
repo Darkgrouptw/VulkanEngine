@@ -137,7 +137,7 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateSwapChain();
 	__CreateImageViews();
 	__CreateRenderPass();
-	__CreateFrameBuffer();
+	__CreateFrameBuffers();
 	__CreateCommandPool();
 	__CreateTextureImage();
 	__CreateIMGUIDescriptor();
@@ -334,7 +334,7 @@ void VulkanEngineApplication::ReCreateSwapChain()
 	__CleanupSwapChain();
 	__CreateSwapChain();
 	__CreateImageViews();
-	__CreateFrameBuffer();
+	__CreateFrameBuffers();
 
 	__ResetCameraAspect();
 }
@@ -655,7 +655,7 @@ void VulkanEngineApplication::__CreateRenderPass()
 	if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
 		throw runtime_error("Failed to create render pass");
 }
-void VulkanEngineApplication::__CreateFrameBuffer()
+void VulkanEngineApplication::__CreateFrameBuffers()
 {
 	SwapChainFrameBuffers.resize(SwapChainImageViews.size());
 	for (size_t i = 0; i < SwapChainImageViews.size(); i++)
@@ -673,6 +673,10 @@ void VulkanEngineApplication::__CreateFrameBuffer()
 		if (vkCreateFramebuffer(mDevice, &frameBufferInfo, nullptr, &SwapChainFrameBuffers[i]) != VK_SUCCESS)
 			throw runtime_error("Failed to create framebuffer");
 	}
+}
+void VulkanEngineApplication::__CreateDepthBuffers()
+{
+	
 }
 void VulkanEngineApplication::__CreateCommandPool()
 {
