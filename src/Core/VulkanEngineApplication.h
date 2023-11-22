@@ -87,19 +87,19 @@ private:
 
 	// Vulkan
 	VkInstance mInstance;
-	VkDebugUtilsMessengerEXT DebugMessenger;
-	VkSurfaceKHR Surface;
-	VkPhysicalDevice PhysiclaDevice									= VK_NULL_HANDLE;
+	VkDebugUtilsMessengerEXT mDebugMessenger;
+	VkSurfaceKHR mSurface;
+	VkPhysicalDevice mPhysiclaDevice								= VK_NULL_HANDLE;
 	VkDevice mDevice;
 	
 	// Vulkan Pipeline
 	VkRenderPass mRenderPass;
-	VkCommandPool CommandPool;
+	VkCommandPool mCommandPool;
 
 	// Vulkan Queue
-	QueueFamilyIndices Indices;
-	VkQueue GraphicsQueue;
-	VkQueue PresentQueue;
+	QueueFamilyIndices mIndices;
+	VkQueue mGraphicsQueue;
+	VkQueue mPresentQueue;
 
 	// Vulkan SwapChain
 	VkSwapchainKHR SwapChain;
@@ -166,7 +166,14 @@ private:
 	bool __IsDeviceSuitable(VkPhysicalDevice);																// 是否為合適的顯卡
 	QueueFamilyIndices __FindQueueFamilies(VkPhysicalDevice);												// 找顯卡中 對應 Queue 的 Indices
 	uint32_t __FindMemoryType(uint32_t, VkMemoryPropertyFlags);												// 找到合適的 Memory Type
+	VkImageView __CreateImageView(VkImage, VkFormat, VkImageAspectFlags);									// 輔助產生 ImageView
+
+	//////////////////////////////////////////////////////////////////////////
+	// Texture Format
+	//////////////////////////////////////////////////////////////////////////
+	VkFormat __GetDepthFormat();																			// 拿 Depth Texture Format
 	VkFormat __FindSupportedTextureFormat(const vector<VkFormat>&, VkImageTiling, VkFormatFeatureFlags);	// 找到合適並支援的 Texture Format
+	bool __HasStencilComponent(VkFormat);
 
 	// 產生 Single Time Command
 	VkCommandBuffer __BeginSingleTimeCommand();

@@ -147,23 +147,23 @@ void VulkanEngineApplication::InitVulkan()
 	// 初始化 IMGUI
 	ImGui_ImplVulkan_InitInfo initInfo{};
 	initInfo.Instance 												= mInstance;
-	initInfo.PhysicalDevice											= PhysiclaDevice;
+	initInfo.PhysicalDevice											= mPhysiclaDevice;
 	initInfo.Device													= mDevice;
-	initInfo.QueueFamily											= Indices.GraphicsFamily.value();
-	initInfo.Queue													= GraphicsQueue;
+	initInfo.QueueFamily											= mIndices.GraphicsFamily.value();
+	initInfo.Queue													= mGraphicsQueue;
 	initInfo.PipelineCache											= VK_NULL_HANDLE;
 	initInfo.DescriptorPool											= mImGuiDescriptorPool;
 	initInfo.Subpass												= 0;
 
-	SwapChainSupportDetails details 								= __QuerySwapChainSupport(PhysiclaDevice);
+	SwapChainSupportDetails details 								= __QuerySwapChainSupport(mPhysiclaDevice);
 	initInfo.MinImageCount											= details.Capbilities.minImageCount;
 	initInfo.ImageCount												= SwapChainImages.size();
 	initInfo.MSAASamples											= VK_SAMPLE_COUNT_1_BIT;
 	initInfo.Allocator												= nullptr;
 	initInfo.CheckVkResultFn										= nullptr;
 	ImGuiWindowM													= new ImGuiWindowManager(Window, &initInfo, mRenderPass);
-	ImGuiWindowM->FetchDeviceName(PhysiclaDevice);
-	ImGuiWindowM->UploadFont(CommandPool, GraphicsQueue, mDevice);
+	ImGuiWindowM->FetchDeviceName(mPhysiclaDevice);
+	ImGuiWindowM->UploadFont(mCommandPool, mGraphicsQueue, mDevice);
 }
 void VulkanEngineApplication::InitScene()
 {
@@ -201,7 +201,7 @@ void VulkanEngineApplication::Destroy()
 	}
 	#pragma endregion
 	#pragma region Command Pool
-	vkDestroyCommandPool(mDevice, CommandPool, nullptr);
+	vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 	#pragma endregion
 	#pragma region IMGUI Descriptor Set Layout
 	vkDestroyDescriptorPool(mDevice, mImGuiDescriptorPool, nullptr);
@@ -213,13 +213,13 @@ void VulkanEngineApplication::Destroy()
 	vkDestroyDevice(mDevice, nullptr);
 	#pragma endregion
 	#pragma region Surface
-	vkDestroySurfaceKHR(mInstance, Surface, nullptr);
+	vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
 	#pragma endregion
 	#pragma region Debug Messager
 	// 清掉 Vulkan 相關東西
 #if defined(VKENGINE_DEBUG_DETAILS)
 	if (EnabledValidationLayer)
-		DestroyDebugUtilsMessengerEXT(mInstance, DebugMessenger, nullptr);
+		DestroyDebugUtilsMessengerEXT(mInstance, mDebugMessenger, nullptr);
 #endif
 	#pragma endregion
 	#pragma region Instance
@@ -288,7 +288,7 @@ void VulkanEngineApplication::DrawFrame()
 	submitInfo.signalSemaphoreCount									= static_cast<uint32_t>(sizeof(signalSemphores) / sizeof(VkSemaphore));
 	submitInfo.pSignalSemaphores									= signalSemphores;
 
-	if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, InFlightFences[mCurrentFrameIndex]) != VK_SUCCESS)
+	if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, InFlightFences[mCurrentFrameIndex]) != VK_SUCCESS)
 		throw runtime_error("Failed to submit draw command buffer");
 	#pragma endregion
 	#pragma region 5.
@@ -303,7 +303,7 @@ void VulkanEngineApplication::DrawFrame()
 	presentInfo.pSwapchains											= swapChains;
 	presentInfo.pImageIndices										= &imageIndex;
 	
-	result															= vkQueuePresentKHR(GraphicsQueue, &presentInfo);
+	result															= vkQueuePresentKHR(mGraphicsQueue, &presentInfo);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mFrameBufferResized)
 	{
 		mFrameBufferResized = false;
@@ -429,14 +429,14 @@ void VulkanEngineApplication::__SetupDebugMessenger()
 	{
 		VkDebugUtilsMessengerCreateInfoEXT createInfo{};
        	__PopulateDebugMessengerCreateInfo(createInfo);
-		if (CreateDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &DebugMessenger) != VK_SUCCESS)
+		if (CreateDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS)
     		throw std::runtime_error("Failed to set up debug messenger");
 	}
 #endif
 }
 void VulkanEngineApplication::__CreateSurface()
 {
-	VkResult result = glfwCreateWindowSurface(mInstance, Window, nullptr, &Surface);
+	VkResult result = glfwCreateWindowSurface(mInstance, Window, nullptr, &mSurface);
 	if (result != VK_SUCCESS)
 		throw runtime_error("Failed to create window surface");
 }
@@ -454,19 +454,19 @@ void VulkanEngineApplication::__PickPhysicalDevice()
 	for(const auto& device: devices)
 		if (__IsDeviceSuitable(device))
 		{
-			PhysiclaDevice = device;
+			mPhysiclaDevice = device;
 			break;
 		}
 	
-	if (PhysiclaDevice == VK_NULL_HANDLE)
+	if (mPhysiclaDevice == VK_NULL_HANDLE)
 		throw runtime_error("No Suitable GPUs");
 }
 void VulkanEngineApplication::__CreateLogicalDevice()
 {
-	Indices															= __FindQueueFamilies(PhysiclaDevice);
+	mIndices															= __FindQueueFamilies(mPhysiclaDevice);
 
 	vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	set<uint32_t> uniqueQueueFamilies 								= {Indices.GraphicsFamily.value(), Indices.PresentFamily.value()};
+	set<uint32_t> uniqueQueueFamilies 								= {mIndices.GraphicsFamily.value(), mIndices.PresentFamily.value()};
 
 	float queuePriority 											= 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -506,14 +506,14 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 #endif
 
 	// 產生裝置完後，設定 Graphics Queue
-	if (vkCreateDevice(PhysiclaDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS)
+	if (vkCreateDevice(mPhysiclaDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS)
 		throw runtime_error("Failed to create logical device");
-    vkGetDeviceQueue(mDevice, Indices.GraphicsFamily.value(), 0, &GraphicsQueue);
-    vkGetDeviceQueue(mDevice, Indices.PresentFamily.value(), 0, &PresentQueue);
+    vkGetDeviceQueue(mDevice, mIndices.GraphicsFamily.value(), 0, &mGraphicsQueue);
+    vkGetDeviceQueue(mDevice, mIndices.PresentFamily.value(), 0, &mPresentQueue);
 }
 void VulkanEngineApplication::__CreateSwapChain()
 {
-	SwapChainSupportDetails details 								= __QuerySwapChainSupport(PhysiclaDevice);
+	SwapChainSupportDetails details 								= __QuerySwapChainSupport(mPhysiclaDevice);
 	VkSurfaceFormatKHR surfaceFormat 								= __ChooseSwapSurfaceFormat(details.Formats);
 	VkPresentModeKHR presentMode 									= __ChooseSwapPresentMode(details.PresentModes);
 	VkExtent2D extent												= __ChooseSwapExtent(details.Capbilities);
@@ -530,7 +530,7 @@ void VulkanEngineApplication::__CreateSwapChain()
 	// 建立 SwapChain
 	VkSwapchainCreateInfoKHR createInfo{};
 	createInfo.sType												= VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface												= Surface;
+	createInfo.surface												= mSurface;
 
 	// 傳入上方的設定
 	createInfo.imageColorSpace										= surfaceFormat.colorSpace;
@@ -542,10 +542,10 @@ void VulkanEngineApplication::__CreateSwapChain()
 	// 其他細節設定
 	createInfo.imageArrayLayers										= 1;									// 如果要使用 Stereo 就會需要兩個 (兩個輸出)，不然一般都是一個
 	createInfo.imageUsage											= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;	// 輸出的圖，可以做什麼使用的設定
-	uint32_t queueFamilyIndices[]									= { Indices.GraphicsFamily.value(), Indices.PresentFamily.value() };
+	uint32_t queueFamilyIndices[]									= { mIndices.GraphicsFamily.value(), mIndices.PresentFamily.value() };
 	
 	// 判斷 Graphics & Present 是否在同一個 Queue
-	if (Indices.GraphicsFamily.value() != Indices.PresentFamily.value())
+	if (mIndices.GraphicsFamily.value() != mIndices.PresentFamily.value())
 	{
 		// 不同 Queue 可以互相 share Images
 		createInfo.imageSharingMode 								= VK_SHARING_MODE_CONCURRENT;
@@ -579,31 +579,8 @@ void VulkanEngineApplication::__CreateImageViews()
 {
 	SwapChainImageViews.resize(SwapChainImages.size());
 	for (size_t i = 0; i < SwapChainImages.size(); i++)
-	{
-		// 相同於 TextureManager::CreateImageView
-		VkImageViewCreateInfo createInfo{};
-		createInfo.sType 											= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image											= SwapChainImages[i];
-		createInfo.viewType											= VK_IMAGE_VIEW_TYPE_2D;
-		createInfo.format											= SwapChainImageFormat;
+		SwapChainImageViews[i] = __CreateImageView(SwapChainImages[i], SwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 
-		// Image 的 Range 設定 0 ~ 1
-		createInfo.components.r										= VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.g										= VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.b										= VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.a										= VK_COMPONENT_SWIZZLE_IDENTITY;
-
-		// 其他用途的設定 (Mipmap 等)
-		createInfo.subresourceRange.aspectMask						= VK_IMAGE_ASPECT_COLOR_BIT;
-		createInfo.subresourceRange.baseMipLevel					= 0;
-		createInfo.subresourceRange.levelCount						= 1;
-		createInfo.subresourceRange.baseArrayLayer					= 0;
-		createInfo.subresourceRange.layerCount						= 1;
-
-		// Create Image
-		if (vkCreateImageView(mDevice, &createInfo, nullptr, &SwapChainImageViews[i]) != VK_SUCCESS)
-			throw runtime_error("Failed to create ImageView");
-	}
 }
 void VulkanEngineApplication::__CreateRenderPass()
 {
@@ -676,16 +653,17 @@ void VulkanEngineApplication::__CreateFrameBuffers()
 }
 void VulkanEngineApplication::__CreateDepthBuffers()
 {
-	
+	VkFormat depthFormat = __GetDepthFormat();
+	mDepthImageView = __CreateImageView(mDepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 void VulkanEngineApplication::__CreateCommandPool()
 {
 	VkCommandPoolCreateInfo poolInfo{};
 	poolInfo.sType													= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.flags													= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	poolInfo.queueFamilyIndex										= Indices.GraphicsFamily.value();
+	poolInfo.queueFamilyIndex										= mIndices.GraphicsFamily.value();
 
-	if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &CommandPool) != VK_SUCCESS)
+	if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS)
 		throw runtime_error("Failed to create command pool");
 }
 void VulkanEngineApplication::__CreateTextureImage()
@@ -755,7 +733,7 @@ void VulkanEngineApplication::__CreateCommandBuffer()
 	
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocateInfo.commandPool										= CommandPool;
+	allocateInfo.commandPool										= mCommandPool;
 	allocateInfo.level												= VK_COMMAND_BUFFER_LEVEL_PRIMARY;		// 如果是 Primary，代表直接送 Command Buffer，無法被其他 Command Buffer 讀取
 	allocateInfo.commandBufferCount									= static_cast<uint32_t>(mCommandBuffers.size());
 
@@ -907,7 +885,7 @@ QueueFamilyIndices VulkanEngineApplication::__FindQueueFamilies(VkPhysicalDevice
 
 		// 判斷 device 是否支援 presentation
 		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, Surface, &presentSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, mSurface, &presentSupport);
 		if (presentSupport)
 			indices.PresentFamily = i;
 
@@ -919,19 +897,76 @@ QueueFamilyIndices VulkanEngineApplication::__FindQueueFamilies(VkPhysicalDevice
 uint32_t VulkanEngineApplication::__FindMemoryType(uint32_t typeFiler, VkMemoryPropertyFlags properties)
 {
 	VkPhysicalDeviceMemoryProperties memProperties;
-	vkGetPhysicalDeviceMemoryProperties(PhysiclaDevice, &memProperties);
+	vkGetPhysicalDeviceMemoryProperties(mPhysiclaDevice, &memProperties);
 
 	for(uint32_t i = 0 ; i < memProperties.memoryTypeCount; i++)
 		if (typeFiler & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 			return i;
 	throw runtime_error("Failed to find suitable memory type");
 }
+VkImageView VulkanEngineApplication::__CreateImageView(VkImage pImage, VkFormat pFormat, VkImageAspectFlags pAspectFlags)
+{
+	// 相同於 TextureManager::CreateImageView
+	VkImageViewCreateInfo createInfo{};
+	createInfo.sType 												= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	createInfo.image												= pImage;
+	createInfo.viewType												= VK_IMAGE_VIEW_TYPE_2D;
+	createInfo.format												= pFormat;
+
+	// Image 的 Range 設定 0 ~ 1
+	createInfo.components.r											= VK_COMPONENT_SWIZZLE_IDENTITY;
+	createInfo.components.g											= VK_COMPONENT_SWIZZLE_IDENTITY;
+	createInfo.components.b											= VK_COMPONENT_SWIZZLE_IDENTITY;
+	createInfo.components.a											= VK_COMPONENT_SWIZZLE_IDENTITY;
+
+	// 其他用途的設定 (Mipmap 等)
+	createInfo.subresourceRange.aspectMask							= pAspectFlags;
+	createInfo.subresourceRange.baseMipLevel						= 0;
+	createInfo.subresourceRange.levelCount							= 1;
+	createInfo.subresourceRange.baseArrayLayer						= 0;
+	createInfo.subresourceRange.layerCount							= 1;
+
+	// Create Image
+	VkImageView imageView;
+	if (vkCreateImageView(mDevice, &createInfo, nullptr, &imageView) != VK_SUCCESS)
+		throw runtime_error("Failed to create ImageView");
+	return imageView;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Texture Format
+//////////////////////////////////////////////////////////////////////////
+VkFormat VulkanEngineApplication::__GetDepthFormat()
+{
+	// VK_FORMAT_D32_SFLOAT: 32-bit float for depth
+	// VK_FORMAT_D32_SFLOAT_S8_UINT: 32 - bit signed float for depth and 8 bit stencil component
+	// VK_FORMAT_D24_UNORM_S8_UINT : 24 - bit float for depth and 8 bit stencil component
+	return __FindSupportedTextureFormat(
+		{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
 VkFormat VulkanEngineApplication::__FindSupportedTextureFormat(const vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
 	for (VkFormat format : candidates)
 	{
+		VkFormatProperties props;
+		vkGetPhysicalDeviceFormatProperties(mPhysiclaDevice, format, &props);
 
+		// 有三種 VkFormatProperties
+		// 1. linearTilingFeatures: Use cases that are supported with linear tiling
+		// 2. optimalTilingFeatures : Use cases that are supported with optimal tiling
+		// 3. bufferFeatures : Use cases that are supported for buffers
+		if (tiling == VK_IMAGE_TILING_LINEAR						&& (props.linearTilingFeatures & features) == features)
+			return format;
+		else if (tiling == VK_IMAGE_TILING_OPTIMAL					&& (props.optimalTilingFeatures & features) == features)
+			return format;
 	}
+	throw runtime_error("Failed to find supported texture format!");
+}
+bool VulkanEngineApplication::__HasStencilComponent(VkFormat format)
+{
+	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
 VkCommandBuffer VulkanEngineApplication::__BeginSingleTimeCommand()
@@ -939,7 +974,7 @@ VkCommandBuffer VulkanEngineApplication::__BeginSingleTimeCommand()
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType												= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocateInfo.level												= VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocateInfo.commandPool										= CommandPool;
+	allocateInfo.commandPool										= mCommandPool;
 	allocateInfo.commandBufferCount									= 1;
 
 	VkCommandBuffer commandBuffer;
@@ -962,11 +997,11 @@ void VulkanEngineApplication::__EndSingleTimeCommand(VkCommandBuffer pBuffer)
 	submitInfo.commandBufferCount									= 1;
 	submitInfo.pCommandBuffers										= &pBuffer;
 	
-	vkQueueSubmit(GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(GraphicsQueue);
+	vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(mGraphicsQueue);
 
 	// Free Buffer
-	vkFreeCommandBuffers(mDevice, CommandPool, 1, &pBuffer);
+	vkFreeCommandBuffers(mDevice, mCommandPool, 1, &pBuffer);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -975,23 +1010,23 @@ void VulkanEngineApplication::__EndSingleTimeCommand(VkCommandBuffer pBuffer)
 SwapChainSupportDetails VulkanEngineApplication::__QuerySwapChainSupport(VkPhysicalDevice device)
 {
 	SwapChainSupportDetails details;
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, Surface, &details.Capbilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mSurface, &details.Capbilities);
 
 	// Get Format
 	uint32_t size = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, Surface, &size, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &size, nullptr);
 	if (size > 0)
 	{
 		details.Formats.resize(size);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, Surface, &size, details.Formats.data());
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &size, details.Formats.data());
 	}
 
 	// Get Present Mode
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, Surface, &size, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &size, nullptr);
 	if (size > 0)
 	{
 		details.PresentModes.resize(size);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, Surface, &size, details.PresentModes.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &size, details.PresentModes.data());
 	}
 	return details;
 }
