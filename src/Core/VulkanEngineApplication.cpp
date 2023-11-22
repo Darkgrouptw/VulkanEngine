@@ -916,8 +916,6 @@ QueueFamilyIndices VulkanEngineApplication::__FindQueueFamilies(VkPhysicalDevice
 	}
 	return indices;																								// 無正常的可以處理 Graphics 的 Queue */
 }
-
-
 uint32_t VulkanEngineApplication::__FindMemoryType(uint32_t typeFiler, VkMemoryPropertyFlags properties)
 {
 	VkPhysicalDeviceMemoryProperties memProperties;
@@ -927,6 +925,13 @@ uint32_t VulkanEngineApplication::__FindMemoryType(uint32_t typeFiler, VkMemoryP
 		if (typeFiler & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 			return i;
 	throw runtime_error("Failed to find suitable memory type");
+}
+VkFormat VulkanEngineApplication::__FindSupportedTextureFormat(const vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+{
+	for (VkFormat format : candidates)
+	{
+
+	}
 }
 
 VkCommandBuffer VulkanEngineApplication::__BeginSingleTimeCommand()
