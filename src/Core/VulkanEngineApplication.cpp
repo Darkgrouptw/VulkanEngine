@@ -53,7 +53,7 @@ void VulkanEngineApplication::ResizeCallback(GLFWwindow* pWindow, int pWidth, in
 	app->mFrameBufferResized = true;
 }
 
-// Vulkan Create Buffer
+// Vulkan Buffer Function
 void VulkanEngineApplication::CreateBuffer(VkDeviceSize pSize, VkBufferUsageFlags pUsage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
 	VkBufferCreateInfo bufferInfo{};
@@ -88,6 +88,74 @@ void VulkanEngineApplication::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer,
 		vkCmdCopyBuffer(buffer, srcBuffer, dstBuffer, 1, &copyRegion);
 	}
 	__EndSingleTimeCommand(buffer);
+}
+
+// Vulkan Image Function
+void VulkanEngineApplication::CreateImage(uint32_t pWidth, uint32_t pHeight, VkFormat pFormat, VkImageTiling pTiling, VkImageUsageFlags pUsage, VkMemoryPropertyFlags pProperty, VkImage &pImage, VkDeviceMemory &pImageMemory)
+{
+	#pragma region Image Create
+	VkImageCreateInfo createInfo{};
+	createInfo.sType												= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	createInfo.imageType											= VK_IMAGE_TYPE_2D;
+	createInfo.extent.width											= pWidth;
+	createInfo.extent.height										= pHeight;
+	createInfo.extent.depth											= 1;									// 這裡是 1 的原因，是因為他算是高度 (Texture 3D 的高)
+	createInfo.mipLevels											= 1;
+	createInfo.arrayLayers											= 1;
+
+	createInfo.format												= pFormat;
+	createInfo.tiling												= pTiling;
+	createInfo.initialLayout										= VK_IMAGE_LAYOUT_UNDEFINED;			// VK_IMAGE_LAYOUT_UNDEFINED (在初始化的時候會砍調沒有在 GPU 用掉像素資料)，VK_IMAGE_LAYOUT_PREINITIALIZED (相反，會保留) (https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImageLayout.html)
+	
+	createInfo.usage												= pUsage; 								// VK_IMAGE_USAGE_SAMPLED_BIT 是設定要 VkImageCreateInfo 時設定
+	createInfo.sharingMode											= VK_SHARING_MODE_EXCLUSIVE;
+	createInfo.samples												= VK_SAMPLE_COUNT_1_BIT;
+	createInfo.flags												= 0;
+
+	if (vkCreateImage(mDevice, &createInfo, nullptr, &pImage) 		!= VK_SUCCESS)
+		throw runtime_error("Failed to create vkimage");
+	#pragma endregion
+	#pragma region Allocate Memory
+	VkMemoryRequirements requirement{};
+	vkGetImageMemoryRequirements(mDevice, pImage, &requirement);
+	
+	VkMemoryAllocateInfo allocateInfo{};
+	allocateInfo.sType												= VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.allocationSize										= requirement.size;
+	allocateInfo.memoryTypeIndex									= __FindMemoryType(requirement.memoryTypeBits, pProperty);
+
+	if (vkAllocateMemory(mDevice, &allocateInfo, nullptr, &pImageMemory) != VK_SUCCESS)
+		throw runtime_error("Failed to allocate memory in image");
+	vkBindImageMemory(mDevice, pImage, pImageMemory, 0);
+	#pragma endregion
+}
+VkImageView VulkanEngineApplication::CreateImageView(VkImage pImage, VkFormat pFormat, VkImageAspectFlags pAspectFlags)
+{
+	// 相同於 TextureManager::CreateImageView
+	VkImageViewCreateInfo createInfo{};
+	createInfo.sType 												= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	createInfo.image												= pImage;
+	createInfo.viewType												= VK_IMAGE_VIEW_TYPE_2D;
+	createInfo.format												= pFormat;
+
+	// Image 的 Range 設定 0 ~ 1
+	createInfo.components.r											= VK_COMPONENT_SWIZZLE_IDENTITY;
+	createInfo.components.g											= VK_COMPONENT_SWIZZLE_IDENTITY;
+	createInfo.components.b											= VK_COMPONENT_SWIZZLE_IDENTITY;
+	createInfo.components.a											= VK_COMPONENT_SWIZZLE_IDENTITY;
+
+	// 其他用途的設定 (Mipmap 等)
+	createInfo.subresourceRange.aspectMask							= pAspectFlags;
+	createInfo.subresourceRange.baseMipLevel						= 0;
+	createInfo.subresourceRange.levelCount							= 1;
+	createInfo.subresourceRange.baseArrayLayer						= 0;
+	createInfo.subresourceRange.layerCount							= 1;
+
+	// Create Image
+	VkImageView imageView;
+	if (vkCreateImageView(mDevice, &createInfo, nullptr, &imageView) != VK_SUCCESS)
+		throw runtime_error("Failed to create ImageView");
+	return imageView;
 }
 
 // Get Vulkan Item
@@ -579,7 +647,7 @@ void VulkanEngineApplication::__CreateImageViews()
 {
 	SwapChainImageViews.resize(SwapChainImages.size());
 	for (size_t i = 0; i < SwapChainImages.size(); i++)
-		SwapChainImageViews[i] = __CreateImageView(SwapChainImages[i], SwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+		SwapChainImageViews[i] = CreateImageView(SwapChainImages[i], SwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 
 }
 void VulkanEngineApplication::__CreateRenderPass()
@@ -654,7 +722,8 @@ void VulkanEngineApplication::__CreateFrameBuffers()
 void VulkanEngineApplication::__CreateDepthBuffers()
 {
 	VkFormat depthFormat = __GetDepthFormat();
-	mDepthImageView = __CreateImageView(mDepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	CreateImage(mSwapChainExtent.width, mSwapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mDepthImage, mDepthImageMemory);
+	mDepthImageView = CreateImageView(mDepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 void VulkanEngineApplication::__CreateCommandPool()
 {
@@ -903,34 +972,6 @@ uint32_t VulkanEngineApplication::__FindMemoryType(uint32_t typeFiler, VkMemoryP
 		if (typeFiler & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 			return i;
 	throw runtime_error("Failed to find suitable memory type");
-}
-VkImageView VulkanEngineApplication::__CreateImageView(VkImage pImage, VkFormat pFormat, VkImageAspectFlags pAspectFlags)
-{
-	// 相同於 TextureManager::CreateImageView
-	VkImageViewCreateInfo createInfo{};
-	createInfo.sType 												= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	createInfo.image												= pImage;
-	createInfo.viewType												= VK_IMAGE_VIEW_TYPE_2D;
-	createInfo.format												= pFormat;
-
-	// Image 的 Range 設定 0 ~ 1
-	createInfo.components.r											= VK_COMPONENT_SWIZZLE_IDENTITY;
-	createInfo.components.g											= VK_COMPONENT_SWIZZLE_IDENTITY;
-	createInfo.components.b											= VK_COMPONENT_SWIZZLE_IDENTITY;
-	createInfo.components.a											= VK_COMPONENT_SWIZZLE_IDENTITY;
-
-	// 其他用途的設定 (Mipmap 等)
-	createInfo.subresourceRange.aspectMask							= pAspectFlags;
-	createInfo.subresourceRange.baseMipLevel						= 0;
-	createInfo.subresourceRange.levelCount							= 1;
-	createInfo.subresourceRange.baseArrayLayer						= 0;
-	createInfo.subresourceRange.layerCount							= 1;
-
-	// Create Image
-	VkImageView imageView;
-	if (vkCreateImageView(mDevice, &createInfo, nullptr, &imageView) != VK_SUCCESS)
-		throw runtime_error("Failed to create ImageView");
-	return imageView;
 }
 
 //////////////////////////////////////////////////////////////////////////

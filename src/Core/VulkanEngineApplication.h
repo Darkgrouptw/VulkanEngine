@@ -60,6 +60,11 @@ public:
 	void CreateBuffer(VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags, VkBuffer&, VkDeviceMemory&); // Create Buffer
 	void CopyBuffer(VkBuffer, VkBuffer, VkDeviceSize);														// Copy Buffer
 
+	// Vulkan Image Function
+	void CreateImage(uint32_t, uint32_t, VkFormat, VkImageTiling, VkImageUsageFlags, VkMemoryPropertyFlags,	// Create Image
+			VkImage&, VkDeviceMemory&);
+	VkImageView CreateImageView(VkImage, VkFormat, VkImageAspectFlags);										// 輔助產生 ImageView
+
 	// Get Vulkan Item
 	static const uint32_t MAX_FRAME_IN_FLIGHTS						= 2;									// 最大上限的 Frame 數
 	inline VkDevice GetDevice()										{ return mDevice; };					// 抓取 Device
@@ -166,7 +171,6 @@ private:
 	bool __IsDeviceSuitable(VkPhysicalDevice);																// 是否為合適的顯卡
 	QueueFamilyIndices __FindQueueFamilies(VkPhysicalDevice);												// 找顯卡中 對應 Queue 的 Indices
 	uint32_t __FindMemoryType(uint32_t, VkMemoryPropertyFlags);												// 找到合適的 Memory Type
-	VkImageView __CreateImageView(VkImage, VkFormat, VkImageAspectFlags);									// 輔助產生 ImageView
 
 	//////////////////////////////////////////////////////////////////////////
 	// Texture Format

@@ -11,7 +11,8 @@
 
 using namespace std;
 
-class TextureManager
+// Need to update to use VKHelper
+/*class TextureManager
 {
 public:
     TextureManager(string,
@@ -48,4 +49,4 @@ private:
     // Command Single Time Buffer Function
     function<VkCommandBuffer()> mBeginBufferFunc                    = nullptr;
     function<void(VkCommandBuffer)> mEndBufferFunc                  = nullptr;
-};
+};*/
