@@ -403,6 +403,7 @@ void VulkanEngineApplication::ReCreateSwapChain()
 	__CleanupSwapChain();
 	__CreateSwapChain();
 	__CreateImageViews();
+	__CreateDepthBuffers();
 	__CreateFrameBuffers();
 
 	__ResetCameraAspect();
@@ -1129,6 +1130,11 @@ VkExtent2D VulkanEngineApplication::__ChooseSwapExtent(const VkSurfaceCapabiliti
 }
 void VulkanEngineApplication::__CleanupSwapChain()
 {
+	#pragma region Depth Buffer
+	vkDestroyImageView(mDevice, mDepthImageView, nullptr);
+	vkDestroyImage(mDevice, mDepthImage, nullptr);
+	vkFreeMemory(mDevice, mDepthImageMemory, nullptr);
+	#pragma endregion
 	#pragma region Frame Buffer
 	for(auto &frameBuffer : SwapChainFrameBuffers)
 		vkDestroyFramebuffer(mDevice, frameBuffer, nullptr);

@@ -291,7 +291,6 @@ void ShaderBase::CreateGraphicsPipeline()
 	pipelineInfo.pViewportState										= &viewportInfo;
 	pipelineInfo.pRasterizationState								= &rasterizationInfo;
 	pipelineInfo.pMultisampleState									= &multisamplingInfo;
-	pipelineInfo.pDepthStencilState									= nullptr;
 	pipelineInfo.pColorBlendState									= &colorBlendInfo;
 	pipelineInfo.pDepthStencilState									= &depthStencilInfo;
 	pipelineInfo.pDynamicState										= &dynamicState;
