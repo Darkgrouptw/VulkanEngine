@@ -205,8 +205,9 @@ void VulkanEngineApplication::InitVulkan()
 	__CreateSwapChain();
 	__CreateImageViews();
 	__CreateRenderPass();
-	__CreateFrameBuffers();
 	__CreateCommandPool();
+	__CreateDepthBuffers();
+	__CreateFrameBuffers();
 	__CreateTextureImage();
 	__CreateIMGUIDescriptor();
 	__CreateCommandBuffer();
@@ -652,7 +653,7 @@ void VulkanEngineApplication::__CreateImageViews()
 }
 void VulkanEngineApplication::__CreateRenderPass()
 {
-	// 設定 Color Buffer
+	#pragma region 設定 Color Buffer
 	VkAttachmentDescription colorBufferAttachment{};
 	colorBufferAttachment.format									= SwapChainImageFormat;
 	colorBufferAttachment.samples									= VK_SAMPLE_COUNT_1_BIT;
@@ -671,27 +672,49 @@ void VulkanEngineApplication::__CreateRenderPass()
 	VkAttachmentReference colorAttachmentRef{};
 	colorAttachmentRef.attachment									= 0;									// 由於 Color Attach Index 為 0
 	colorAttachmentRef.layout										= VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // 希望得到 Best performance Of Color Attachment
+	#pragma endregion
+	#pragma region 設定 Depth Buffer
+	VkAttachmentDescription depthBufferAttachment{};
+	depthBufferAttachment.format									= __GetDepthFormat();
+	depthBufferAttachment.samples									= VK_SAMPLE_COUNT_1_BIT;
+	depthBufferAttachment.loadOp									= VK_ATTACHMENT_LOAD_OP_CLEAR;			// 在 Load 完之後，先做 Clear
+	depthBufferAttachment.storeOp								 	= VK_ATTACHMENT_STORE_OP_DONT_CARE;		// Render 完之後，會存在 memory 內，方便以後讀取
 
+	depthBufferAttachment.stencilLoadOp								= VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	depthBufferAttachment.stencilStoreOp							= VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+	depthBufferAttachment.initialLayout								= VK_IMAGE_LAYOUT_UNDEFINED;
+	depthBufferAttachment.finalLayout								= VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	// Attachment & Subpass
+	VkAttachmentReference depthAttachmentRef{};
+	depthAttachmentRef.attachment									= 1;
+	depthAttachmentRef.layout										= VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	#pragma endregion
+
+	// Subpass
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint										= VK_PIPELINE_BIND_POINT_GRAPHICS;		// 此 Pipeline 是用來 Graphics 的 (或是可以切換成 Compute)
 	subpass.colorAttachmentCount									= 1;
 	subpass.pColorAttachments										= &colorAttachmentRef;
+	subpass.pDepthStencilAttachment									= &depthAttachmentRef;
 
 	// Subpass 也需要等待 ImageAvailableSemaphore
 	// 需要設定 Dependency
 	VkSubpassDependency dependency{};
 	dependency.srcSubpass											= VK_SUBPASS_EXTERNAL;
 	dependency.dstSubpass											= 0;
-	dependency.srcStageMask											= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; // 確定 RenderPass 會等待 Subpass 完成
-	dependency.dstStageMask											= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcStageMask											= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT; // 確定 RenderPass 會等待 Subpass 完成
+	dependency.dstStageMask											= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	dependency.srcAccessMask										= 0;
-	dependency.dstAccessMask										= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependency.dstAccessMask										= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 	// Create Render Pass
+	vector<VkAttachmentDescription> attachments						= { colorBufferAttachment, depthBufferAttachment };
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType											= VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount									= 1;
-	renderPassInfo.pAttachments										= &colorBufferAttachment;
+	renderPassInfo.attachmentCount									= static_cast<uint32_t>(attachments.size());
+	renderPassInfo.pAttachments										= attachments.data();
 	renderPassInfo.subpassCount										= 1;
 	renderPassInfo.pSubpasses										= &subpass;
 	renderPassInfo.dependencyCount									= 1;
@@ -700,12 +723,28 @@ void VulkanEngineApplication::__CreateRenderPass()
 	if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
 		throw runtime_error("Failed to create render pass");
 }
+void VulkanEngineApplication::__CreateCommandPool()
+{
+	VkCommandPoolCreateInfo poolInfo{};
+	poolInfo.sType													= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.flags													= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	poolInfo.queueFamilyIndex										= mIndices.GraphicsFamily.value();
+
+	if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS)
+		throw runtime_error("Failed to create command pool");
+}
+void VulkanEngineApplication::__CreateDepthBuffers()
+{
+	VkFormat depthFormat = __GetDepthFormat();
+	CreateImage(mSwapChainExtent.width, mSwapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mDepthImage, mDepthImageMemory);
+	mDepthImageView = CreateImageView(mDepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+}
 void VulkanEngineApplication::__CreateFrameBuffers()
 {
 	SwapChainFrameBuffers.resize(SwapChainImageViews.size());
 	for (size_t i = 0; i < SwapChainImageViews.size(); i++)
 	{
-		VkImageView attachments[] 									= { SwapChainImageViews[i] };
+		VkImageView attachments[] 									= { SwapChainImageViews[i], mDepthImageView };
 		VkFramebufferCreateInfo frameBufferInfo{};
 		frameBufferInfo.sType										= VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		frameBufferInfo.renderPass									= mRenderPass;
@@ -718,22 +757,6 @@ void VulkanEngineApplication::__CreateFrameBuffers()
 		if (vkCreateFramebuffer(mDevice, &frameBufferInfo, nullptr, &SwapChainFrameBuffers[i]) != VK_SUCCESS)
 			throw runtime_error("Failed to create framebuffer");
 	}
-}
-void VulkanEngineApplication::__CreateDepthBuffers()
-{
-	VkFormat depthFormat = __GetDepthFormat();
-	CreateImage(mSwapChainExtent.width, mSwapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mDepthImage, mDepthImageMemory);
-	mDepthImageView = CreateImageView(mDepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-}
-void VulkanEngineApplication::__CreateCommandPool()
-{
-	VkCommandPoolCreateInfo poolInfo{};
-	poolInfo.sType													= VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.flags													= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	poolInfo.queueFamilyIndex										= mIndices.GraphicsFamily.value();
-
-	if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS)
-		throw runtime_error("Failed to create command pool");
 }
 void VulkanEngineApplication::__CreateTextureImage()
 {
@@ -851,9 +874,11 @@ void VulkanEngineApplication::__SetupCommandBuffer(VkCommandBuffer commandBuffer
 	renderPassInfo.renderArea.extent								= mSwapChainExtent;
 
 	// Clear
-	VkClearValue clearColor 										= {{{ 0.2f, 0.84f, 0.8f, 1 }}};
-	renderPassInfo.clearValueCount									= 1;
-	renderPassInfo.pClearValues										= &clearColor;
+	vector<VkClearValue> clearColor(2);
+	clearColor[0].color 											= {{ 0.2f, 0.84f, 0.8f, 1 }};
+	clearColor[1].depthStencil										= {1.0f, 0};							// 1.0f 是因為 depth 1 是 far, 0 是 near, 後面的 0 是 stencil
+	renderPassInfo.clearValueCount									= static_cast<uint32_t>(clearColor.size());
+	renderPassInfo.pClearValues										= clearColor.data();
 
 	// 設定 RenderPass (且無其他 Pass => CONTENTS_INLINE)
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);

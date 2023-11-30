@@ -150,9 +150,9 @@ private:
 	void __CreateSwapChain();																				// 建立 Swap Chain
 	void __CreateImageViews();																				// 建立 Image Views
 	void __CreateRenderPass();																				// 建立 RenderPass，主要是要設定 Color Buffer & Depth Buffer
-	void __CreateFrameBuffers();																			// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
-	void __CreateDepthBuffers();																			// 產生 Depth 相關的資源
 	void __CreateCommandPool();																				// 建立 Command Pool
+	void __CreateDepthBuffers();																			// 產生 Depth 相關的資源
+	void __CreateFrameBuffers();																			// 建立 Frame Buffer，把 SwapChain 的圖片畫上去
 	void __CreateTextureImage();																			// 建立 Texture
 	void __CreateIMGUIDescriptor();																			// 建立 IMGUI Descriptor Pool & Set
 	void __CreateCommandBuffer();																			// 建立 Command Buffer

@@ -153,7 +153,7 @@ void ShaderBase::CreateGraphicsPipeline()
 	// 3. Vertex Shader	(From Code)											
 	// 4. Rasterization & MultiSamping
 	// 5. Fragment Shader (Fom Code)
-	// 6. Color Blending											Blending 到 FrameBuffer 中
+	// 6. Color Blending & Depth Stencil Test						Blending 到 FrameBuffer 中
 	// 7. FrameBuffer
 	#pragma region 1. Vertex Input
 	auto attribeDesc												= VertexBufferInfo::GetAttributeDescription();
@@ -212,10 +212,11 @@ void ShaderBase::CreateGraphicsPipeline()
 	//multisamplingInfo.alphaToCoverageEnable							= VK_FALSE;
 	//multisamplingInfo.alphaToOneEnable 								= VK_FALSE;
 	#pragma endregion
-	#pragma region 6. Color Blending
+	#pragma region 6. Color Blending and Depth Stencil Test
 	// 這裡要設定兩個
 	// 1. 設定 Color Blending 後的 FrameBuffer 上的設定
 	// 2. 設定 Global 的 Color Blending
+	// 3. 設定 Global 的 Depth
 	
 	// 1.
 	VkPipelineColorBlendAttachmentState colorBlendAttachmentInfo{};
@@ -235,6 +236,24 @@ void ShaderBase::CreateGraphicsPipeline()
 	colorBlendInfo.logicOpEnable									= VK_FALSE;
 	colorBlendInfo.attachmentCount									= 1;
 	colorBlendInfo.pAttachments										= &colorBlendAttachmentInfo;
+
+	// 3.
+	VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
+	depthStencilInfo.sType											= VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencilInfo.depthTestEnable								= VK_TRUE;
+	depthStencilInfo.depthWriteEnable								= VK_TRUE;
+
+	depthStencilInfo.depthCompareOp									= VK_COMPARE_OP_LESS;
+
+	// 是否要卡到 0 ~ 1 之間 （暫先不設定）
+	depthStencilInfo.depthBoundsTestEnable							= VK_FALSE;
+	depthStencilInfo.minDepthBounds									= 0.f;
+	depthStencilInfo.maxDepthBounds									= 1.f;
+
+	// Stencil Test
+	depthStencilInfo.stencilTestEnable								= VK_FALSE;
+	depthStencilInfo.front											= {};
+	depthStencilInfo.back											= {};
 	#pragma endregion
 
 	// 而在 OpenGL 中已經設定好 Fixed Function
@@ -274,6 +293,7 @@ void ShaderBase::CreateGraphicsPipeline()
 	pipelineInfo.pMultisampleState									= &multisamplingInfo;
 	pipelineInfo.pDepthStencilState									= nullptr;
 	pipelineInfo.pColorBlendState									= &colorBlendInfo;
+	pipelineInfo.pDepthStencilState									= &depthStencilInfo;
 	pipelineInfo.pDynamicState										= &dynamicState;
 
 	pipelineInfo.layout												= mPipelineLayout;
