@@ -564,6 +564,13 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 	// Mac 有開啟此功能，需要設定一下
 	deviceExtensionNames.push_back("VK_KHR_portability_subset");
 #endif
+#if defined(USE_BARYCENTRIC_WIREFRAME)
+	if (mEnableBarycentric)
+	{
+		deviceExtensionNames.push_back(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
+	}
+#endif
+
 	createInfo.enabledExtensionCount								= static_cast<uint32_t>(deviceExtensionNames.size());
 	createInfo.ppEnabledExtensionNames								= deviceExtensionNames.data();
 
@@ -923,9 +930,19 @@ bool VulkanEngineApplication::__CheckDeviceExtensionSupport(VkPhysicalDevice dev
 	vector<VkExtensionProperties> properties(extensionCount);
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, properties.data());
 
+	auto isFindLambda = [&](const char* pName) {
+		return !(find_if(properties.begin(), properties.end(), [pName](VkExtensionProperties p) { return strcmp(p.extensionName, pName) == 0; }) == properties.end()); // 找到 end 也沒找到
+	};
+
 	for(const auto& names : deviceExtensionNames)
-		if (find_if(properties.begin(), properties.end(), [names](VkExtensionProperties p) { return strcmp(p.extensionName, names) == 0; }) == properties.end())							// 找到 end 也沒找到
+		if (!isFindLambda(names))
 			return false;
+
+#if defined(USE_BARYCENTRIC_WIREFRAME)
+	// Barycentric Coordinate
+	if (isFindLambda(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME))
+		mEnableBarycentric											= true;
+#endif
 	return true;
 }
 bool VulkanEngineApplication::__IsDeviceSuitable(VkPhysicalDevice device)

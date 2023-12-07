@@ -22,6 +22,7 @@ using namespace std;
 
 // 測試 Vulkan 的一些細節使用
 #define VKENGINE_DEBUG_DETAILS
+#define USE_BARYCENTRIC_WIREFRAME																			// 畫 Wireframe 使用
 
 // 在 Vulkan 中，有很多不同的 Queue，分別各次處理不同的 operation
 struct QueueFamilyIndices
@@ -197,8 +198,13 @@ private:
 	// 檢查項目
 	vector<const char*> deviceExtensionNames						= 
 	{
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 	};
+
+	// Barycentric
+#if defined(USE_BARYCENTRIC_WIREFRAME)
+	bool mEnableBarycentric											= false;								// 是否開啟這個功能
+#endif
 
 	// Debug Vulkan 的功能
 #if defined(VKENGINE_DEBUG_DETAILS)
