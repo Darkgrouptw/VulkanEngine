@@ -9,5 +9,5 @@ layout (location = 0) out vec4 OutColor;
 
 void main()
 {
-    OutColor = mix(BorderColor, vec4(1, 0, 0, 1), EdgeFactor(BaryCoordinate));
+    OutColor = mix(BorderColor, vec4(1, 0, 0, 1), EdgeFactor());
 }

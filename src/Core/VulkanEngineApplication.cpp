@@ -533,7 +533,7 @@ void VulkanEngineApplication::__PickPhysicalDevice()
 }
 void VulkanEngineApplication::__CreateLogicalDevice()
 {
-	mIndices															= __FindQueueFamilies(mPhysiclaDevice);
+	mIndices														= __FindQueueFamilies(mPhysiclaDevice);
 
 	vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	set<uint32_t> uniqueQueueFamilies 								= {mIndices.GraphicsFamily.value(), mIndices.PresentFamily.value()};
