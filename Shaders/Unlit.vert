@@ -17,7 +17,6 @@ layout (binding = 0) uniform UniformBufferInfo {
 
 // Out
 layout (location = 0) out vec4 OutVertexColor;
-layout (location = 1) out vec3 OutBaryCoordinate;
 
 void main()
 {
@@ -25,5 +24,4 @@ void main()
 
     // Send to Fragment
     OutVertexColor                                                  = InVertexColor;
-    OutBaryCoordinate                                               = BaryCoordPos[gl_VertexIndex % 3];
 }

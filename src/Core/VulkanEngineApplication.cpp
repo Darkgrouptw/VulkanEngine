@@ -566,9 +566,7 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 #endif
 #if defined(USE_BARYCENTRIC_WIREFRAME)
 	if (mEnableBarycentric)
-	{
 		deviceExtensionNames.push_back(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
-	}
 #endif
 
 	createInfo.enabledExtensionCount								= static_cast<uint32_t>(deviceExtensionNames.size());
@@ -941,7 +939,10 @@ bool VulkanEngineApplication::__CheckDeviceExtensionSupport(VkPhysicalDevice dev
 #if defined(USE_BARYCENTRIC_WIREFRAME)
 	// Barycentric Coordinate
 	if (isFindLambda(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME))
+	{
+		cout << "Enable BARYCENTRIC_EXTENSION" << endl;
 		mEnableBarycentric											= true;
+	}
 #endif
 	return true;
 }
@@ -952,7 +953,7 @@ bool VulkanEngineApplication::__IsDeviceSuitable(VkPhysicalDevice device)
 		return false;
 
 	// 找出各種 Queue 是否支援
-	QueueFamilyIndices indices 								= __FindQueueFamilies(device);
+	QueueFamilyIndices indices 										= __FindQueueFamilies(device);
 	if (!indices.IsCompleted())
 		return false;	
 
