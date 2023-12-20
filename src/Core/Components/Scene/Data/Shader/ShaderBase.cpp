@@ -243,7 +243,7 @@ void ShaderBase::CreateGraphicsPipeline()
 	depthStencilInfo.depthTestEnable								= VK_TRUE;
 	depthStencilInfo.depthWriteEnable								= VK_TRUE;
 
-	depthStencilInfo.depthCompareOp									= VK_COMPARE_OP_LESS;
+	depthStencilInfo.depthCompareOp									= VK_COMPARE_OP_LESS_OR_EQUAL;
 
 	// 是否要卡到 0 ~ 1 之間 （暫先不設定）
 	depthStencilInfo.depthBoundsTestEnable							= VK_FALSE;

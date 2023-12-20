@@ -567,6 +567,12 @@ void VulkanEngineApplication::__CreateLogicalDevice()
 #if defined(USE_BARYCENTRIC_WIREFRAME)
 	if (mEnableBarycentric)
 		deviceExtensionNames.push_back(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
+
+	VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR barycentricFeatures{};
+	barycentricFeatures.sType										= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR;
+	barycentricFeatures.fragmentShaderBarycentric					= true;
+	
+	createInfo.pNext												= &barycentricFeatures;
 #endif
 
 	createInfo.enabledExtensionCount								= static_cast<uint32_t>(deviceExtensionNames.size());
